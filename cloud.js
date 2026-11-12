@@ -16,6 +16,14 @@ const cloudName=()=>CLOUD.user?((CLOUD.user.user_metadata&&CLOUD.user.user_metad
 /* ---- Eşitleme kaydı: bu cihaz buluttan en son hangi ilerlemeyle eşitlendi ---- */
 function cloudSyncGet(){try{const o=JSON.parse(localStorage.getItem(CLOUD_SYNC_KEY)||"null");return(o&&CLOUD.user&&o.uid===CLOUD.user.id)?o.ms:null}catch(e){return null}}
 function cloudSyncSet(ms){try{localStorage.setItem(CLOUD_SYNC_KEY,JSON.stringify({uid:CLOUD.user.id,ms}))}catch(e){}}
+/* Bu cihazdaki kayıtlar başka bir hesaba mı ait? (eşitleme işaretindeki hesap numarası farklıysa evet) */
+function cloudForeign(){try{const o=JSON.parse(localStorage.getItem(CLOUD_SYNC_KEY)||"null");return!!(o&&CLOUD.user&&o.uid&&o.uid!==CLOUD.user.id)}catch(e){return false}}
+/* Cihazdaki karakterleri siler (bulutta duran kayda dokunmaz) ve sayfayı yeniler */
+function cloudWipeLocal(){
+  CLOUD.silent=true;SLOTS=[null,null,null,null,null];activeSlot=0;
+  try{localStorage.setItem(SLOTS_KEY,JSON.stringify({active:0,slots:[null,null,null,null,null]}));localStorage.removeItem(CLOUD_SYNC_KEY)}catch(e){}
+  location.reload();
+}
 const cloudStamp=()=>SLOTS.reduce((m,s)=>s?Math.max(m,s.ts||0):m,0);
 const cloudHasLocal=()=>SLOTS.some(Boolean);
 
@@ -92,12 +100,15 @@ async function cloudSignIn(reg,w){
   CLOUD.busy=false;cloudUI();
 }
 async function cloudSignOut(){
+  let safe=true;
   try{
-    if(CLOUD.timer){clearTimeout(CLOUD.timer);CLOUD.timer=null;await cloudPush(true)}
+    if(CLOUD.timer){clearTimeout(CLOUD.timer);CLOUD.timer=null;safe=await cloudPush(true)}
     await CLOUD.sb.auth.signOut();
-  }catch(e){}
+  }catch(e){safe=false}
   CLOUD.user=null;CLOUD.state="out";CLOUD.hold=false;CLOUD.msg="";
-  cloudUI();toast("Hesaptan çıkış yapıldı");
+  /* Kayıtlar buluta gittiyse cihazı temizle: başka hesap açınca eski karakterler karışmasın */
+  if(safe){cloudWipeLocal();return}
+  cloudUI();toast("Çıkış yapıldı. Buluta gönderilemeyen ilerleme bu cihazda duruyor.");
 }
 
 /* ---- Buluta yaz / buluttan oku ---- */
@@ -152,6 +163,7 @@ async function cloudReconcile(manual){
   if(!CLOUD.user||!CLOUD.sb)return;
   CLOUD.lastCheck=Date.now();
   try{
+    if(cloudForeign()){cloudWipeLocal();return}
     const row=await cloudFetch(),last=cloudSyncGet(),has=cloudHasLocal(),stamp=cloudStamp();
     if(!row){
       if(has)await cloudPush(true);
@@ -250,7 +262,7 @@ function cloudUI(){
   const c=$("cloud-c");if(c)c.innerHTML=cloudPanel("c");
   const m=$("cloud-m");if(m&&!CLOUD.asking)m.innerHTML=cloudPanel("m");
   Object.keys(keep).forEach(id=>{const e=$(id);if(e)e.value=keep[id]});
-  const b=$("cl-open");if(b)b.textContent=CLOUD.state==="in"?"☁️ "+cloudName():"☁️ Hesap";
+  const b=$("cl-open");if(b)b.textContent=CLOUD.state==="in"?"☁️ Bağlı":"☁️ Hesap";
 }
 function cloudInjectBtn(){
   const top=document.querySelector("#cs-screen .cs-top");

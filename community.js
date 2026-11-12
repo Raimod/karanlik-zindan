@@ -2,7 +2,7 @@
    TOPLULUK: liderlik tablosu + genel sohbet
    cloud.js'e bağlıdır (giriş yapılmadıysa çalışmaz). game.js ve cloud.js'ten SONRA yüklenir.
    ============================================================ */
-const COM={sub:"rank",by:"level",timer:null,msgs:[],sig:"",sending:false,muted:[],lastLb:""};
+const COM={names:{},sub:"rank",by:"level",timer:null,msgs:[],sig:"",sending:false,muted:[],lastLb:""};
 try{COM.muted=JSON.parse(localStorage.getItem("kz_muted")||"[]")}catch(e){}
 
 const RANKS={level:["Seviye","Lv."],tower:["Kule","Kat "],elites:["Elit","elit"]};
@@ -92,8 +92,8 @@ async function comLoadRank(){
       const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1);
       return`<div class="q" style="padding:6px 8px;margin-bottom:5px;${mine?"border:1px solid var(--gold);":""}">
         <div style="width:30px;text-align:center;font-weight:800">${medal}</div>
-        <div style="flex:1;min-width:0"><b style="${mine?"color:var(--gold)":""}">${escH(x.username||"?")}</b>${mine?' <span class="mu" style="font-size:9px">(sen)</span>':""}
-          <div class="mu" style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.e} ${escH(x.char_name||"")}</div></div>
+        <div style="flex:1;min-width:0"><b style="${mine?"color:var(--gold)":""}">${escH(x.char_name||"?")}</b>${mine?' <span class="mu" style="font-size:9px">(sen)</span>':""}
+          <div class="mu" style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.e} ${escH(c.n||x.cls||"")}</div></div>
         <b class="g" style="font-size:12px">${escH(val)}</b></div>`;
     }).join("");
   }catch(e){
@@ -109,6 +109,14 @@ async function comLoadChat(scroll){
     const r=await CLOUD.sb.from("chat_messages").select("id,user_id,username,body,created_at").order("id",{ascending:false}).limit(50);
     if(r.error)throw r.error;
     COM.msgs=(r.data||[]).slice().reverse();
+    const need=[...new Set(COM.msgs.map(m=>m.user_id))].filter(u=>!(u in COM.names)||COM.names[u]===null);
+    if(need.length){
+      try{
+        const n=await CLOUD.sb.from("leaderboard").select("user_id,char_name").in("user_id",need);
+        (n.data||[]).forEach(x=>{COM.names[x.user_id]=x.char_name||null});
+      }catch(e){}
+      need.forEach(u=>{if(!(u in COM.names))COM.names[u]=null});
+    }
     comRenderChat(scroll);
   }catch(e){
     const l=$("chat-list");
@@ -117,7 +125,7 @@ async function comLoadChat(scroll){
 }
 function comRenderChat(force){
   const list=$("chat-list");if(!list)return;
-  const sig=COM.msgs.map(m=>m.id).join(",")+"|"+COM.muted.length;
+  const sig=COM.msgs.map(m=>m.id+":"+(COM.names[m.user_id]||"")).join(",")+"|"+COM.muted.length;
   if(!force&&sig===COM.sig)return;
   COM.sig=sig;
   const nearBottom=list.scrollHeight-list.scrollTop-list.clientHeight<60;
@@ -125,7 +133,7 @@ function comRenderChat(force){
     const mine=CLOUD.user&&m.user_id===CLOUD.user.id;
     const t=new Date(m.created_at).toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"});
     const act=mine?`<span style="cursor:pointer;margin-left:6px" onclick="comDel(${Number(m.id)})">🗑️</span>`:`<span style="cursor:pointer;margin-left:6px" onclick="comMute('${escH(m.user_id)}')">🔇</span>`;
-    return`<div style="margin-bottom:6px"><b style="color:${mine?"var(--gold)":"#93c5fd"}">${escH(m.username||"?")}</b> <span class="mu" style="font-size:9px">${t}</span>${act}<div style="word-break:break-word">${escH(m.body)}</div></div>`;
+    return`<div style="margin-bottom:6px"><b style="color:${mine?"var(--gold)":"#93c5fd"}">${escH(COM.names[m.user_id]||"Oyuncu")}</b> <span class="mu" style="font-size:9px">${t}</span>${act}<div style="word-break:break-word">${escH(m.body)}</div></div>`;
   }).join("")||'<p class="mu">Henüz mesaj yok. İlk mesajı sen yaz!</p>';
   list.innerHTML=rows;
   if(force||nearBottom)list.scrollTop=list.scrollHeight;
