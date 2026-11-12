@@ -20,6 +20,7 @@ Bu dosya, projede çalışan herkesin (Berkay, Claude, Gemini, GPT) okuması iç
 - `sql/koruma.sql`: hile koruması (sunucu her kayıtta altın/seviye/kule/eşya sınırlarını kontrol eder). topluluk.sql'den SONRA çalıştırılır; topluluk.sql tekrar çalıştırılırsa koruma.sql da tekrar çalıştırılmalı. Ayarlar kz_config tablosunda (guard_enabled=0 acil kapatma)
 - `sql/sunucu.sql`: kayıt ve liderliğe doğrudan yazmayı kapatır; yazma yalnızca kz_save / kz_lb_refresh fonksiyonlarından geçer (en son çalıştırılır; kurulum/topluluk tekrar çalıştırılırsa bunu da tekrar çalıştır)
 - `sql/savas.sql`: sunucu savaşı: kz_battle tablosu, kz_b_get/kz_b_put (yalnızca service_role), kz_lock_err. koruma.sql ve sunucu.sql'den SONRA çalıştırılır. Kilit `kz_config.srv_lock` (0 kapalı, 1 açık)
+- `sql/savas_siki2.sql`: srv_lock=2 (eşya kilidi, savas_siki.sql'den sonra)
 - `sql/savas_siki.sql`: srv_lock=1 yapar: seviye/tecrübe/kule/boss/öldürme-elit-kadim sayaçlarını yalnızca sunucu değiştirebilir (savaş denemesi çalıştıktan sonra çalıştırılır)
 - `edge/handler.js`: battle fonksiyonunun mantığı (Node'da test edilir). `edge/deno_glue.ts`: Supabase bağlantısı. `edge/build.sh`: engine.js + handler.js + glue -> `edge/battle/index.ts` (Supabase panelinde yapıştırılan TEK dosya). engine.js değişirse build.sh çalıştırılıp fonksiyon yeniden yüklenmeli
 - `sql/kurulum.sql`: Supabase'e bir kez yapıştırılan veritabanı kodu (tablolar + erişim kuralları)
@@ -40,6 +41,8 @@ Bu dosya, projede çalışan herkesin (Berkay, Claude, Gemini, GPT) okuması iç
 - Sunucu savaş tempo sınırı: oyuncu hamlesi 250 ms, oto savaşta hamle başına 150 ms (kz_battle.lock_until).
 
 ## Değişiklik günlüğü
+
+- 1.5.2: Aşama 3b / 1. adım: eşya üretimi sunucuya taşındı. Demirci (yükseltme, efsun çevirme) ve sandık açma artık `battle` fonksiyonunun `forge` ve `chest` işlemleri (engine.js: forgeUpg, forgeReroll, chestOpen). Oyun işlemden önce bflush ile kaydı gönderir, sonucu ecoCall ile uygular. sql/savas.sql: kz_item_key, kz_items_err; sql/savas_siki2.sql srv_lock=2 yapar: çantadaki/kuşanılan her eşya ya önceki kayıtta aynen var olmalı (efsun kilidi `l` hariç) ya da düz (g=1, +0, efsunsuz, Tüccar türü) olmalı; güçlü eşya yalnızca sunucudan gelir. Kuşanma, atma, satma, efsun kilidi serbest. Testler: pgtest/t4.js (27), tests/t22.js (9). Hâlâ istemcide: altın/malzeme/iksir kazançları, görev ve günlük ödüller, satış geliri (aşama 3b/2).
 
 - 1.5.1: Çağrı tasarrufu (50 kişilik test, ücretsiz plan 500 bin çağrı/ay): MANUEL savaş artık telefonda oynanır; sunucu `start` ile tohum (seed) verir, telefon engine.js'i `seeded(seed,k)` ile oynar, savaş bitince hamle listesi `finish` ile gider, sunucu aynı tohumla baştan oynatır, sonuç ve ödülü (sunucuya özel rastgelelikle) o belirler. Savaş başına ~1 çağrı; zaferde sonraki savaş (`next`) önceden hazırlanır, "Tekrar savaş" çağrısız. Hamle listesi tutmazsa reddedilir. Tempo: savaş başına en az 1.5 sn, hamle başına 200 ms (telefon kendisi bekler). Oto savaş 5-8 savaşı tek çağrıda oynar; manuel<->oto geçişi hamleleri `auto` ile taşır. Manuel savaş sürerken bulut kaydı bekletilir. Sohbet yenileme 4 sn -> 8 sn. Yeni test: tests/t21.js.
 

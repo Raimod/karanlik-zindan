@@ -1,4 +1,4 @@
-const GAME_VERSION="1.5.1";
+const GAME_VERSION="1.5.2";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -775,15 +775,25 @@ ${aff?`<div class="ct" style="margin-top:12px;font-size:12px;color:#c084fc">Efsu
 v.innerHTML=`<div class="cd"><div class="ct">Demirci ocağı <span class="g" style="font-size:11px">+15 sınırı</span></div><div class="mu" style="font-size:10px;margin-bottom:8px">${matLine()}</div>
 <div class="pr" style="margin:0 0 10px"><button style="${fsrc=="eq"?"border-color:var(--gold);color:var(--gold)":""}" onclick="fsrc='eq';SF=null;view()">Kuşanılanlar</button><button style="${fsrc=="bag"?"border-color:var(--gold);color:var(--gold)":""}" onclick="fsrc='bag';SF=null;view()">Çantadakiler</button></div>
 <div class="bg5" style="max-height:170px;overflow:auto">${src||'<p class="mu" style="font-size:10px">Eşya yok.</p>'}</div>${act}</div>`}
-function selF(k){SF=fsrc=="eq"?P.eq[k]:P.inv[k];view()}
+function selF(k){SF=fsrc=="eq"?P.eq[k]:P.inv[k];SFloc=[fsrc=="eq"?"eq":"inv",k];view()}
+let SFloc=null;
+function sfReselect(){if(!SFloc){SF=null;return}SF=SFloc[0]==="eq"?P.eq[SFloc[1]]:P.inv[SFloc[1]];if(!SF)SFloc=null}
 function rm(i){SL.forEach(k=>{if(P.eq[k]===i)P.eq[k]=null});const n=P.inv.indexOf(i);if(n>-1)P.inv.splice(n,1)}
-function upg(){const i=SF;if(!i)return;if(i.p>=15)return toast("Maksimum +15");const cost=8+i.rl*6+i.p*14,nd=need(i.p);if(!hasMat(nd))return toast("Yetersiz malzeme");if(P.gold<cost)return toast("Yetersiz altın");P.gold-=cost;useMat(nd);
-const ch=i.p>=10?30-(i.p-10)*4:100-i.p*6;
-if(R(100)<=ch){i.p++;P.st.fok=(P.st.fok||0)+1;ev("fok");A.crit();toast("🔥 Başarılı! +"+i.p)}else{A.hit();
- if(i.p>=6&&Math.random()<(i.p>=10?.25:.4)){if(P.sc>0){P.sc--;toast("📜 Parşömen eşyanı korudu")}else if(i.p>=10){rm(i);SF=null;toast("💥 Eşya ocakta parçalandı!")}else{i.p--;toast("Başarısız: eşya +"+i.p+" seviyesine düştü")}}else toast("Başarısız, seviye atlamadı")}
-sync();save();view()}
+async function upg(){
+  const i=SF;if(!i||!SFloc)return;
+  if(i.p>=15)return toast("Maksimum +15");
+  const loc=SFloc,r=await ecoCall({op:"forge",a:"upg",loc});
+  if(!r)return;
+  if(r.removed){SF=null;SFloc=null}else sfReselect();
+  view();
+}
 function lockA(n){SF.af[n].l=!SF.af[n].l;save();view()}
-function reroll(){if(P.gold<45)return toast("Yetersiz altın");P.gold-=45;SF.af.forEach(a=>{if(!a.l)a.v=RI(1,10)});A.pot();toast("Efsunlar yenilendi");sync();save();view()}
+async function reroll(){
+  if(!SF||!SFloc)return;
+  const r=await ecoCall({op:"forge",a:"reroll",loc:SFloc});
+  if(!r)return;
+  sfReselect();view();
+}
 
 /* ---------- ŞEHİR & YETENEK ---------- */
 function qp(q){return P.q[q.id]||(P.q[q.id]={p:0,c:0})}
@@ -914,6 +924,25 @@ async function bflush(){
   clearTimeout(CLOUD.timer);CLOUD.timer=null;
   for(let i=0;i<3;i++){if(await cloudPush(true))return true;if(CLOUD.hold)return false;await bSleep(2600)}
   return false;
+}
+/* Demirci, sandık gibi tek adımlık işlemler sunucuda yapılır; sonuç kayda yazılır, burada gösterilir */
+let ecoBusy=false;
+async function ecoCall(body){
+  if(ecoBusy||battleBusy||bStarting)return null;
+  ecoBusy=true;
+  try{
+    const ctx={P};
+    if(!(await bflush())){toast("⚠️ İlerleme buluta gönderilemedi, işlem yapılamadı. Bağlantını kontrol et.");return null}
+    if(ctx.P!==P)return null;
+    const r=await bcall(body);
+    if(r.err){bFail(r);return null}
+    if(ctx.P!==P)return null;
+    for(const k in r.ps)P[k]=r.ps[k];
+    sync();CLOUD.sig=bSig();
+    if(r.done)saveAll();
+    applyEv(r.steps[0].out);
+    return r;
+  }finally{ecoBusy=false}
 }
 function applySnap(s){
   P.hp=s.hp;P.mp=s.mp;P.maxHp=s.maxHp;P.maxMp=s.maxMp;P.pot=s.pot;P.st.d=s.d;
@@ -1244,35 +1273,13 @@ function chestUI(){
     <button class="btn s" style="margin-top:8px" onclick="closeM();view()">Vazgeç</button>`;
   $("im").style.display="flex";
 }
-function openChBulk(count){
+async function openChBulk(count){
   const n=Math.max(1,Math.min(P.ch,Math.floor(Number(count)||1)));
   if(n<=0)return;
-  CB.log=CB.log||[];
-  let totGold=0,totSc=0,totHp=0,totMp=0,skippedEq=0;
-  const items=[];
-  for(let k=0;k<n;k++){
-    P.ch--;ev("chest");
-    const x=R(100);
-    if(x<10){
-      if(P.inv.length<50){
-        drop(RG[Math.min(4,Math.floor((P.lv-1)/10))].mobs[0],3);
-        items.push(P.inv[P.inv.length-1]);
-      }else{
-        skippedEq++;
-        const g=RI(P.lv*20,P.lv*45)+40;
-        P.gold+=g;totGold+=g;
-      }
-    }else if(x<17){
-      P.sc++;totSc++;
-    }else if(x<47){
-      const rSz=R(100),sz=rSz<60?"S":rSz<90?"M":"L";
-      P.pot.hp[sz]=(P.pot.hp[sz]||0)+2;P.pot.mp[sz]=(P.pot.mp[sz]||0)+2;totHp+=2;totMp+=2;
-    }else{
-      const g=RI(P.lv*25,P.lv*60)+50;
-      P.gold+=g;totGold+=g;
-    }
-  }
-  A.elite();hud();save();
+  const r=await ecoCall({op:"chest",n});
+  if(!r||!r.done)return;
+  const {gold:totGold,sc:totSc,hp:totHp,mp:totMp,items,skipped:skippedEq}=r.res;
+  hud();
   const lines=[];
   if(totGold>0)lines.push(`<div class="q" style="margin-bottom:4px"><span>🪙 Altın</span><b class="g">+${totGold.toLocaleString()} 🪙</b></div>`);
   if(totSc>0)lines.push(`<div class="q" style="margin-bottom:4px"><span>📜 Koruma Parşömeni</span><b style="color:#c084fc">+${totSc} adet</b></div>`);

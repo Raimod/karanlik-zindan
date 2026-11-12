@@ -285,6 +285,67 @@ function bLose(p){
   return{lost:l};
 }
 
-const KZ={SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
+
+/* ---------- DEMİRCİ VE SANDIK (sunucuda çalışır; rastgelelik rng ile) ---------- */
+function forgeNeed(p){if(p<5)return{kirik:2+p*2};const k=NT[p%4];if(p<9)return{kirik:6,[k]:2};if(p<12)return{kirik:8,[k]:3,kan:2,ruh:p-8};return{kirik:12,[k]:4,kan:p-9,ruh:p-8}}
+/* konum: ["eq",slot] ya da ["inv",sıra] */
+function itemAt(p,loc){
+  if(!Array.isArray(loc)||loc.length!==2)return null;
+  if(loc[0]==="eq")return SL.includes(loc[1])&&p.eq[loc[1]]?p.eq[loc[1]]:null;
+  if(loc[0]==="inv")return Number.isInteger(loc[1])&&loc[1]>=0&&loc[1]<p.inv.length?p.inv[loc[1]]:null;
+  return null;
+}
+function itemRemove(p,loc){if(loc[0]==="eq")p.eq[loc[1]]=null;else p.inv.splice(loc[1],1)}
+/* Ocakta yükselt. out.ok=true ise malzeme/altın harcandı. */
+function forgeUpg(p,loc,rng){
+  const out=[];out.ok=false;const i=itemAt(p,loc);
+  if(!i){out.push({toast:"Eşya bulunamadı"});return out}
+  if(i.p>=15){out.push({toast:"Maksimum +15"});return out}
+  const cost=8+i.rl*6+i.p*14,nd=forgeNeed(i.p);
+  if(!Object.keys(nd).every(k=>(p.mat[k]||0)>=nd[k])){out.push({toast:"Yetersiz malzeme"});return out}
+  if(p.gold<cost){out.push({toast:"Yetersiz altın"});return out}
+  p.gold-=cost;Object.keys(nd).forEach(k=>p.mat[k]-=nd[k]);out.ok=true;
+  const ch=i.p>=10?30-(i.p-10)*4:100-i.p*6;
+  if(rng.R(100)<=ch){i.p++;p.st.fok=(p.st.fok||0)+1;out.push({ev:["fok",1]});out.push({snd:"crit"});out.push({toast:"🔥 Başarılı! +"+i.p})}
+  else{
+    out.push({snd:"hit"});
+    if(i.p>=6&&rng.R(1)<(i.p>=10?.25:.4)){
+      if(p.sc>0){p.sc--;out.push({toast:"📜 Parşömen eşyanı korudu"})}
+      else if(i.p>=10){itemRemove(p,loc);out.removed=true;out.push({toast:"💥 Eşya ocakta parçalandı!"})}
+      else{i.p--;out.push({toast:"Başarısız: eşya +"+i.p+" seviyesine düştü"})}
+    }else out.push({toast:"Başarısız, seviye atlamadı"});
+  }
+  syncP(p);return out;
+}
+/* Kilitli olmayan efsunları yeniden çevir (45 altın) */
+function forgeReroll(p,loc,rng){
+  const out=[];out.ok=false;const i=itemAt(p,loc);
+  if(!i||!Array.isArray(i.af)||!i.af.length){out.push({toast:"Efsun yok"});return out}
+  if(p.gold<45){out.push({toast:"Yetersiz altın"});return out}
+  p.gold-=45;i.af.forEach(a=>{if(!a.l)a.v=rng.RI(1,10)});
+  out.push({snd:"pot"});out.push({toast:"Efsunlar yenilendi"});out.ok=true;syncP(p);return out;
+}
+/* n sandık aç. out.res = özet (altın, parşömen, iksir, eşyalar) */
+function chestOpen(p,n,rng){
+  const out=[];out.ok=false;n=Math.max(0,Math.min(p.ch,Math.floor(n)||0));
+  const res={n,gold:0,sc:0,hp:0,mp:0,items:[],skipped:0};
+  if(n<=0){out.push({toast:"Sandık yok"});out.res=res;return out}
+  for(let k=0;k<n;k++){
+    p.ch--;out.push({ev:["chest",1]});
+    const x=rng.R(100);
+    if(x<10){
+      if(p.inv.length<50){
+        const o=dropItem(p,RG[Math.min(4,Math.floor((p.lv-1)/10))].mobs[0],3,rng);
+        for(const e of o)if(e.ev)out.push(e);
+        res.items.push(p.inv[p.inv.length-1]);
+      }else{res.skipped++;const g=rng.RI(p.lv*20,p.lv*45)+40;p.gold+=g;res.gold+=g}
+    }else if(x<17){p.sc++;res.sc++}
+    else if(x<47){const r=rng.R(100),sz=r<60?"S":r<90?"M":"L";p.pot.hp[sz]=(p.pot.hp[sz]||0)+2;p.pot.mp[sz]=(p.pot.mp[sz]||0)+2;res.hp+=2;res.mp+=2}
+    else{const g=rng.RI(p.lv*25,p.lv*60)+50;p.gold+=g;res.gold+=g}
+  }
+  out.push({snd:"elite"});out.res=res;out.ok=true;return out;
+}
+
+const KZ={SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
 (typeof globalThis!=="undefined"?globalThis:window).KZ=KZ;
 if(typeof module!=="undefined"&&module.exports)module.exports=KZ;

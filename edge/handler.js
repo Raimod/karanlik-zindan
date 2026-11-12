@@ -7,6 +7,7 @@
    * OTO: sunucu bir istekte birkaç savaşı oynar ("auto"). */
 const BH_FIELDS=["hp","mp","maxHp","maxMp","gold","xp","lv","sp","ap","pot","mat","tw","ch","boss","st","stk"];
 const BH_MAX_STEPS=300,BH_MAX_ACTS=400;
+const BH_ECO_FIELDS=BH_FIELDS.concat(["eq","sc"]);
 
 function bhSnap(B,p,full){
   const s={hp:p.hp,mp:p.mp,maxHp:p.maxHp,maxMp:p.maxMp,pot:p.pot,d:p.st.d,
@@ -27,7 +28,7 @@ async function kzBattleHandle(KZ,db,uid,body,opts){
   opts=opts||{};
   const rngS=KZ.mkRng(opts.rand||Math.random);            /* ödül rastgeleliği: yalnızca sunucuda, telefon bilemez */
   const op=body&&body.op;
-  if(!["start","finish","auto","end","act","pot"].includes(op))return{err:"gecersiz_istek"};
+  if(!["start","finish","auto","end","act","pot","forge","chest"].includes(op))return{err:"gecersiz_istek"};
   if(!bhInt(body.slot,0,4))return{err:"gecersiz_istek"};
   const g=await db.get(uid);
   if(!g||g.nosave)return{err:"kayit_yok"};
@@ -39,6 +40,25 @@ async function kzBattleHandle(KZ,db,uid,body,opts){
 
   if(op==="end"){await db.put(uid,g.rev,body.slot,ps,null,0);return{ok:true,steps:[]}}
   if((op==="act"||op==="pot"||op==="auto")&&g.wait_ms>0)return{err:"bekle",ms:g.wait_ms};
+
+  /* Demirci ve sandık: savaştan bağımsız, tek adımlık işlemler. Sürmekte olan savaş kaydı korunur. */
+  if(op==="forge"||op==="chest"){
+    const p=JSON.parse(JSON.stringify(ps)),rng=rngS;
+    let o;
+    if(op==="forge"){
+      if(body.a==="upg")o=KZ.forgeUpg(p,body.loc,rng);
+      else if(body.a==="reroll")o=KZ.forgeReroll(p,body.loc,rng);
+      else return{err:"gecersiz_istek"};
+    }else{
+      if(!bhInt(body.n,1,500))return{err:"gecersiz_istek"};
+      o=KZ.chestOpen(p,body.n,rng);
+    }
+    if(!o.ok){return{ok:true,done:false,steps:[{out:[...o]}],ps:Object.fromEntries(BH_ECO_FIELDS.map(k=>[k,ps[k]]).concat([["inv",ps.inv]]))}}
+    try{await db.put(uid,g.rev,body.slot,p,g.bslot===body.slot?g.b:null,0)}
+    catch(e){const m=String(e&&e.message||e);return{err:/cakisma/.test(m)?"cakisma":"sunucu_hatasi",msg:m}}
+    const ps3={};for(const k of BH_ECO_FIELDS)ps3[k]=p[k];ps3.inv=p.inv;
+    return{ok:true,done:true,steps:[{out:[...o]}],res:o.res,removed:!!o.removed,ps:ps3};
+  }
 
   const p=JSON.parse(JSON.stringify(ps));
   let rngC=null;                                           /* savaş (hamle) rastgeleliği: tohumlu, telefonla aynı */

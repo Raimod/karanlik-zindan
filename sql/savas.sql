@@ -79,17 +79,70 @@ revoke all on function public.kz_b_put(uuid,text,int,jsonb,jsonb,int) from publi
 grant execute on function public.kz_b_get(uuid) to service_role;
 grant execute on function public.kz_b_put(uuid,text,int,jsonb,jsonb,int) to service_role;
 
+-- Eşya kimliği: ad, set, bölme, sınıf, seviye, tür, yükseltme, taban güç ve efsunlar. Efsun kilidi ("l") sayılmaz.
+create or replace function public.kz_item_key(it jsonb)
+returns text language sql immutable set search_path = public as $$
+  select concat_ws('|', it->>'name', it->>'setOre', it->>'slot', it->>'rc', it->>'rl', it->>'g', it->>'p', it->>'bp',
+    case when jsonb_typeof(it->'af') = 'array' then
+      coalesce((select string_agg((a->>'t') || ':' || (a->>'v'), ',' order by ord)
+                from jsonb_array_elements(it->'af') with ordinality as x(a, ord)), '')
+    else '' end)
+$$;
+
+-- Eşya kilidi (srv_lock >= 2): çantadaki ve kuşanılan her eşya, ya önceki kayıtta aynen vardı
+-- ya da düz (Tüccar Maren'in sattığı türden: sıradan, +0, efsunsuz) bir eşya olmalı.
+-- Güçlü eşya yalnızca sunucudan gelir (savaş düşüşü, sandık, demirci).
+create or replace function public.kz_items_err(ns jsonb, os jsonb)
+returns text language plpgsql stable security definer set search_path = public as $$
+declare ok text[] := '{}'; it jsonb; kv record; k text; pos int;
+begin
+  if os is not null and jsonb_typeof(os) = 'object' then
+    if jsonb_typeof(os->'inv') = 'array' then
+      for it in select * from jsonb_array_elements(os->'inv') loop
+        if jsonb_typeof(it) = 'object' then ok := ok || public.kz_item_key(it); end if;
+      end loop;
+    end if;
+    if jsonb_typeof(os->'eq') = 'object' then
+      for kv in select * from jsonb_each(os->'eq') loop
+        if jsonb_typeof(kv.value) = 'object' then ok := ok || public.kz_item_key(kv.value); end if;
+      end loop;
+    end if;
+  end if;
+  for it in
+    select value from jsonb_array_elements(case when jsonb_typeof(ns->'inv') = 'array' then ns->'inv' else '[]'::jsonb end)
+    union all
+    select value from jsonb_each(case when jsonb_typeof(ns->'eq') = 'object' then ns->'eq' else '{}'::jsonb end)
+  loop
+    if jsonb_typeof(it) <> 'object' then continue; end if;
+    if public.kz_n(it,'g') = 1 and public.kz_n(it,'p') = 0
+       and (jsonb_typeof(it->'af') <> 'array' or jsonb_array_length(it->'af') = 0) then
+      continue;                                      -- düz eşya
+    end if;
+    k := public.kz_item_key(it);
+    pos := array_position(ok, k);
+    if pos is null then return 'esya sunucudan gelmeli'; end if;
+    ok := ok[1:pos-1] || ok[pos+1:array_length(ok,1)];
+  end loop;
+  return null;
+end;
+$$;
+revoke all on function public.kz_items_err(jsonb,jsonb) from public, anon, authenticated;
+
 -- İlerleme alanları kilidi: seviye, tecrübe, kule, boss, öldürme/elit/kadim sayaçları yalnızca sunucu değiştirir.
 create or replace function public.kz_lock_err(ns jsonb, os jsonb)
 returns text language plpgsql stable security definer set search_path = public as $$
-declare same boolean; fresh boolean;
+declare same boolean; fresh boolean; e text;
 begin
+  same := os is not null and jsonb_typeof(os) = 'object'
+          and (os->>'name') = (ns->>'name') and (os->>'cls') = (ns->>'cls');
+  if public.kz_cfg('srv_lock',0) >= 2 then
+    e := public.kz_items_err(ns, case when same then os else null end);
+    if e is not null then return e; end if;
+  end if;
   fresh := public.kz_n(ns,'lv') = 1 and public.kz_n(ns,'xp') = 0 and public.kz_n(ns,'tw') = 0
        and public.kz_n(ns->'st','k') = 0 and public.kz_n(ns->'st','e') = 0 and public.kz_n(ns->'st','l') = 0
        and coalesce(ns->'boss','{}'::jsonb) = '{}'::jsonb;
   if fresh then return null; end if;                       -- yeni (ya da sıfırlanmış) karakter
-  same := os is not null and jsonb_typeof(os) = 'object'
-          and (os->>'name') = (ns->>'name') and (os->>'cls') = (ns->>'cls');
   if not same then return 'yeni karakter baslangic seviyesinde olmali'; end if;
   if public.kz_n(ns,'lv') <> public.kz_n(os,'lv') or public.kz_n(ns,'xp') <> public.kz_n(os,'xp') then
     return 'ilerleme degistirilemez (seviye/tecrube)'; end if;
