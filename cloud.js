@@ -36,7 +36,7 @@ async function cloudInit(){
     CLOUD.user=(r.data&&r.data.session)?r.data.session.user:null;
     CLOUD.state=CLOUD.user?"in":"out";
     cloudUI();
-    if(CLOUD.user)await cloudReconcile(false);
+    if(CLOUD.user){await cloudReconcile(false);if(typeof comPushLb==="function")comPushLb()}
   }catch(e){
     CLOUD.state="offline";cloudUI();
   }
@@ -87,6 +87,7 @@ async function cloudSignIn(reg,w){
     toast("☁️ Giriş yapıldı: "+c.u);
     cloudUI();
     await cloudReconcile(true);
+    if(typeof comPushLb==="function")comPushLb();
   }catch(e){CLOUD.msg=cloudErr(e)}
   CLOUD.busy=false;cloudUI();
 }
@@ -114,6 +115,7 @@ async function cloudPush(quiet){
       {onConflict:"user_id"});
     if(r.error)throw r.error;
     cloudSyncSet(ms);CLOUD.lastSync=Date.now();CLOUD.msg="";
+    if(typeof comPushLb==="function")comPushLb();
     if(!quiet)toast("☁️ Buluta kaydedildi");
     cloudUI();return true;
   }catch(e){

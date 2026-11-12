@@ -1,4 +1,4 @@
-const GAME_VERSION="1.2.0";
+const GAME_VERSION="1.3.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -584,10 +584,10 @@ $("hl").innerText="LV."+P.lv;$("hn").innerText=P.name;$("hc").innerText=CL[P.cls
 $("hg").innerText=P.gold.toLocaleString();$("hb").innerText=P.inv.length;
 $("hh").style.width=Math.max(0,P.hp/P.maxHp*100)+"%";$("hm").style.width=Math.max(0,P.mp/P.maxMp*100)+"%";$("hx").style.width=Math.min(100,P.xp/x*100)+"%";
 $("ht").innerText=P.hp+" / "+P.maxHp+" HP";$("hmt").innerText=P.mp+" / "+P.maxMp+" MP"}
-const TABS=[["character","🧙","Karakter"],["inventory","🎒","Çanta"],["map","🗺️","Harita"],["forge","🔨","Demirci"],["city","🏰","Şehir"],["quests","📜","Görev"],["wiki","📖","Wiki"]];
+const TABS=[["character","🧙","Karakter"],["inventory","🎒","Çanta"],["map","🗺️","Harita"],["forge","🔨","Demirci"],["city","🏰","Şehir"],["quests","📜","Görev"],["community","🌐","Topluluk"],["wiki","📖","Wiki"]];
 function nav(){$("nv").innerHTML=TABS.map(t=>`<button class="${tab==t[0]?"a":""}" onclick="go('${t[0]}')"><span>${t[1]}</span>${t[2]}</button>`).join("")}
 function go(t){tab=t;armed="";nav();view()}
-function view(){const v=$("mv");if(CB.on){combatUI(v);return}({character:cChar,inventory:cBag,map:cMap,forge:cForge,city:cCity,skills:cSkills,quests:cQuests,wiki:cWiki})[tab](v)}
+function view(){const v=$("mv");if(CB.on){combatUI(v);return}({character:cChar,inventory:cBag,map:cMap,forge:cForge,city:cCity,skills:cSkills,quests:cQuests,community:(typeof cCommunity==="function"?cCommunity:cCity),wiki:cWiki})[tab](v)}
 function toast(m){const e=document.createElement("div");e.className="t";e.innerText=m;$("tt").appendChild(e);setTimeout(()=>e.remove(),2400)}
 
 /* ---------- GÖRSELLER (SVG) ---------- */

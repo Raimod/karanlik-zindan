@@ -16,7 +16,7 @@ header{position:sticky;top:0;z-index:20;padding:10px 14px;background:#120f1b;bor
 .bar b{position:absolute;inset:0;text-align:center;font-size:9px;line-height:12px;text-shadow:0 1px 2px #000}
 .hpf{background:linear-gradient(90deg,#8f1d22,var(--hp))}.mpf{background:linear-gradient(90deg,#1e40af,var(--mp))}.xpf{background:var(--xp)}
 main{flex:1;padding:9px 10px calc(74px + env(safe-area-inset-bottom,0px))}
-nav{position:fixed;bottom:0;width:100%;max-width:480px;display:grid;grid-template-columns:repeat(7,1fr);background:#120f1bf5;border-top:1px solid var(--ln);z-index:25;padding-bottom:env(safe-area-inset-bottom,0px)}
+nav{position:fixed;bottom:0;width:100%;max-width:480px;display:grid;grid-template-columns:repeat(8,1fr);background:#120f1bf5;border-top:1px solid var(--ln);z-index:25;padding-bottom:env(safe-area-inset-bottom,0px)}
 nav button{background:none;border:0;color:var(--mu);padding:8px 0 7px;font-size:9px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
 nav button span{font-size:17px}nav button.a{color:var(--gold)}
 .sub-tabs{display:flex;gap:5px;margin-bottom:9px;background:#120f1b;padding:4px;border-radius:10px;border:1px solid var(--ln)}
