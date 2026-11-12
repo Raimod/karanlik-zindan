@@ -197,6 +197,10 @@ declare
   oldrow public.saves%rowtype; hasold boolean := false;
   dt numeric; i int; ns jsonb; os jsonb; e text; n int;
 begin
+  -- Sunucu savaşı (kz_b_put) yazarken: istemci kuralları atlanır, kayıt zamanı değişmez
+  if coalesce(current_setting('kz.srv', true),'') = '1' and tg_op = 'UPDATE' then
+    new.updated_at := old.updated_at; new.updated_ms := old.updated_ms; return new;
+  end if;
   new.updated_at := now();                       -- zamanı sunucu belirler, istemci değil
   if public.kz_cfg('guard_enabled',1) < 1 then return new; end if;
   if jsonb_typeof(new.data) <> 'object' or jsonb_typeof(new.data->'slots') <> 'array' then
@@ -230,6 +234,11 @@ begin
     os := case when hasold then oldrow.data->'slots'->i else null end;
     e := public.kz_slot_err(ns, os, dt);
     if e is not null then raise exception 'hile_korumasi: % (yuva %)', e, i + 1; end if;
+    -- Sunucu savaşı açıksa: ilerleme alanlarını istemci değiştiremez (savas.sql tanımlar)
+    if public.kz_cfg('srv_lock',0) >= 1 then
+      e := public.kz_lock_err(ns, os);
+      if e is not null then raise exception 'hile_korumasi: % (yuva %)', e, i + 1; end if;
+    end if;
   end loop;
   return new;
 end;

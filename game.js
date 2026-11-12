@@ -1,4 +1,4 @@
-const GAME_VERSION="1.4.2";
+const GAME_VERSION="1.5.1";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -887,9 +887,101 @@ function applyEv(out){for(const e of out){if(e.lg!==undefined)lg(e.lg);else if(e
 function onKill(k){
  P.dl.q.forEach(q=>{if(q.p<q.n&&(q.k=="any"||(q.k=="elite"&&k.el)||(q.k=="tower"&&k.tw)))q.p++});
  QS.forEach(q=>{if(q.ri<0||(q.ri==k.ri&&q.mi==k.mi)){const s=qp(q);if(s.p<q.n){s.p++;if(s.p==q.n)toast("📜 Görev tamamlandı! Şehirden ödülünü al.")}}})}
-function startCombat(ri,mi,keep,tw){const nb=newBattle(P,ri,mi,tw);
-CB={...CB,on:true,over:false,busy:false,...nb,log:keep?CB.log:[]};
-view();if(!keep)lg("⚔️ <b>"+nb.mob.name+"</b> ile dövüş başladı!");upd()}
+/* ---- Savaş sunucuda oynanır (Supabase 'battle' fonksiyonu). Burası sonucu ekranda oynatır. ---- */
+let battleBusy=false,bStarting=false,autoRun=false;
+const bSleep=ms=>new Promise(r=>setTimeout(r,ms));
+const B_ERR={bolge_kapali:"Bu bölge henüz açık değil",gecersiz_istek:"Geçersiz savaş isteği",savas_yok:"Savaş sona ermiş",kayit_yok:"Kayıt sunucuya yüklenemedi",kayit_uyumsuz:"Kayıt eşitlenemedi, tekrar dene",giris_gerekli:"Oturum süresi dolmuş, hesaba tekrar giriş yap",cakisma:"Kayıt çakıştı, tekrar dene",sunucu_hatasi:"Sunucu hatası, biraz sonra tekrar dene",fn_yok:"Savaş fonksiyonu sunucuda bulunamadı (kurulum eksik)"};
+function bFail(r){toast("⚠️ "+(r.err==="ag"?"Sunucuya ulaşılamadı. Savaş için internet gerekli.":r.err==="cevrimdisi"?"Savaş için hesabına bağlı ve çevrimiçi olmalısın.":(B_ERR[r.err]||"Savaş hatası: "+r.err)))}
+/* sunucunun kaydı hesaplarken dikkate aldığı alanlar (can/mana, görev, ayar hariç) */
+function bSig(){const o={};for(const k in P)if(!["hp","mp","ts","dl","q","selPot","autoCfg","art"].includes(k))o[k]=P[k];return JSON.stringify(o)}
+async function bcall(body){
+  if(!CLOUD.sb||!CLOUD.user)return{err:"cevrimdisi"};
+  body={...body,slot:activeSlot,name:P.name,cls:P.cls};
+  for(let t=0;t<4;t++){
+    let data=null,error=null;
+    try{const r=await CLOUD.sb.functions.invoke("battle",{body});data=r.data;error=r.error}catch(e){error=e}
+    if(error||!data){const st=error&&error.context&&error.context.status;
+      return{err:st===401?"giris_gerekli":st===404?"fn_yok":"ag"}}
+    if(data.err==="bekle"){await bSleep(Math.min(3000,(data.ms||200)+40));continue}
+    if(data.err==="cakisma"){await bSleep(300);continue}
+    return data;
+  }
+  return{err:"bekle"};
+}
+/* Savaştan önce: son değişiklikler (kuşanma, satış, nitelik...) sunucudaki kayda ulaşmış olmalı */
+async function bflush(){
+  if(CLOUD.sig===bSig())return true;
+  clearTimeout(CLOUD.timer);CLOUD.timer=null;
+  for(let i=0;i<3;i++){if(await cloudPush(true))return true;if(CLOUD.hold)return false;await bSleep(2600)}
+  return false;
+}
+function applySnap(s){
+  P.hp=s.hp;P.mp=s.mp;P.maxHp=s.maxHp;P.maxMp=s.maxMp;P.pot=s.pot;P.st.d=s.d;
+  const b=s.B,m=CB.mob;
+  CB.tele=b.tele;CB.stun=b.stun;CB.sh=b.sh;CB.shT=b.shT;CB.pz=b.pz;CB.pzT=b.pzT;CB.dot=b.dot;CB.dotT=b.dotT;CB.dotN=b.dotN;CB.rage=b.rage;CB.armor=b.armor;CB.ph=b.ph;
+  if(m){m.hp=b.mhp;m.atk=b.matk}
+  if(s.ps)for(const k in s.ps)P[k]=s.ps[k];
+}
+function bShowWin(m){
+  CB.over=true;const o=$("ov");
+  if(o)o.innerHTML=`<div class="pr" style="margin-top:8px"><button class="btn" style="color:#000" onclick="${CB.tw?`startCombat(0,0,1,${CB.tw+1})`:`startCombat(${m.ri},${m.mi},1)`}">${CB.tw?"🗼 Sonraki kat":"⚔️ Tekrar savaş"}</button><button class="btn s" onclick="endC()">Harita</button>${P.ch?`<button class="btn s" onclick="chestUI()">🎁 ${P.ch}</button>`:""}</div>`}
+/* Sunucudan gelen adımları sırayla ekranda oynat. Sunucu işi çoktan bitirdi; oynatma kesilse bile son durum uygulanır. */
+async function bReplay(r,ctx){
+  let first=true,lost=false;
+  const d=()=>CB.fast?230:520;
+  try{
+    for(const st of r.steps){
+      if(!CB.on||P!==ctx.P)break;
+      if(!first)await bSleep(d());first=false;
+      if(!CB.on||P!==ctx.P)break;
+      if(st.start){CB={...CB,on:true,over:false,...st.start,log:CB.log||[],acts:[],fin:false};view()}
+      applySnap(st.s);applyEv(st.out);
+      if(st.win){bShowWin(CB.mob);hud();saveAll(true)}
+      if(st.lose!==undefined){
+        stopAuto();CB.on=false;CB.over=true;lost=true;
+        toast("Yenildin! -"+st.lose+" 🪙, şehirde uyandın");break}
+      upd();
+    }
+  }finally{
+    if(P===ctx.P){
+      for(const k in r.ps)P[k]=r.ps[k];
+      if(r.over)CB.over=true;
+      sync();CLOUD.sig=bSig();
+      /* savaş sürüyorsa: sunucunun bıraktığı yerden (tohum, sayaç) yerel oynamaya devam edilir */
+      if(r.B&&CB.on&&!CB.over&&!lost){CB.seed=r.B.seed;CB.k=r.B.k;CB.rng=seeded(CB.seed,CB.k||0);CB.acts=[];CB.t0=Date.now()}
+      if(lost){saveAll();CB.busy=false;battleBusy=false;go("city");return}
+      if(CB.on)upd();
+      saveAll(true);
+    }
+    CB.busy=false;battleBusy=false;
+  }
+}
+/* Zaferde sunucu bir sonraki savaşı da hazır tutar (çağrı tasarrufu): "Tekrar savaş" ek çağrı gerektirmez */
+function adoptPre(ri,mi,tw){
+  const pr=CB.pre;
+  if(!(pr&&CB.on&&CB.over&&pr.ri===ri&&pr.mi===mi&&(pr.tw||0)===(tw||0)&&CLOUD.sig===bSig()))return false;
+  CB={...CB,on:true,over:false,busy:false,...pr.nb,pre:null,acts:[],fin:false};
+  CB.rng=seeded(CB.seed,CB.k||0);CB.t0=Date.now();view();lg("⚔️ <b>"+CB.mob.name+"</b> ile dövüş başladı!");upd();return true;
+}
+async function startCombat(ri,mi,keep,tw){
+  if(battleBusy||bStarting)return;
+  if(adoptPre(ri,mi,tw))return;
+  CB.pre=null;
+  bStarting=true;
+  const ctx={P};
+  try{
+    if(!(await bflush())){toast("⚠️ İlerleme buluta gönderilemedi, savaş başlatılamadı. Bağlantını kontrol et.");return}
+    if(ctx.P!==P)return;
+    battleBusy=true;
+    let r=await bcall({op:"start",ri,mi,tw:tw||0,hp:Math.floor(P.hp),mp:Math.floor(P.mp)});
+    if(r.err==="kayit_yok"||r.err==="kayit_uyumsuz"){
+      if(await cloudPush(true))r=await bcall({op:"start",ri,mi,tw:tw||0,hp:Math.floor(P.hp),mp:Math.floor(P.mp)});
+    }
+    if(r.err||ctx.P!==P){battleBusy=false;if(r.err)bFail(r);return}
+    CB={...CB,on:true,over:false,busy:true,log:keep?CB.log:[]};
+    await bReplay(r,ctx);
+  }finally{bStarting=false}
+}
 function lg(t){CB.log.unshift(t);if(CB.log.length>40)CB.log.pop();const b=$("lg");if(b)b.innerHTML=CB.log.map(x=>"<div>"+x+"</div>").join("")}
 function combatUI(v){const m=CB.mob,c=CL[P.cls];
 v.innerHTML=`<div class="cd mc" id="mc"><div class="bn" style="opacity:.55">${banner(RG[CB.ri].h)}</div><div class="rel"><div class="au"></div><div class="mav" id="mav">${mobSVG(m)}<div class="fl" id="fl"></div></div>
@@ -935,18 +1027,40 @@ hud()}
 function fx(t,c){const f=$("fl");if(!f)return;const s=document.createElement("span");s.className="fn";s.style.cssText=`color:${c};left:${30+R(40)}%;top:${20+R(20)}%`;s.innerText=t;f.appendChild(s);setTimeout(()=>s.remove(),850)}
 function shake(){const a=$("mav");if(!a)return;a.classList.add("sk");setTimeout(()=>a.classList.remove("sk"),250)}
 function vig(){const e=$("vg");e.classList.add("h");setTimeout(()=>e.classList.remove("h"),200)}
-function act(i){if(!CB.on||CB.over||CB.busy)return;const out=bAct(CB,P,i,RNG);applyEv(out);if(!out.acted)return;
-upd();if(CB.mob.hp<=0){win();return}
-CB.busy=true;setTimeout(mobTurn,CB.fast?120:380)}
-function mobTurn(){CB.busy=false;if(!CB.on||CB.over)return;const out=bMobTurn(CB,P,RNG);applyEv(out);
-upd();if(P.hp<=0){lose();return}if(CB.mob.hp<=0){win();return}}
-function win(){CB.busy=false;const m=CB.mob,out=bWin(CB,P,RNG);applyEv(out);
-sync();save();upd();const o=$("ov");
-if(o)o.innerHTML=`<div class="pr" style="margin-top:8px"><button class="btn" style="color:#000" onclick="${CB.tw?`startCombat(0,0,1,${CB.tw+1})`:`startCombat(${m.ri},${m.mi},1)`}">${CB.tw?"🗼 Sonraki kat":"⚔️ Tekrar savaş"}</button><button class="btn s" onclick="endC()">Harita</button>${P.ch?`<button class="btn s" onclick="chestUI()">🎁 ${P.ch}</button>`:""}</div>`;
-if(CB.auto)setTimeout(()=>{if(CB.on&&CB.over&&CB.auto)startCombat(m.ri,m.mi,1,CB.tw?CB.tw+1:0)},CB.fast?400:800)}
-function lose(){CB.over=true;stopAuto();const r=bLose(P);CB.on=false;sync();save();toast("Yenildin! -"+r.lost+" 🪙, şehirde uyandın");go("city")}
-function endC(){CB.on=false;stopAuto();go("map")}
-function flee(){CB.on=false;stopAuto();toast("Savaştan kaçtın");go("map")}
+/* Manuel savaş telefonda oynanır (sunucunun verdiği tohumla); bitince hamle listesi sunucuya gider, sunucu aynısını oynatıp ödülü verir */
+function act(i){
+  if(!CB.on||CB.over||CB.busy||battleBusy||!CB.rng)return;
+  const out=bAct(CB,P,i,CB.rng);applyEv(out);if(!out.acted)return;
+  CB.acts.push(i);upd();
+  if(CB.mob.hp<=0){finishFight();return}
+  CB.busy=true;setTimeout(mobTurn,CB.fast?120:380)}
+function mobTurn(){CB.busy=false;if(!CB.on||CB.over)return;const out=bMobTurn(CB,P,CB.rng);applyEv(out);upd();
+  if(P.hp<=0||CB.mob.hp<=0)finishFight()}
+async function finishFight(partial){
+  if(CB.fin||!CB.on)return;
+  CB.fin=true;CB.busy=true;battleBusy=true;
+  const ctx={P},acts=CB.acts.slice();
+  /* sunucunun tempo kuralı: gereksiz çağrı (ve 'bekle' yanıtı) olmasın diye süreyi burada bekle */
+  const need=Math.max(partial?0:1500,acts.length*200)+120-(Date.now()-(CB.t0||0));
+  if(need>0)await bSleep(need);
+  const next=partial?undefined:(CB.tw?{ri:0,mi:0,tw:CB.tw+1}:{ri:CB.ri,mi:CB.mi,tw:0});
+  const r=await bcall({op:"finish",acts,partial:!!partial,next});
+  CB.fin=false;
+  if(ctx.P!==P){battleBusy=false;return}
+  if(r.err){
+    CB.busy=false;battleBusy=false;
+    if(["gecersiz_eylem","bitmedi","savas_yok"].includes(r.err)){toast("⚠️ Savaş sunucuyla eşleşmedi, savaş sıfırlandı");CB.on=false;stopAuto();go("map")}
+    else{bFail(r);if(!partial&&CB.on){CB.busy=false;CB.fin=false;setTimeout(()=>finishFight(),2500)}}
+    return}
+  const pre=r.steps.find(x=>x.start);
+  r.steps=r.steps.filter(x=>!x.start);
+  CB.pre=pre?{ri:pre.start.ri,mi:pre.start.mi,tw:pre.start.tw||0,nb:pre.start}:null;
+  await bReplay(r,ctx);
+}
+function endC(){CB.on=false;CB.pre=null;stopAuto();save();go("map")}
+function flee(){
+  if(CB.on&&!CB.over&&CB.acts&&CB.acts.length&&!CB.fin)finishFight(true);
+  CB.on=false;CB.pre=null;stopAuto();save();toast("Savaştan kaçtın");go("map")}
 function cycleSelPot(t){
   const order=["S","M","L"];
   const cur=P.selPot[t]||"S";
@@ -956,11 +1070,12 @@ function cycleSelPot(t){
   save();upd();
 }
 function pot(t,szOverride){
-  if(CB.over)return;
+  if(!CB.on||CB.over||CB.busy||battleBusy||!CB.rng)return false;
   const sz=szOverride||P.selPot[t]||"S";
   const out=bPot(P,t,sz,!!szOverride);applyEv(out);
   if(!out.ok)return false;
-  save();upd();
+  CB.acts.push(["p",t,sz]);
+  saveAll(true);upd();
   return true;
 }
 
@@ -1048,20 +1163,30 @@ function openAutoSetup(alreadyRunning){
 }
 function startAutoWithCfg(){
   closeM();
-  if(!CB.auto){
-    CB.auto=true;
-    aT=setInterval(auto,CB.fast?450:850);
-    if(CB.over)startCombat(CB.ri,CB.mi,1,CB.tw||0);
-  }
+  if(!CB.auto){CB.auto=true;autoLoop()}
   upd();
   toast("🤖 Otomatik savaş aktif!");
 }
-function stopAuto(){CB.auto=false;clearInterval(aT);aT=null}
-function auto(){if(!CB.on||CB.over||CB.busy)return;const r=bAutoStep(CB,P,RNG);applyEv(r.out);
-if(r.kind==="pot"){save();upd();return}
-if(r.kind==="stop"){stopAuto();upd();return}
-act(r.k)}
-
+function stopAuto(){CB.auto=false}
+/* Oto savaş: her istekte sunucu birkaç savaşı birden oynar, burada sırayla izlenir */
+async function autoLoop(){
+  if(autoRun)return;autoRun=true;
+  try{
+    while(CB.auto&&CB.on){
+      if(battleBusy||CB.busy||bStarting){await bSleep(200);continue}
+      if(!((CB.over||(CB.acts&&CB.acts.length))?true:await bflush())){stopAuto();toast("⚠️ İlerleme buluta gönderilemedi, oto savaş durdu");upd();break}
+      const nx=CB.over?{ri:CB.ri,mi:CB.mi,tw:CB.tw?CB.tw+1:0}:{ri:CB.ri,mi:CB.mi,tw:CB.tw||0};
+      if(CB.over&&CB.pre&&!adoptPre(nx.ri,nx.mi,nx.tw)){CB.pre=null}
+      const pend=(!CB.over&&CB.acts&&CB.acts.length)?CB.acts.slice():undefined;
+      const ctx={P};battleBusy=true;CB.busy=true;
+      const r=await bcall({op:"auto",fights:CB.fast?8:5,...nx,acts:pend,cfg:P.autoCfg});
+      if(ctx.P!==P||!CB.on){CB.busy=false;battleBusy=false;break}
+      if(r.err){CB.busy=false;battleBusy=false;stopAuto();bFail(r);upd();break}
+      await bReplay(r,ctx);
+      if(r.stopped==="stop"||r.stopped==="noact"){if(CB.auto){stopAuto();upd();if(r.stopped==="noact")toast("⛔ Oto savaş durdu: mana yok")}}
+    }
+  }finally{autoRun=false}
+}
 /* ---------- GANİMET ---------- */
 function drop(m,fg){applyEv(dropItem(P,m,fg,RNG))}
 

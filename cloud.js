@@ -8,7 +8,7 @@ const CLOUD_KEY="sb_publishable_pYF8HKKVrN3d1t5x6t7Rcw_fHSnzCU9"; /* herkese aç
 const CLOUD_MAIL="@kz-oyun.com"; /* kullanıcı adından sahte e-posta üretmek için */
 const CLOUD_LIB="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js";
 const CLOUD_SYNC_KEY="kz_cloud_sync";
-const CLOUD={sb:null,user:null,state:"loading",busy:false,msg:"",timer:null,silent:false,hold:false,asking:false,pending:null,lastSync:0,lastCheck:0};
+const CLOUD={sb:null,user:null,state:"loading",busy:false,msg:"",timer:null,silent:false,hold:false,asking:false,pending:null,lastSync:0,lastCheck:0,sig:null};
 
 const escH=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const cloudName=()=>CLOUD.user?((CLOUD.user.user_metadata&&CLOUD.user.user_metadata.username)||(CLOUD.user.email||"").split("@")[0]):"";
@@ -120,11 +120,14 @@ async function cloudFetch(){
 }
 async function cloudPush(quiet){
   if(!CLOUD.user||!CLOUD.sb||CLOUD.hold)return false;
+  /* savaş sonucu ekranda oynatılırken kayıt gönderme: sunucudaki ilerlemenin üstüne eski durum yazılmasın */
+  if(typeof battleBusy!=="undefined"&&(battleBusy||(CB.on&&!CB.over&&CB.acts&&CB.acts.length))){if(!CLOUD.timer)CLOUD.timer=setTimeout(()=>{CLOUD.timer=null;cloudPush(true)},3000);return false}
   const ms=cloudStamp()||Date.now();
+  const sig=typeof bSig==="function"?bSig():null;
   try{
     const r=await CLOUD.sb.rpc("kz_save",{p_data:{v:GAME_VERSION,active:activeSlot,slots:SLOTS},p_ms:ms});
     if(r.error)throw r.error;
-    cloudSyncSet(ms);CLOUD.lastSync=Date.now();CLOUD.msg="";
+    cloudSyncSet(ms);CLOUD.lastSync=Date.now();CLOUD.msg="";CLOUD.sig=sig;
     if(typeof comPushLb==="function")comPushLb();
     if(!quiet)toast("☁️ Buluta kaydedildi");
     cloudUI();return true;
@@ -133,6 +136,10 @@ async function cloudPush(quiet){
       /* çok sık kayıt: sessizce 10 sn sonra tekrar dene */
       if(!CLOUD.timer)CLOUD.timer=setTimeout(()=>{CLOUD.timer=null;cloudPush(true)},10000);
       return false;
+    }
+    if(/ilerleme degistirilemez|baslangic seviyesinde/i.test((e&&e.message)||"")){
+      /* sunucudaki savaş ilerlemesi bu cihazdakinden yeni: bulut kaydını yükle */
+      try{const row=await cloudFetch();if(row){cloudApply(row);toast("☁️ Sunucudaki ilerleme yüklendi");return true}}catch(e2){}
     }
     CLOUD.msg="Buluta kaydedilemedi: "+cloudErr(e);cloudUI();
     if(!quiet)toast("☁️ "+CLOUD.msg);
@@ -155,6 +162,7 @@ function cloudApply(row){
     saveAll();
     cloudSyncSet(cloudStamp());
     CLOUD.lastSync=Date.now();
+    if(typeof bSig==="function")CLOUD.sig=bSig();
     try{
       if($("cs-screen").style.display==="flex")renderCharSelect();
       else{sync();nav();view()}

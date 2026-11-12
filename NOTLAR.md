@@ -19,6 +19,9 @@ Bu dosya, projede çalışan herkesin (Berkay, Claude, Gemini, GPT) okuması iç
 - `sql/topluluk.sql`: liderlik + sohbet tabloları (kurulum.sql'den SONRA Supabase'te çalıştırılır)
 - `sql/koruma.sql`: hile koruması (sunucu her kayıtta altın/seviye/kule/eşya sınırlarını kontrol eder). topluluk.sql'den SONRA çalıştırılır; topluluk.sql tekrar çalıştırılırsa koruma.sql da tekrar çalıştırılmalı. Ayarlar kz_config tablosunda (guard_enabled=0 acil kapatma)
 - `sql/sunucu.sql`: kayıt ve liderliğe doğrudan yazmayı kapatır; yazma yalnızca kz_save / kz_lb_refresh fonksiyonlarından geçer (en son çalıştırılır; kurulum/topluluk tekrar çalıştırılırsa bunu da tekrar çalıştır)
+- `sql/savas.sql`: sunucu savaşı: kz_battle tablosu, kz_b_get/kz_b_put (yalnızca service_role), kz_lock_err. koruma.sql ve sunucu.sql'den SONRA çalıştırılır. Kilit `kz_config.srv_lock` (0 kapalı, 1 açık)
+- `sql/savas_siki.sql`: srv_lock=1 yapar: seviye/tecrübe/kule/boss/öldürme-elit-kadim sayaçlarını yalnızca sunucu değiştirebilir (savaş denemesi çalıştıktan sonra çalıştırılır)
+- `edge/handler.js`: battle fonksiyonunun mantığı (Node'da test edilir). `edge/deno_glue.ts`: Supabase bağlantısı. `edge/build.sh`: engine.js + handler.js + glue -> `edge/battle/index.ts` (Supabase panelinde yapıştırılan TEK dosya). engine.js değişirse build.sh çalıştırılıp fonksiyon yeniden yüklenmeli
 - `sql/kurulum.sql`: Supabase'e bir kez yapıştırılan veritabanı kodu (tablolar + erişim kuralları)
 
 ## Yol haritası
@@ -32,9 +35,15 @@ Bu dosya, projede çalışan herkesin (Berkay, Claude, Gemini, GPT) okuması iç
 - Giriş: kullanıcı adı + şifre. Kullanıcı adından sahte e-posta (`ad@kz-oyun.com`) üretiliyor. Supabase'te "Confirm email" KAPALI olmalı.
 - Kayıt tek satırda tutuluyor (`saves` tablosu, `data` alanı = 5 yuva). `ts` alanı gerçek oyun kaydında güncellenir; `saveAll(true)` sadece cihaza yazar (can yenilenmesi, arka plan).
 - Supabase publishable anahtarı kodda açık durabilir. `sb_secret_` ve `eyJ...` ile başlayan anahtarlar ASLA koda veya GitHub'a konmaz.
-- Hile koruması yok: önemli hesaplamalar hâlâ istemcide. Takas/liderlik tablosundan önce sunucuya taşınmalı.
+- Savaş (1.5.0+) Supabase Edge Function `battle` içinde oynanır; oyun `CLOUD.sb.functions.invoke('battle')` ile çağırır. İnternet ve giriş şart. Seviye/tecrübe/kule/boss/sayaçlar savas_siki.sql sonrası yalnızca sunucudan değişir.
+- Hâlâ istemcide kalanlar (aşama 3b): görev/günlük ödül altını, sandık içeriği, satış, demirci, dükkan, iksir/malzeme sayıları. Altın ve eşya yine bütçe kurallarıyla sınırlı. Takas öncesi bunlar sunucuya taşınmalı.
+- Sunucu savaş tempo sınırı: oyuncu hamlesi 250 ms, oto savaşta hamle başına 150 ms (kz_battle.lock_until).
 
 ## Değişiklik günlüğü
+
+- 1.5.1: Çağrı tasarrufu (50 kişilik test, ücretsiz plan 500 bin çağrı/ay): MANUEL savaş artık telefonda oynanır; sunucu `start` ile tohum (seed) verir, telefon engine.js'i `seeded(seed,k)` ile oynar, savaş bitince hamle listesi `finish` ile gider, sunucu aynı tohumla baştan oynatır, sonuç ve ödülü (sunucuya özel rastgelelikle) o belirler. Savaş başına ~1 çağrı; zaferde sonraki savaş (`next`) önceden hazırlanır, "Tekrar savaş" çağrısız. Hamle listesi tutmazsa reddedilir. Tempo: savaş başına en az 1.5 sn, hamle başına 200 ms (telefon kendisi bekler). Oto savaş 5-8 savaşı tek çağrıda oynar; manuel<->oto geçişi hamleleri `auto` ile taşır. Manuel savaş sürerken bulut kaydı bekletilir. Sohbet yenileme 4 sn -> 8 sn. Yeni test: tests/t21.js.
+
+- 1.5.0: Aşama 3 / 3-4. adım: SAVAŞ SUNUCUDA OYNANIR. Edge Function `battle` (ops: start/act/pot/auto/end) engine.js'i kullanır, sonucu kaydın içine yazar (kz_b_put, hile korumasını ve updated_ms'i atlar). Oyun sonucu adım adım ekranda oynatır (bReplay). Oto savaş tek istekte 3-5 savaş oynatır (çağrı tasarrufu). Savaş öncesi bflush: kuşanma/satış gibi değişiklikler önce buluta gider. Savaş sırasında bulut kaydı bekletilir (battleBusy). Kilit hatasında sunucu kaydı otomatik yüklenir. Savaş için internet gerekir. Yeni testler: pgtest/t3.js (35, gerçek PostgreSQL), tests/t19.js (19, uçtan uca), tests/t20_deno.js. Eski testler (t1-t10, t18) için tests/legacy_patch.js yerel savaş kodunu enjekte eder.
 
 - 1.4.2: Aşama 3 / 2. adım: savaş döngüsü (vuruş, canavar sırası, iksir, oto savaş, ödül, eşya düşürme, yenilgi) engine.js'e taşındı. Ekrana dokunmaz, olay listesi döndürür; rastgelelik rng parametresiyle. game.js bu olayları ekranda uygular. 60 karakter x 25 savaş (1500 savaş) eski sürümle karakter durumu ve savaş mesajlarında BİREBİR aynı doğrulandı (tests/t17.js). Node'da ekransız çalıştığı doğrulandı.
 - 1.4.1: Aşama 3 hazırlığı: veri tabloları ve formüller game.js'ten engine.js'e taşındı. Oyun davranışı değişmedi (175 karakterde eski sürümle birebir doğrulandı). index.html engine.js'i game.js'ten önce yükler.
@@ -52,7 +61,7 @@ Yöntem: Supabase Edge Function (Deno) aynı engine.js'i kullanır. Savaş mant�
 Parçalar:
  1. Veri/formüller engine.js'e (YAPILDI, 1.4.1)
  2. Savaş döngüsü saf fonksiyona (rng parametreli), Node'da test; eski oyunla sonuç karşılaştırma (YAPILDI, 1.4.2)
- 3. Edge Function `battle`: kaydı sunucudan okur, savaşı oynatır, ödülü sunucu kaydına yazar (kz_apply, sadece service_role)
- 4. Telefon: savaş sonucunu sunucudan alır, log'u oynatır; kz_save sunucu alanlarını (xp, seviye, öldürme, kule, elit eşya, ödüller) değiştiremez
+ 3. Edge Function `battle` + sql/savas.sql (YAPILDI, 1.5.0)
+ 4. Telefon sonucu oynatır; kz_save ilerleme alanlarını değiştiremez (savas_siki.sql) (YAPILDI, 1.5.0)
  5. Görev/sandık/satış/demirci kazançları sırayla sunucuya (aşama 3b)
 Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ücretsiz plan 500 bin çağrı/ay), oyun mantığı değişince Edge Function da güncellenmeli.

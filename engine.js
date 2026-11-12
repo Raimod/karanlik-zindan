@@ -120,6 +120,10 @@ return{atk:fAtk,minAtk:Math.max(1,Math.floor(fAtk*.85)),maxAtk:Math.max(1,Math.c
 const MT={kirik:["⚙️","Demir Kırığı"],zehir:["🧪","Zehir Bezi"],zirh:["🪨","Zırh Parçası"],tuy:["🪶","Çevik Tüy"],oz:["🌿","Yeşil Öz"],kan:["🩸","Kan Kristali"],ruh:["👻","Elit Ruhu"]};
 const TM={poison:"zehir",armor:"zirh",swift:"tuy",regen:"oz",drain:"kan"},NT=["zehir","zirh","tuy","oz"];
 const mkRng=f=>({R:n=>f()*n,RI:(a,b)=>Math.floor(a+f()*(b-a+1))});
+/* Tohumlu rastgelelik: (seed,k) ile kaldığı yerden devam edilebilir. Telefon ve sunucu aynı sayıları üretir. */
+function seeded(seed,k){k=k||0;let a=(seed+Math.imul(k,0x6D2B79F5))|0;
+  const f=()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;k++;return((t^t>>>14)>>>0)/4294967296};
+  const r=mkRng(f);Object.defineProperty(r,"k",{get:()=>k});return r}
 const _lg=(o,t)=>o.push({lg:t});
 
 function syncP(p){const d=statsOf(p);p.maxHp=d.hp;p.maxMp=d.mp;p.hp=Math.min(p.hp,p.maxHp);p.mp=Math.min(p.mp,p.maxMp)}
@@ -281,6 +285,6 @@ function bLose(p){
   return{lost:l};
 }
 
-const KZ={SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
+const KZ={SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
 (typeof globalThis!=="undefined"?globalThis:window).KZ=KZ;
 if(typeof module!=="undefined"&&module.exports)module.exports=KZ;

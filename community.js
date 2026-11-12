@@ -70,7 +70,7 @@ function cCommunity(v){
     COM.timer=setInterval(()=>{
       if(tab!=="community"||COM.sub!=="chat"||document.hidden||!CLOUD.user||CB.on){if(tab!=="community"||COM.sub!=="chat")comStop();return}
       comLoadChat(false);
-    },4000);
+    },8000);
   }
 }
 
