@@ -1,4 +1,4 @@
-const GAME_VERSION="1.4.1";
+const GAME_VERSION="1.4.2";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -880,9 +880,16 @@ function sell(n){const i=P.inv[n];P.gold+=sellV(i);P.inv.splice(n,1);closeM();hu
 
 /* ---------- SAVAŞ ---------- */
 let CB={on:false,auto:false,fast:false},aT=null;
-function startCombat(ri,mi,keep,tw){const m=tw?towerMob(tw):{...RG[ri].mobs[mi]};m.tr=m.el?"boss":["poison","armor","swift","regen","drain"][(m.ri+m.mi)%5];if(P.hp<=0)P.hp=1;
-CB={...CB,on:true,over:false,busy:false,ri:m.ri,mi:m.mi,mob:m,tw:tw||0,pz:0,pzT:0,ph:0,armor:m.tr=="armor",sh:0,shT:0,dot:0,dotT:0,tele:false,stun:false,rage:false,log:keep?CB.log:[]};
-view();if(!keep)lg("⚔️ <b>"+m.name+"</b> ile dövüş başladı!");upd()}
+const RNG=mkRng(()=>Math.random());
+/* Motorun döndürdüğü olayları ekranda uygula (sıra korunur) */
+function applyEv(out){for(const e of out){if(e.lg!==undefined)lg(e.lg);else if(e.fx)fx(e.fx[0],e.fx[1]);else if(e.snd)A[e.snd]();else if(e.toast)toast(e.toast);else if(e.shake)shake();else if(e.vig)vig();else if(e.ev)ev(e.ev[0],e.ev[1]);else if(e.kill)onKill(e.kill)}}
+/* Öldürme: günlük ve normal görev ilerlemesi */
+function onKill(k){
+ P.dl.q.forEach(q=>{if(q.p<q.n&&(q.k=="any"||(q.k=="elite"&&k.el)||(q.k=="tower"&&k.tw)))q.p++});
+ QS.forEach(q=>{if(q.ri<0||(q.ri==k.ri&&q.mi==k.mi)){const s=qp(q);if(s.p<q.n){s.p++;if(s.p==q.n)toast("📜 Görev tamamlandı! Şehirden ödülünü al.")}}})}
+function startCombat(ri,mi,keep,tw){const nb=newBattle(P,ri,mi,tw);
+CB={...CB,on:true,over:false,busy:false,...nb,log:keep?CB.log:[]};
+view();if(!keep)lg("⚔️ <b>"+nb.mob.name+"</b> ile dövüş başladı!");upd()}
 function lg(t){CB.log.unshift(t);if(CB.log.length>40)CB.log.pop();const b=$("lg");if(b)b.innerHTML=CB.log.map(x=>"<div>"+x+"</div>").join("")}
 function combatUI(v){const m=CB.mob,c=CL[P.cls];
 v.innerHTML=`<div class="cd mc" id="mc"><div class="bn" style="opacity:.55">${banner(RG[CB.ri].h)}</div><div class="rel"><div class="au"></div><div class="mav" id="mav">${mobSVG(m)}<div class="fl" id="fl"></div></div>
@@ -928,45 +935,16 @@ hud()}
 function fx(t,c){const f=$("fl");if(!f)return;const s=document.createElement("span");s.className="fn";s.style.cssText=`color:${c};left:${30+R(40)}%;top:${20+R(20)}%`;s.innerText=t;f.appendChild(s);setTimeout(()=>s.remove(),850)}
 function shake(){const a=$("mav");if(!a)return;a.classList.add("sk");setTimeout(()=>a.classList.remove("sk"),250)}
 function vig(){const e=$("vg");e.classList.add("h");setTimeout(()=>e.classList.remove("h"),200)}
-function act(i){if(!CB.on||CB.over||CB.busy)return;const isBasic=i<0,c=CL[P.cls],s=isBasic?{n:"Temel saldırı",mp:0,m:1,dot:0}:c.sk[i],rk=isBasic?0:P.sr[i]||0,rm=(1+rk*.05)*(rk>=50?1.25:1);
-if(P.mp<s.mp)return toast("Yetersiz mana!");P.mp-=s.mp;const d=D(),m=CB.mob;
-if(!isBasic&&s.i&&CB.tele){CB.tele=false;CB.stun=true;CB.armor=false;A.int();lg("⚡ <b style=color:#e6b450>KESİNTİ!</b> Düşmanın hazırlığı bozuldu, tur kaybetti.");fx("KESİNTİ!","#e6b450")}
-if(!isBasic&&s.heal){const h=Math.floor(P.maxHp*.45*(1+P.at.int*.01));P.hp=Math.min(P.maxHp,P.hp+h);A.pot();lg("💚 +"+h+" HP");fx("+"+h,"#22c55e")}
-if(!isBasic&&s.sh){CB.sh=Math.floor(P.maxHp*.35*rm);CB.shT=3;lg("🛡️ Kalkan açtın ("+CB.sh+")")}
-if(s.m>0){const ld=m.lv-P.lv,rng=isBasic?(.85+R(.30)):(.90+R(.20));let pen=ld>=3?Math.max(.25,1-(ld-2)*.12):1,x=Math.floor(d.atk*rng*s.m*rm*(1-m.def/(m.def+200))*pen),gl=ld>=5&&Math.random()<.4;if(gl)x=Math.floor(x*.35);
- const cr=s.crit||R(100)<d.cr;if(cr){x=Math.floor(x*1.8);A.crit();ev("crit")}else A.hit();if(CB.armor)x=Math.floor(x*.6);x=Math.max(5,x);m.hp=Math.max(0,m.hp-x);P.st.d=Math.max(P.st.d,x);ev("dmg",x);shake();fx(cr?"💥"+x:x,cr?"#e6b450":"#fff");
- lg((cr?"⚡ ":"")+(gl?"🛡️ ":"")+s.n+": <b style=color:#e5484d>"+x+"</b> hasar")}
-if(!isBasic&&s.dot){CB.dot=Math.max(3,Math.floor(d.atk*.3*rm));CB.dotT=3;CB.dotN=P.cls=="tank"?"🩸 İç Kanama":P.cls=="mage"?"🔥 Yanma":P.cls=="archer"?"🧪 Zehir":P.cls=="assassin"?"🩸 Kanama":P.cls=="healer"?"✨ Kutsal Yanık":"☠️ Etki"}
-upd();if(m.hp<=0){win();return}
+function act(i){if(!CB.on||CB.over||CB.busy)return;const out=bAct(CB,P,i,RNG);applyEv(out);if(!out.acted)return;
+upd();if(CB.mob.hp<=0){win();return}
 CB.busy=true;setTimeout(mobTurn,CB.fast?120:380)}
-function mobTurn(){CB.busy=false;if(!CB.on||CB.over)return;const m=CB.mob;
-// 6 Parça Set Yenilenmesi
-const regenSet=getActiveSets().find(s=>s.regenPct>0);
-if(regenSet&&P.hp<P.maxHp){const rg=Math.max(5,Math.floor(P.maxHp*(regenSet.regenPct/100)));P.hp=Math.min(P.maxHp,P.hp+rg);lg("🌿 Set yenilemesi: +"+rg+" HP")}
-if(m.tr=="regen")m.hp=Math.min(m.mx,m.hp+Math.floor(m.mx*.03));
-if(CB.pzT>0){P.hp=Math.max(0,P.hp-CB.pz);CB.pzT--;lg("🤢 Zehir: <b style=color:#a3e635>"+CB.pz+"</b> hasar");if(P.hp<=0){upd();lose();return}}
-if(CB.dotT>0){m.hp=Math.max(0,m.hp-CB.dot);CB.dotT--;lg((CB.dotN||"☠️ Etki")+": <b style=color:#a3e635>"+CB.dot+"</b> hasar");fx(CB.dot,"#a3e635");if(m.hp<=0){upd();win();return}}
-if(m.el&&CB.ph<2&&m.hp<=m.mx*(CB.ph?.33:.66)){CB.ph++;CB.rage=true;m.atk=Math.floor(m.atk*1.3);lg("🔥 <b style=color:#f43f5e>"+m.name+" "+(CB.ph+1)+". faza geçti!</b> Daha sert vuruyor.");fx((CB.ph+1)+". FAZ!","#f43f5e")}
-if(CB.stun){CB.stun=false;lg("💫 "+m.name+" sersemledi, saldıramadı.")}
-else if(CB.tele){CB.tele=false;hit(Math.floor(m.atk*2.5),true)}
-else if(R(1)<(CB.rage?.5:m.el?.38:.25)){CB.tele=true;lg("⚠️ <b style=color:#f43f5e>"+m.name+"</b> güçlü bir saldırı hazırlıyor!")}
-else{hit(m.atk,false);if(m.tr=="swift"&&R(1)<.3)hit(Math.floor(m.atk*.6),false);if(m.tr=="poison"){CB.pz=Math.max(8,Math.floor(m.atk*.15));CB.pzT=3;lg("🤢 Zehirlendin!")}}
-if(CB.shT>0&&--CB.shT==0)CB.sh=0;
-upd();if(P.hp<=0)lose()}
-function hit(a,t){const m=CB.mob,ld=m.lv-P.lv,ar=D().arm;a=Math.floor(a*(.90+R(.20)));if(ld>=3)a=Math.floor(a*(1+(ld-2)*.15));a=Math.max(8,Math.floor(a*(1-ar/(ar+180))));vig();
-if(CB.sh>0){const b=Math.min(CB.sh,a);CB.sh-=b;a-=b;lg("🛡️ Kalkan <b style=color:#38bdf8>"+b+"</b> hasarı emdi")}
-if(a>0){P.hp=Math.max(0,P.hp-a);if(m.tr=="drain")m.hp=Math.min(m.mx,m.hp+Math.floor(a*.5));A.hit();lg(t?"💥 <b style=color:#f43f5e>[AĞIR DARBE]</b> "+a+" hasar aldın!":"🩸 "+a+" hasar aldın")}}
-function win(){CB.over=true;CB.busy=false;const m=CB.mob,g=RI(m.g[0],m.g[1]),x=killXp(m.xp,m.lv,P.lv);P.gold+=g;P.xp+=x;P.st.k++;P.stk++;dq(m);if(m.el){P.st.e++;if(!CB.tw)P.boss[m.ri]=true}
-lg("🎉 <b>"+m.name+"</b> yenildi! +"+g+"🪙 "+(x?"+"+x+" XP":"(0 XP, seviye farkı)"));
-QS.forEach(q=>{if(q.ri<0||(q.ri==m.ri&&q.mi==m.mi)){const s=qp(q);if(s.p<q.n){s.p++;if(s.p==q.n)toast("📜 Görev tamamlandı! Şehirden ödülünü al.")}}});
-if(m.el&&!CB.tw&&m.ri<4&&!P.boss[m.ri+1])lg("🗝️ Yeni bölgenin kapısı açıldı!");
-while(P.xp>=reqXp(P.lv)&&P.lv<50){const prevHp=P.maxHp,prevMp=P.maxMp;P.xp-=reqXp(P.lv);P.lv++;P.sp+=2;P.ap+=3;ev("lvl",P.lv);A.lvl();sync();const dHp=P.maxHp-prevHp,dMp=P.maxMp-prevMp;toast("🌟 Seviye "+P.lv+"! (+"+dHp+" HP, +"+dMp+" MP, +2 SP, +3 AP)");P.hp=P.maxHp;P.mp=P.maxMp}
-if(R(1)<.16){const t=R(1)<.5?"hp":"mp",r=R(100),sz=r<65?"S":r<92?"M":"L",d=POT_DEF[t][sz];P.pot[t][sz]=(P.pot[t][sz]||0)+1;lg(`${d.e} 1× <b style=color:${G[d.g].c}>${d.n}</b> buldun`)}
-matDrop(m);if(CB.tw){ev("tower",CB.tw);P.tw=Math.max(P.tw,CB.tw);if(CB.tw%5==0){P.ch++;lg("🎁 Kat ödülü: sandık!")}}if(m.el&&!CB.tw&&R(100)<50){P.ch++;lg("🎁 Elit sandığı düştü!")}if(m.el||R(100)<12)drop(m);
+function mobTurn(){CB.busy=false;if(!CB.on||CB.over)return;const out=bMobTurn(CB,P,RNG);applyEv(out);
+upd();if(P.hp<=0){lose();return}if(CB.mob.hp<=0){win();return}}
+function win(){CB.busy=false;const m=CB.mob,out=bWin(CB,P,RNG);applyEv(out);
 sync();save();upd();const o=$("ov");
 if(o)o.innerHTML=`<div class="pr" style="margin-top:8px"><button class="btn" style="color:#000" onclick="${CB.tw?`startCombat(0,0,1,${CB.tw+1})`:`startCombat(${m.ri},${m.mi},1)`}">${CB.tw?"🗼 Sonraki kat":"⚔️ Tekrar savaş"}</button><button class="btn s" onclick="endC()">Harita</button>${P.ch?`<button class="btn s" onclick="chestUI()">🎁 ${P.ch}</button>`:""}</div>`;
 if(CB.auto)setTimeout(()=>{if(CB.on&&CB.over&&CB.auto)startCombat(m.ri,m.mi,1,CB.tw?CB.tw+1:0)},CB.fast?400:800)}
-function lose(){CB.over=true;stopAuto();const l=Math.floor(P.gold*.1);P.gold-=l;P.st.dm++;P.stk=0;P.hp=Math.max(1,Math.floor(P.maxHp*.3));CB.on=false;sync();save();toast("Yenildin! -"+l+" 🪙, şehirde uyandın");go("city")}
+function lose(){CB.over=true;stopAuto();const r=bLose(P);CB.on=false;sync();save();toast("Yenildin! -"+r.lost+" 🪙, şehirde uyandın");go("city")}
 function endC(){CB.on=false;stopAuto();go("map")}
 function flee(){CB.on=false;stopAuto();toast("Savaştan kaçtın");go("map")}
 function cycleSelPot(t){
@@ -980,25 +958,8 @@ function cycleSelPot(t){
 function pot(t,szOverride){
   if(CB.over)return;
   const sz=szOverride||P.selPot[t]||"S";
-  const d=POT_DEF[t][sz];
-  if((P.pot[t][sz]||0)<=0){
-    if(!szOverride)toast(`${d.n} kalmadı (yanındaki K/O/B tuşuyla boyut değiştir)`);
-    return false;
-  }
-  if(t=="hp"&&P.hp>=P.maxHp){if(!szOverride)toast("Canın zaten tamamen dolu!");return false;}
-  if(t=="mp"&&P.mp>=P.maxMp){if(!szOverride)toast("Manan zaten tamamen dolu!");return false;}
-  P.pot[t][sz]--;A.pot();ev("pot");
-  if(t=="hp"){
-    const r=Math.floor(P.maxHp*d.pct);
-    P.hp=Math.min(P.maxHp,P.hp+r);
-    fx("+"+r,"#22c55e");
-    lg(`🧪 ${d.n}: <b style=color:#4ade80>+${r} HP</b> (Kalan: ${P.pot.hp[sz]})`);
-  }else{
-    const r=Math.floor(P.maxMp*d.pct);
-    P.mp=Math.min(P.maxMp,P.mp+r);
-    fx("+"+r,"#38bdf8");
-    lg(`💧 ${d.n}: <b style=color:#38bdf8>+${r} MP</b> (Kalan: ${P.pot.mp[sz]})`);
-  }
+  const out=bPot(P,t,sz,!!szOverride);applyEv(out);
+  if(!out.ok)return false;
   save();upd();
   return true;
 }
@@ -1096,33 +1057,13 @@ function startAutoWithCfg(){
   toast("🤖 Otomatik savaş aktif!");
 }
 function stopAuto(){CB.auto=false;clearInterval(aT);aT=null}
-function auto(){if(!CB.on||CB.over||CB.busy)return;
-const cfg=P.autoCfg||{hp:"S",mp:"S",hpThr:40,mpThr:25,skills:[1,1,1,1]};
-const skOn=Array.isArray(cfg.skills)?cfg.skills:[1,1,1,1];
-if(P.hp<P.maxHp*(cfg.hpThr/100)){
-  const hSz=pickBestAvailPot("hp",cfg.hp);
-  if(hSz&&pot("hp",hSz))return;
-  if(P.hp<P.maxHp*.18){lg("⛔ Oto savaş durdu: can kritik ve seçili iksir bitti");stopAuto();upd();return}
-}
-if(P.mp<P.maxMp*(cfg.mpThr/100)){
-  const mSz=pickBestAvailPot("mp",cfg.mp);
-  if(mSz&&pot("mp",mSz))return;
-}
-const sk=CL[P.cls].sk;
-if(CB.tele){const k=sk.findIndex((s,i)=>skOn[i]&&s.i&&P.mp>=s.mp);if(k>-1)return act(k)}
-if(CB.sh<=0&&CB.shT==0){const k=sk.findIndex((s,i)=>skOn[i]&&s.sh&&P.mp>=s.mp&&R(1)<.3);if(k>-1)return act(k)}
-if(P.maxHp-P.hp>P.maxHp*.5){const k=sk.findIndex((s,i)=>skOn[i]&&s.heal&&P.mp>=s.mp);if(k>-1)return act(k)}
-let b=-1,bm=0;sk.forEach((s,i)=>{if(skOn[i]&&!s.heal&&P.mp>=s.mp&&s.m*(1+(P.sr[i]||0)*.05)>bm&&s.mp<=P.mp*.6){bm=s.m;b=i}});
-act(b)}
+function auto(){if(!CB.on||CB.over||CB.busy)return;const r=bAutoStep(CB,P,RNG);applyEv(r.out);
+if(r.kind==="pot"){save();upd();return}
+if(r.kind==="stop"){stopAuto();upd();return}
+act(r.k)}
 
 /* ---------- GANİMET ---------- */
-function drop(m,fg){if(P.inv.length>=50){lg("⚠️ Çanta dolu, eşya kayboldu!");return}
-const ks=Object.keys(CL),rc=R(1)<.6?P.cls:ks[RI(0,4)],si=RI(0,7),sl=SL[si],r=RG[m.ri];let g=1,x=R(100);
-if(m.el)g=x<=2.5?5:x<=15?4:x<=40?3:x<=70?2:1;else g=x<=.4?5:x<=5?4:x<=18?3:x<=45?2:1;
-if(fg)g=Math.max(g,fg);const ac=(()=>{const y=R(100);return y<=1?4:y<=5?3:y<=13?2:y<=28?1:0})(),P0=[["atk","Saldırı Gücü"],["def","Zırh Direnci"],["crit","Kritik Vuruş"]],af=[];
-for(let n=0;n<ac;n++){const p=P0[RI(0,2)];af.push({t:p[0],n:p[1],v:RI(1,10),l:false})}
-const it={name:r.ore+" "+CL[rc].it[si],setOre:r.ore,slot:sl,rc,rl:r.req,g,p:0,bp:r.pw,af};P.inv.push(it);P.st.l+=g==5?1:0;if(g>=3)ev("drop3");
-if(g==5){A.elite();toast("👑 KADİM ELİT EŞYA: "+it.name+"!");lg("👑 <b style=color:#e6b450>[JACKPOT]</b> "+it.name)}else lg("📦 <b style=color:"+G[g].c+">"+it.name+" ["+G[g].t+"]</b>"+(rc==P.cls?" ✅":""))}
+function drop(m,fg){applyEv(dropItem(P,m,fg,RNG))}
 
 /* ---------- GÜNLÜK, SANDIK, KULE ---------- */
 const TN={poison:"🤢 Zehirli",armor:"🪨 Zırhlı (kesinti kırar)",swift:"💨 Çevik",regen:"💚 Yenilenir",drain:"🧛 Can çalar",boss:"👑 Boss · 3 faz"};
@@ -1226,8 +1167,7 @@ function openChBulk(count){
     ${P.ch>0?`<button class="btn" style="margin-bottom:6px" onclick="chestUI()">🎁 Tekrar Aç (Kalan: ${P.ch})</button>`:""}
     <button class="btn s" onclick="closeM();view()">Tamam</button>`;
 }
-function towerMob(f){const r=Math.min(4,Math.floor((P.lv-1)/10)),b=f%5==0,t=RG[r].mobs[b?3:f%3],s=1+f*.07;
-return{...t,id:"t"+f,lv:Math.min(60,P.lv+Math.floor(f/4)),hp:Math.floor(t.hp*s),mx:Math.floor(t.hp*s),atk:Math.floor(t.atk*s),def:Math.floor(t.def*s),xp:Math.floor(t.xp*s*.6),el:b,name:(b?"Kule Muhafızı ":"")+t.name+" · Kat "+f}}
+function towerMob(f){return towerMobOf(P,f)}
 function towerCard(){return`<div class="cd" style="background:linear-gradient(135deg,#3b1d6e66,var(--pn))"><div class="ct">🗼 Sonsuz Kule <span class="g" style="font-size:11px">Rekor: Kat ${P.tw}</span></div><p class="mu" style="font-size:11px;margin-bottom:8px">Her kat zorlaşır. 5 katta bir boss ve sandık.</p><button class="btn v" onclick="startCombat(0,0,0,${P.tw+1})">Kat ${P.tw+1}’e çık</button></div>`}
 const better=i=>i.rc==P.cls&&effLv(i)<=P.lv&&pw(i)>(P.eq[i.slot]?pw(P.eq[i.slot]):0);
 
@@ -1264,15 +1204,12 @@ return`<div class="cd"><div class="ct">Yetenekler <span class="g" style="font-si
 return`<div class="q"><div style="flex:1"><b>${s.n}</b> <span class="g">[${t} · ${r}/50]</span><div class="mu">${s.d} · ${s.mp} MP${dm}</div></div><button class="btn" style="width:auto;padding:6px 10px" ${P.sp>0&&r<50?"":"disabled"} onclick="upSk(${i})">+1</button></div>`}).join("")+`</div>`}
 
 /* ---------- MALZEME, GÖREV ÇEŞİTLİLİĞİ ---------- */
-const MT={kirik:["⚙️","Demir Kırığı"],zehir:["🧪","Zehir Bezi"],zirh:["🪨","Zırh Parçası"],tuy:["🪶","Çevik Tüy"],oz:["🌿","Yeşil Öz"],kan:["🩸","Kan Kristali"],ruh:["👻","Elit Ruhu"]};
-const TM={poison:"zehir",armor:"zirh",swift:"tuy",regen:"oz",drain:"kan"},NT=["zehir","zirh","tuy","oz"];
 function need(p){if(p<5)return{kirik:2+p*2};const k=NT[p%4];if(p<9)return{kirik:6,[k]:2};if(p<12)return{kirik:8,[k]:3,kan:2,ruh:p-8};return{kirik:12,[k]:4,kan:p-9,ruh:p-8}}
 const hasMat=n=>Object.keys(n).every(k=>(P.mat[k]||0)>=n[k]);
 function useMat(n){Object.keys(n).forEach(k=>P.mat[k]-=n[k])}
 function needHTML(p){if(p>=15)return"";return`<div class="q" style="flex-wrap:wrap;margin:6px 0">Gereken: ${Object.entries(need(p)).map(([k,n])=>`<b style="color:${(P.mat[k]||0)>=n?"#4ade80":"#f87171"}">${MT[k][0]}${MT[k][1]} ${P.mat[k]||0}/${n}</b>`).join(" · ")}</div>`}
 const matLine=()=>Object.keys(MT).map(k=>MT[k][0]+" "+(P.mat[k]||0)).join(" &nbsp;");
 function gm(k,n){P.mat[k]=(P.mat[k]||0)+n;ev("mat",n);lg(MT[k][0]+" +"+n+" "+MT[k][1])}
-function matDrop(m){if(R(100)<65)gm("kirik",RI(1,2));const k=TM[m.tr];if(k&&R(100)<40)gm(k,1);if(m.el){gm("ruh",RI(1,2));if(R(100)<50)gm("kan",1)}}
 const QV=[
 {id:"v1",h:"Savaş",k:"crit",n:30,txt:"30 kritik vuruş yap",g:150,m:{kirik:5}},
 {id:"v2",h:"Savaş",k:"crit",n:150,txt:"150 kritik vuruş yap",g:600,ch:1},

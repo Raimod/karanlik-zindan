@@ -36,6 +36,7 @@ Bu dosya, projede çalışan herkesin (Berkay, Claude, Gemini, GPT) okuması iç
 
 ## Değişiklik günlüğü
 
+- 1.4.2: Aşama 3 / 2. adım: savaş döngüsü (vuruş, canavar sırası, iksir, oto savaş, ödül, eşya düşürme, yenilgi) engine.js'e taşındı. Ekrana dokunmaz, olay listesi döndürür; rastgelelik rng parametresiyle. game.js bu olayları ekranda uygular. 60 karakter x 25 savaş (1500 savaş) eski sürümle karakter durumu ve savaş mesajlarında BİREBİR aynı doğrulandı (tests/t17.js). Node'da ekransız çalıştığı doğrulandı.
 - 1.4.1: Aşama 3 hazırlığı: veri tabloları ve formüller game.js'ten engine.js'e taşındı. Oyun davranışı değişmedi (175 karakterde eski sürümle birebir doğrulandı). index.html engine.js'i game.js'ten önce yükler.
 - 1.4.0: Aşama 2: sunucu kaydın sahibi. cloudPush -> rpc kz_save, comPushLb -> rpc kz_lb_refresh (liderlik kayıttan hesaplanır). Yeni hesaplar yalnızca yeni karakterle başlar (first_days=0). İki kayıt arası en az 5 sn (min_save_s); 'cok sik kayit' hatasında istemci sessizce yeniden dener.
 - 1.3.4: Hile koruması aşama 1 (sql/koruma.sql): sunucu, kayıtlar arası geçen süreye göre mantıksız ilerlemeyi reddeder. Eşya sınırları: rl/bp bölge sınırı, sahte elit eşya (st.l) engeli. Liderlik değerleri kayıtlı veriyle uyuşmak zorunda. Yeni eşya kuralları takas aşamasında gözden geçirilmeli (kz_item_err).
@@ -50,7 +51,7 @@ Neden: sunucu "savaş şu kadar sürede bitebilir" diyebilir ama gerçek hasarı
 Yöntem: Supabase Edge Function (Deno) aynı engine.js'i kullanır. Savaş mantığı (act, mobTurn, hit, win ödülü, drop, matDrop, towerMob, otomatik iksir/yetenek) ekrandan ayrılıp engine.js'e taşınır; telefon sonucu sunucudan alıp ekranda oynatır.
 Parçalar:
  1. Veri/formüller engine.js'e (YAPILDI, 1.4.1)
- 2. Savaş döngüsü saf fonksiyona (rng parametreli), Node'da test; eski oyunla sonuç karşılaştırma
+ 2. Savaş döngüsü saf fonksiyona (rng parametreli), Node'da test; eski oyunla sonuç karşılaştırma (YAPILDI, 1.4.2)
  3. Edge Function `battle`: kaydı sunucudan okur, savaşı oynatır, ödülü sunucu kaydına yazar (kz_apply, sadece service_role)
  4. Telefon: savaş sonucunu sunucudan alır, log'u oynatır; kz_save sunucu alanlarını (xp, seviye, öldürme, kule, elit eşya, ödüller) değiştiremez
  5. Görev/sandık/satış/demirci kazançları sırayla sunucuya (aşama 3b)

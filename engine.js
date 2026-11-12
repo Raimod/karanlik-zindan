@@ -109,6 +109,178 @@ if(tb.atk)pa+=tb.atk;if(tb.arm)pd+=tb.arm;if(tb.hp)php+=tb.hp;if(tb.cr)cr+=tb.cr
 const fAtk=Math.floor(atk*(1+pa/100));
 return{atk:fAtk,minAtk:Math.max(1,Math.floor(fAtk*.85)),maxAtk:Math.max(1,Math.ceil(fAtk*1.15)),arm:Math.floor(arm*(1+pd/100)),hp:Math.floor(hp*(1+php/100)),mp:Math.floor(mp*(1+pmp/100)),cr:Math.min(75,Math.floor(cr))}}
 
-const KZ={SL,SN,CL,G,RG,TITLES,POT_DEF,CW,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf};
+
+/* ============================================================
+   SAVAŞ MOTORU
+   Ekrana dokunmaz. Ne olacağını "olay listesi" (out) olarak döndürür:
+   {lg:"yazı"} {fx:[yazı,renk]} {snd:"hit"} {toast:"yazı"} {shake:1} {vig:1} {ev:[ad,sayı]}
+   Rastgelelik rng parametresinden gelir (aynı tohum = aynı savaş).
+   B = savaş durumu (oyundaki CB ile aynı alanlar), p = karakter (oyundaki P).
+   ============================================================ */
+const MT={kirik:["⚙️","Demir Kırığı"],zehir:["🧪","Zehir Bezi"],zirh:["🪨","Zırh Parçası"],tuy:["🪶","Çevik Tüy"],oz:["🌿","Yeşil Öz"],kan:["🩸","Kan Kristali"],ruh:["👻","Elit Ruhu"]};
+const TM={poison:"zehir",armor:"zirh",swift:"tuy",regen:"oz",drain:"kan"},NT=["zehir","zirh","tuy","oz"];
+const mkRng=f=>({R:n=>f()*n,RI:(a,b)=>Math.floor(a+f()*(b-a+1))});
+const _lg=(o,t)=>o.push({lg:t});
+
+function syncP(p){const d=statsOf(p);p.maxHp=d.hp;p.maxMp=d.mp;p.hp=Math.min(p.hp,p.maxHp);p.mp=Math.min(p.mp,p.maxMp)}
+function pickBestAvailPotOf(p,t,pref){
+  if(pref&&pref!=="off"&&(p.pot[t][pref]||0)>0)return pref;
+  return null;
+}
+function towerMobOf(p,f){const r=Math.min(4,Math.floor((p.lv-1)/10)),b=f%5==0,t=RG[r].mobs[b?3:f%3],s=1+f*.07;
+return{...t,id:"t"+f,lv:Math.min(60,p.lv+Math.floor(f/4)),hp:Math.floor(t.hp*s),mx:Math.floor(t.hp*s),atk:Math.floor(t.atk*s),def:Math.floor(t.def*s),xp:Math.floor(t.xp*s*.6),el:b,name:(b?"Kule Muhafızı ":"")+t.name+" · Kat "+f}}
+
+/* Yeni savaş durumu */
+function newBattle(p,ri,mi,tw){
+  const m=tw?towerMobOf(p,tw):{...RG[ri].mobs[mi]};
+  m.tr=m.el?"boss":["poison","armor","swift","regen","drain"][(m.ri+m.mi)%5];
+  if(p.hp<=0)p.hp=1;
+  return{ri:m.ri,mi:m.mi,mob:m,tw:tw||0,pz:0,pzT:0,ph:0,armor:m.tr=="armor",sh:0,shT:0,dot:0,dotT:0,tele:false,stun:false,rage:false};
+}
+
+/* Canavarın oyuncuya vuruşu */
+function bHit(B,p,a,t,out,rng){
+  const m=B.mob,ld=m.lv-p.lv,ar=statsOf(p).arm;
+  a=Math.floor(a*(.90+rng.R(.20)));
+  if(ld>=3)a=Math.floor(a*(1+(ld-2)*.15));
+  a=Math.max(8,Math.floor(a*(1-ar/(ar+180))));
+  out.push({vig:1});
+  if(B.sh>0){const b=Math.min(B.sh,a);B.sh-=b;a-=b;_lg(out,"🛡️ Kalkan <b style=color:#38bdf8>"+b+"</b> hasarı emdi")}
+  if(a>0){p.hp=Math.max(0,p.hp-a);if(m.tr=="drain")m.hp=Math.min(m.mx,m.hp+Math.floor(a*.5));out.push({snd:"hit"});_lg(out,t?"💥 <b style=color:#f43f5e>[AĞIR DARBE]</b> "+a+" hasar aldın!":"🩸 "+a+" hasar aldın")}
+}
+
+/* Oyuncunun hamlesi: i=-1 temel saldırı, 0..3 yetenek. out.acted=false ise hamle yapılmadı (mana yok). */
+function bAct(B,p,i,rng){
+  const out=[];out.acted=false;
+  const isBasic=i<0,c=CL[p.cls],s=isBasic?{n:"Temel saldırı",mp:0,m:1,dot:0}:c.sk[i],rk=isBasic?0:p.sr[i]||0,rm=(1+rk*.05)*(rk>=50?1.25:1);
+  if(p.mp<s.mp){out.push({toast:"Yetersiz mana!"});return out}
+  p.mp-=s.mp;out.acted=true;
+  const d=statsOf(p),m=B.mob;
+  if(!isBasic&&s.i&&B.tele){B.tele=false;B.stun=true;B.armor=false;out.push({snd:"int"});_lg(out,"⚡ <b style=color:#e6b450>KESİNTİ!</b> Düşmanın hazırlığı bozuldu, tur kaybetti.");out.push({fx:["KESİNTİ!","#e6b450"]})}
+  if(!isBasic&&s.heal){const h=Math.floor(p.maxHp*.45*(1+p.at.int*.01));p.hp=Math.min(p.maxHp,p.hp+h);out.push({snd:"pot"});_lg(out,"💚 +"+h+" HP");out.push({fx:["+"+h,"#22c55e"]})}
+  if(!isBasic&&s.sh){B.sh=Math.floor(p.maxHp*.35*rm);B.shT=3;_lg(out,"🛡️ Kalkan açtın ("+B.sh+")")}
+  if(s.m>0){
+    const ld=m.lv-p.lv,rg=isBasic?(.85+rng.R(.30)):(.90+rng.R(.20));
+    let pen=ld>=3?Math.max(.25,1-(ld-2)*.12):1,x=Math.floor(d.atk*rg*s.m*rm*(1-m.def/(m.def+200))*pen),gl=ld>=5&&rng.R(1)<.4;
+    if(gl)x=Math.floor(x*.35);
+    const cr=s.crit||rng.R(100)<d.cr;
+    if(cr){x=Math.floor(x*1.8);out.push({snd:"crit"});out.push({ev:["crit",1]})}else out.push({snd:"hit"});
+    if(B.armor)x=Math.floor(x*.6);
+    x=Math.max(5,x);m.hp=Math.max(0,m.hp-x);p.st.d=Math.max(p.st.d,x);
+    out.push({ev:["dmg",x]});out.push({shake:1});out.push({fx:[cr?"💥"+x:x,cr?"#e6b450":"#fff"]});
+    _lg(out,(cr?"⚡ ":"")+(gl?"🛡️ ":"")+s.n+": <b style=color:#e5484d>"+x+"</b> hasar");
+  }
+  if(!isBasic&&s.dot){B.dot=Math.max(3,Math.floor(d.atk*.3*rm));B.dotT=3;B.dotN=p.cls=="tank"?"🩸 İç Kanama":p.cls=="mage"?"🔥 Yanma":p.cls=="archer"?"🧪 Zehir":p.cls=="assassin"?"🩸 Kanama":p.cls=="healer"?"✨ Kutsal Yanık":"☠️ Etki"}
+  return out;
+}
+
+/* Canavarın sırası. Bittikten sonra: p.hp<=0 ise oyuncu öldü, B.mob.hp<=0 ise canavar öldü. */
+function bMobTurn(B,p,rng){
+  const out=[],m=B.mob;
+  const regenSet=getActiveSetsOf(p).find(s=>s.regenPct>0);
+  if(regenSet&&p.hp<p.maxHp){const rg=Math.max(5,Math.floor(p.maxHp*(regenSet.regenPct/100)));p.hp=Math.min(p.maxHp,p.hp+rg);_lg(out,"🌿 Set yenilemesi: +"+rg+" HP")}
+  if(m.tr=="regen")m.hp=Math.min(m.mx,m.hp+Math.floor(m.mx*.03));
+  if(B.pzT>0){p.hp=Math.max(0,p.hp-B.pz);B.pzT--;_lg(out,"🤢 Zehir: <b style=color:#a3e635>"+B.pz+"</b> hasar");if(p.hp<=0)return out}
+  if(B.dotT>0){m.hp=Math.max(0,m.hp-B.dot);B.dotT--;_lg(out,(B.dotN||"☠️ Etki")+": <b style=color:#a3e635>"+B.dot+"</b> hasar");out.push({fx:[B.dot,"#a3e635"]});if(m.hp<=0)return out}
+  if(m.el&&B.ph<2&&m.hp<=m.mx*(B.ph?.33:.66)){B.ph++;B.rage=true;m.atk=Math.floor(m.atk*1.3);_lg(out,"🔥 <b style=color:#f43f5e>"+m.name+" "+(B.ph+1)+". faza geçti!</b> Daha sert vuruyor.");out.push({fx:[(B.ph+1)+". FAZ!","#f43f5e"]})}
+  if(B.stun){B.stun=false;_lg(out,"💫 "+m.name+" sersemledi, saldıramadı.")}
+  else if(B.tele){B.tele=false;bHit(B,p,Math.floor(m.atk*2.5),true,out,rng)}
+  else if(rng.R(1)<(B.rage?.5:m.el?.38:.25)){B.tele=true;_lg(out,"⚠️ <b style=color:#f43f5e>"+m.name+"</b> güçlü bir saldırı hazırlıyor!")}
+  else{bHit(B,p,m.atk,false,out,rng);if(m.tr=="swift"&&rng.R(1)<.3)bHit(B,p,Math.floor(m.atk*.6),false,out,rng);if(m.tr=="poison"){B.pz=Math.max(8,Math.floor(m.atk*.15));B.pzT=3;_lg(out,"🤢 Zehirlendin!")}}
+  if(B.shT>0&&--B.shT==0)B.sh=0;
+  return out;
+}
+
+/* Savaşta iksir içme. quiet=true ise uyarı yazısı üretmez (oto savaş). out.ok = içildi mi. */
+function bPot(p,t,sz,quiet){
+  const out=[];out.ok=false;
+  const d=POT_DEF[t][sz];
+  if((p.pot[t][sz]||0)<=0){if(!quiet)out.push({toast:`${d.n} kalmadı (yanındaki K/O/B tuşuyla boyut değiştir)`});return out}
+  if(t=="hp"&&p.hp>=p.maxHp){if(!quiet)out.push({toast:"Canın zaten tamamen dolu!"});return out}
+  if(t=="mp"&&p.mp>=p.maxMp){if(!quiet)out.push({toast:"Manan zaten tamamen dolu!"});return out}
+  p.pot[t][sz]--;out.push({snd:"pot"});out.push({ev:["pot",1]});
+  if(t=="hp"){const r=Math.floor(p.maxHp*d.pct);p.hp=Math.min(p.maxHp,p.hp+r);out.push({fx:["+"+r,"#22c55e"]});_lg(out,`🧪 ${d.n}: <b style=color:#4ade80>+${r} HP</b> (Kalan: ${p.pot.hp[sz]})`)}
+  else{const r=Math.floor(p.maxMp*d.pct);p.mp=Math.min(p.maxMp,p.mp+r);out.push({fx:["+"+r,"#38bdf8"]});_lg(out,`💧 ${d.n}: <b style=color:#38bdf8>+${r} MP</b> (Kalan: ${p.pot.mp[sz]})`)}
+  out.ok=true;return out;
+}
+
+/* Oto savaşın bir adımı. kind: "pot" (iksir içti), "stop" (oto savaş durmalı), "act" (k numaralı hamle yap, -1 temel saldırı) */
+function bAutoStep(B,p,rng){
+  const out=[];
+  const cfg=p.autoCfg||{hp:"S",mp:"S",hpThr:40,mpThr:25,skills:[1,1,1,1]};
+  const skOn=Array.isArray(cfg.skills)?cfg.skills:[1,1,1,1];
+  if(p.hp<p.maxHp*(cfg.hpThr/100)){
+    const hSz=pickBestAvailPotOf(p,"hp",cfg.hp);
+    if(hSz){const o=bPot(p,"hp",hSz,true);out.push(...o);if(o.ok)return{out,kind:"pot"}}
+    if(p.hp<p.maxHp*.18){_lg(out,"⛔ Oto savaş durdu: can kritik ve seçili iksir bitti");return{out,kind:"stop"}}
+  }
+  if(p.mp<p.maxMp*(cfg.mpThr/100)){
+    const mSz=pickBestAvailPotOf(p,"mp",cfg.mp);
+    if(mSz){const o=bPot(p,"mp",mSz,true);out.push(...o);if(o.ok)return{out,kind:"pot"}}
+  }
+  const sk=CL[p.cls].sk;
+  if(B.tele){const k=sk.findIndex((s,i)=>skOn[i]&&s.i&&p.mp>=s.mp);if(k>-1)return{out,kind:"act",k}}
+  if(B.sh<=0&&B.shT==0){const k=sk.findIndex((s,i)=>skOn[i]&&s.sh&&p.mp>=s.mp&&rng.R(1)<.3);if(k>-1)return{out,kind:"act",k}}
+  if(p.maxHp-p.hp>p.maxHp*.5){const k=sk.findIndex((s,i)=>skOn[i]&&s.heal&&p.mp>=s.mp);if(k>-1)return{out,kind:"act",k}}
+  let b=-1,bm=0;sk.forEach((s,i)=>{if(skOn[i]&&!s.heal&&p.mp>=s.mp&&s.m*(1+(p.sr[i]||0)*.05)>bm&&s.mp<=p.mp*.6){bm=s.m;b=i}});
+  return{out,kind:"act",k:b};
+}
+
+/* Eşya düşürme */
+function dropItem(p,m,fg,rng){
+  const out=[];
+  if(p.inv.length>=50){_lg(out,"⚠️ Çanta dolu, eşya kayboldu!");return out}
+  const ks=Object.keys(CL),rc=rng.R(1)<.6?p.cls:ks[rng.RI(0,4)],si=rng.RI(0,7),sl=SL[si],r=RG[m.ri];let g=1,x=rng.R(100);
+  if(m.el)g=x<=2.5?5:x<=15?4:x<=40?3:x<=70?2:1;else g=x<=.4?5:x<=5?4:x<=18?3:x<=45?2:1;
+  if(fg)g=Math.max(g,fg);
+  const ac=(()=>{const y=rng.R(100);return y<=1?4:y<=5?3:y<=13?2:y<=28?1:0})(),P0=[["atk","Saldırı Gücü"],["def","Zırh Direnci"],["crit","Kritik Vuruş"]],af=[];
+  for(let n=0;n<ac;n++){const q=P0[rng.RI(0,2)];af.push({t:q[0],n:q[1],v:rng.RI(1,10),l:false})}
+  const it={name:r.ore+" "+CL[rc].it[si],setOre:r.ore,slot:sl,rc,rl:r.req,g,p:0,bp:r.pw,af};
+  p.inv.push(it);p.st.l+=g==5?1:0;
+  if(g>=3)out.push({ev:["drop3",1]});
+  if(g==5){out.push({snd:"elite"});out.push({toast:"👑 KADİM ELİT EŞYA: "+it.name+"!"});_lg(out,"👑 <b style=color:#e6b450>[JACKPOT]</b> "+it.name)}
+  else _lg(out,"📦 <b style=color:"+G[g].c+">"+it.name+" ["+G[g].t+"]</b>"+(rc==p.cls?" ✅":""));
+  return out;
+}
+
+function _gmat(p,k,n,out){p.mat[k]=(p.mat[k]||0)+n;out.push({ev:["mat",n]});_lg(out,MT[k][0]+" +"+n+" "+MT[k][1])}
+function matDropOf(p,m,rng,out){
+  if(rng.R(100)<65)_gmat(p,"kirik",rng.RI(1,2),out);
+  const k=TM[m.tr];if(k&&rng.R(100)<40)_gmat(p,k,1,out);
+  if(m.el){_gmat(p,"ruh",rng.RI(1,2),out);if(rng.R(100)<50)_gmat(p,"kan",1,out)}
+}
+
+/* Zafer: ödülleri verir. {kill:..} olayı görev ilerlemesi için telefona bildirilir. */
+function bWin(B,p,rng){
+  const out=[];B.over=true;
+  const m=B.mob,g=rng.RI(m.g[0],m.g[1]),x=killXp(m.xp,m.lv,p.lv);
+  p.gold+=g;p.xp+=x;p.st.k++;p.stk++;
+  out.push({kill:{el:!!m.el,tw:B.tw,ri:m.ri,mi:m.mi}});
+  if(m.el){p.st.e++;if(!B.tw)p.boss[m.ri]=true}
+  _lg(out,"🎉 <b>"+m.name+"</b> yenildi! +"+g+"🪙 "+(x?"+"+x+" XP":"(0 XP, seviye farkı)"));
+  if(m.el&&!B.tw&&m.ri<4&&!p.boss[m.ri+1])_lg(out,"🗝️ Yeni bölgenin kapısı açıldı!");
+  while(p.xp>=reqXp(p.lv)&&p.lv<50){
+    const prevHp=p.maxHp,prevMp=p.maxMp;p.xp-=reqXp(p.lv);p.lv++;p.sp+=2;p.ap+=3;
+    out.push({ev:["lvl",p.lv]});out.push({snd:"lvl"});syncP(p);
+    const dHp=p.maxHp-prevHp,dMp=p.maxMp-prevMp;
+    out.push({toast:"🌟 Seviye "+p.lv+"! (+"+dHp+" HP, +"+dMp+" MP, +2 SP, +3 AP)"});
+    p.hp=p.maxHp;p.mp=p.maxMp;
+  }
+  if(rng.R(1)<.16){const t=rng.R(1)<.5?"hp":"mp",r=rng.R(100),sz=r<65?"S":r<92?"M":"L",d=POT_DEF[t][sz];p.pot[t][sz]=(p.pot[t][sz]||0)+1;_lg(out,`${d.e} 1× <b style=color:${G[d.g].c}>${d.n}</b> buldun`)}
+  matDropOf(p,m,rng,out);
+  if(B.tw){out.push({ev:["tower",B.tw]});p.tw=Math.max(p.tw,B.tw);if(B.tw%5==0){p.ch++;_lg(out,"🎁 Kat ödülü: sandık!")}}
+  if(m.el&&!B.tw&&rng.R(100)<50){p.ch++;_lg(out,"🎁 Elit sandığı düştü!")}
+  if(m.el||rng.R(100)<12)out.push(...dropItem(p,m,0,rng));
+  syncP(p);
+  return out;
+}
+
+/* Yenilgi: altının %10'u gider, can %30 */
+function bLose(p){
+  const l=Math.floor(p.gold*.1);p.gold-=l;p.st.dm++;p.stk=0;p.hp=Math.max(1,Math.floor(p.maxHp*.3));syncP(p);
+  return{lost:l};
+}
+
+const KZ={SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
 (typeof globalThis!=="undefined"?globalThis:window).KZ=KZ;
 if(typeof module!=="undefined"&&module.exports)module.exports=KZ;
