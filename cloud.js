@@ -258,11 +258,32 @@ function cloudHTML(){
 }
 function cloudUI(){
   const keep={};
-  ["u","p"].forEach(k=>["c","m"].forEach(w=>{const e=$("cl-"+k+"-"+w);if(e)keep[e.id]=e.value}));
+  ["u","p"].forEach(k=>["c","m","g"].forEach(w=>{const e=$("cl-"+k+"-"+w);if(e)keep[e.id]=e.value}));
   const c=$("cloud-c");if(c)c.innerHTML=cloudPanel("c");
   const m=$("cloud-m");if(m&&!CLOUD.asking)m.innerHTML=cloudPanel("m");
   Object.keys(keep).forEach(id=>{const e=$(id);if(e)e.value=keep[id]});
   const b=$("cl-open");if(b)b.textContent=CLOUD.state==="in"?"☁️ Bağlı":"☁️ Hesap";
+  cloudGate();
+}
+/* Giriş zorunlu: hesapla giriş yapılana kadar oyun ekranı kapalı kalır.
+   İstisna: daha önce bu cihazda giriş yapılmışsa ve şu an çevrimdışıysa oyun açılır. */
+function cloudGate(){
+  let g=$("cloud-gate");
+  let wasOk=false;try{const o=JSON.parse(localStorage.getItem(CLOUD_SYNC_KEY)||"null");wasOk=!!(o&&o.uid)}catch(e){}
+  if(CLOUD.state==="in"||(CLOUD.state==="offline"&&wasOk)){if(g)g.remove();return}
+  if(!g){
+    g=document.createElement("div");g.id="cloud-gate";
+    g.style.cssText="position:fixed;inset:0;background:#07060c;z-index:500;display:flex;align-items:center;justify-content:center;padding:18px;overflow-y:auto";
+    document.body.appendChild(g);
+  }
+  const st=CLOUD.state;
+  let body;
+  if(st==="loading")body=`<p class="mu" style="font-size:12px;text-align:center">Bağlanıyor...</p>`;
+  else if(st==="offline")body=`<p class="mu" style="font-size:12px;margin-bottom:10px">Sunucuya ulaşılamıyor. Oynamak için hesapla giriş yapman gerekiyor, internetini kontrol et.</p><button class="btn" onclick="cloudRetry()">Tekrar dene</button>`;
+  else body=cloudPanel("g");
+  const keep={};["u","p"].forEach(k=>{const e=$("cl-"+k+"-g");if(e)keep[e.id]=e.value});
+  g.innerHTML=`<div class="mm2" style="max-width:360px;width:100%"><div class="ct" style="text-align:center;font-size:18px">⚔️ Karanlık Zindan</div><p class="mu" style="text-align:center;font-size:11px;margin:4px 0 12px">Oynamak için giriş yap veya hesap oluştur</p>${body}</div>`;
+  Object.keys(keep).forEach(id=>{const e=$(id);if(e)e.value=keep[id]});
 }
 function cloudInjectBtn(){
   const top=document.querySelector("#cs-screen .cs-top");

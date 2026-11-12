@@ -33,6 +33,7 @@ Bu dosya, projede çalışan herkesin (Berkay, Claude, Gemini, GPT) okuması iç
 
 ## Değişiklik günlüğü
 
+- 1.3.3: Giriş zorunlu: hesapla giriş yapılmadan oyun açılmaz (cloud.js cloudGate). İstisna: daha önce giriş yapılmış cihaz çevrimdışıyken oynayabilir.
 - 1.3.2: Kullanıcı adı sadece giriş ekranında; sohbet ve düğmelerde karakter adı görünür (sohbet adı liderlik tablosundaki karakterden gelir).
 - 1.3.1: Sıralamada artık kullanıcı adı değil karakter adı görünür. Hata düzeltme: hesaptan çıkınca cihazdaki karakterler siliniyor (bulutta kalır), başka hesap açınca eski hesabın karakteri kopyalanmıyor.
 - 1.3.0: Topluluk sekmesi: liderlik tablosu (Seviye/Kule/Elit, ilk 25) ve genel sohbet (4 sn'de yenilenir, 200 karakter, 2 sn hız sınırı, 7 gün saklama, kendi mesajını sil, 🔇 sustur). Alt menü 8 sekme. Not: değerler hâlâ istemciden geliyor, hile sunucu doğrulaması gelene kadar mümkün.
