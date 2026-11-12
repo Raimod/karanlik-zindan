@@ -1,4 +1,4 @@
-const GAME_VERSION="1.1.0";
+const GAME_VERSION="1.2.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -80,9 +80,10 @@ let P=NEW(),tab="character",SF=null,fsrc="eq",sel="tank",armed="",targetCreateSl
 
 const SLOTS_KEY="kz_rpg_slots_v3",ARTS_KEY="kz_rpg_arts_v3";
 
-function saveAll(){
+function saveAll(quiet){
+  /* quiet=true: sadece cihaza yaz (can yenilenmesi, arka plana geçme). Zaman damgasını ve bulut kuyruğunu etkilemez. */
   if(SLOTS[activeSlot]){
-    P.ts=Date.now();
+    if(!quiet)P.ts=Date.now();
     SLOTS[activeSlot]=P;
   }
   try{
@@ -91,8 +92,9 @@ function saveAll(){
   }catch(e){
     toast("⚠️ Depolama alanı sınırına yaklaşıldı!");
   }
+  if(!quiet&&typeof cloudQueue==="function")cloudQueue();
 }
-const save=saveAll;
+const save=()=>saveAll();
 
 function loadAll(){
   try{
@@ -652,7 +654,7 @@ if(charSub=="eq"){
   content=`<div class="cd"><div class="ct">🏅 Unvanlar <span class="mu" style="font-size:10px">Pasif bonus verir</span></div>${titleHtml}</div>`;
 }else{
   content=`<div class="cd"><div class="ct">📊 Savaş & İlerleme Kayıtları</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${box("Öldürme",s.k)}${box("Elit öldürme",s.e)}${box("Kadim eşya",s.l)}${box("En yüksek vuruş",s.d)}${box("Yenilgi",s.dm)}${box("Açılan bölge",Object.keys(P.boss).length+1+"/5")}</div>
-  <button class="btn s" style="margin-top:8px;padding:8px;font-size:11px" onclick="resetGame()">${armed=="rs"?"Emin misin? Tekrar dokun":"Bu karakteri sıfırla"}</button></div>${backupHTML()}`;
+  <button class="btn s" style="margin-top:8px;padding:8px;font-size:11px" onclick="resetGame()">${armed=="rs"?"Emin misin? Tekrar dokun":"Bu karakteri sıfırla"}</button></div>${typeof cloudHTML==="function"?cloudHTML():""}${backupHTML()}`;
 }
 
 v.innerHTML=headerCard+subNav+content;
@@ -1687,7 +1689,7 @@ setInterval(()=>{
     P.mp=Math.min(P.maxMp,P.mp+mpStep);
     hud();
     regenTicks++;
-    if(regenTicks%5===0)saveAll();
+    if(regenTicks%5===0)saveAll(true);
   }
 },2000);
 
@@ -1700,5 +1702,5 @@ addEventListener("DOMContentLoaded",()=>{
     sync();hud();
   }
 });
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveAll()});
-window.addEventListener("pagehide",saveAll);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveAll(true)});
+window.addEventListener("pagehide",()=>saveAll(true));
