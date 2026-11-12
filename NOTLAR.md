@@ -12,6 +12,7 @@ Bu dosya, projede çalışan herkesin (Berkay, Claude, Gemini, GPT) okuması iç
 - `index.html`: sadece iskelet
 - `style.css`: tasarım
 - `game.js`: oyun kodu (savaş, eşya, görev, kayıt, arayüz)
+- `engine.js`: oyunun veri tabloları ve formülleri (sınıflar, bölgeler, canavarlar, eşya gücü, XP, set/unvan, karakter gücü statsOf). Ekrandan bağımsız: document/window/P/toast YOK. Telefon (game.js'ten önce) ve ileride sunucu aynı dosyayı kullanır. Formülleri değiştirirsen SADECE burada değiştir
 - `cloud.js`: Supabase hesap ve bulut kayıt (giriş, kayıt, eşitleme, çakışma sorusu)
 - `img/`: sınıf görselleri (tank, mage, archer, assassin, healer .webp)
 - `community.js`: Topluluk sekmesi (liderlik tablosu + genel sohbet). cloud.js'e bağlı, giriş gerekir
@@ -35,6 +36,7 @@ Bu dosya, projede çalışan herkesin (Berkay, Claude, Gemini, GPT) okuması iç
 
 ## Değişiklik günlüğü
 
+- 1.4.1: Aşama 3 hazırlığı: veri tabloları ve formüller game.js'ten engine.js'e taşındı. Oyun davranışı değişmedi (175 karakterde eski sürümle birebir doğrulandı). index.html engine.js'i game.js'ten önce yükler.
 - 1.4.0: Aşama 2: sunucu kaydın sahibi. cloudPush -> rpc kz_save, comPushLb -> rpc kz_lb_refresh (liderlik kayıttan hesaplanır). Yeni hesaplar yalnızca yeni karakterle başlar (first_days=0). İki kayıt arası en az 5 sn (min_save_s); 'cok sik kayit' hatasında istemci sessizce yeniden dener.
 - 1.3.4: Hile koruması aşama 1 (sql/koruma.sql): sunucu, kayıtlar arası geçen süreye göre mantıksız ilerlemeyi reddeder. Eşya sınırları: rl/bp bölge sınırı, sahte elit eşya (st.l) engeli. Liderlik değerleri kayıtlı veriyle uyuşmak zorunda. Yeni eşya kuralları takas aşamasında gözden geçirilmeli (kz_item_err).
 - 1.3.3: Giriş zorunlu: hesapla giriş yapılmadan oyun açılmaz (cloud.js cloudGate). İstisna: daha önce giriş yapılmış cihaz çevrimdışıyken oynayabilir.
@@ -42,3 +44,14 @@ Bu dosya, projede çalışan herkesin (Berkay, Claude, Gemini, GPT) okuması iç
 - 1.3.1: Sıralamada artık kullanıcı adı değil karakter adı görünür. Hata düzeltme: hesaptan çıkınca cihazdaki karakterler siliniyor (bulutta kalır), başka hesap açınca eski hesabın karakteri kopyalanmıyor.
 - 1.3.0: Topluluk sekmesi: liderlik tablosu (Seviye/Kule/Elit, ilk 25) ve genel sohbet (4 sn'de yenilenir, 200 karakter, 2 sn hız sınırı, 7 gün saklama, kendi mesajını sil, 🔇 sustur). Alt menü 8 sekme. Not: değerler hâlâ istemciden geliyor, hile sunucu doğrulaması gelene kadar mümkün.
 - 1.2.0: Bulut hesap ve kayıt (cloud.js, sql/kurulum.sql). Cihaz değişince aynı karakter, 15 sn'de otomatik bulut kaydı, çakışmada "hangi kayıt kalsın" sorusu.- 1.1.0: Tek HTML dosyası index.html + style.css + game.js + img/ olarak bölündü. Kayıt yedeği kutusunun 2 saniyede silinmesi düzeltildi. Eski tek yuvalı kayıt (kz_rpg_v2) 1. yuvaya taşınıyor.
+
+## Aşama 3 planı: savaşı sunucuda oynat (karar verildi)
+Neden: sunucu "savaş şu kadar sürede bitebilir" diyebilir ama gerçek hasarı bilemez; zaman kontrolü mevcut korumadan çok az iyi. Gerçek çözüm savaşı sunucuda oynatmak.
+Yöntem: Supabase Edge Function (Deno) aynı engine.js'i kullanır. Savaş mantığı (act, mobTurn, hit, win ödülü, drop, matDrop, towerMob, otomatik iksir/yetenek) ekrandan ayrılıp engine.js'e taşınır; telefon sonucu sunucudan alıp ekranda oynatır.
+Parçalar:
+ 1. Veri/formüller engine.js'e (YAPILDI, 1.4.1)
+ 2. Savaş döngüsü saf fonksiyona (rng parametreli), Node'da test; eski oyunla sonuç karşılaştırma
+ 3. Edge Function `battle`: kaydı sunucudan okur, savaşı oynatır, ödülü sunucu kaydına yazar (kz_apply, sadece service_role)
+ 4. Telefon: savaş sonucunu sunucudan alır, log'u oynatır; kz_save sunucu alanlarını (xp, seviye, öldürme, kule, elit eşya, ödüller) değiştiremez
+ 5. Görev/sandık/satış/demirci kazançları sırayla sunucuya (aşama 3b)
+Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ücretsiz plan 500 bin çağrı/ay), oyun mantığı değişince Edge Function da güncellenmeli.
