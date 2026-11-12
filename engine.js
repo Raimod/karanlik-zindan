@@ -346,6 +346,170 @@ function chestOpen(p,n,rng){
   out.push({snd:"elite"});out.res=res;out.ok=true;return out;
 }
 
-const KZ={SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
+/* ===== EKONOMİ, GÖREV, GÜNLÜK (sunucuda işlenir; telefon yalnızca sonucu gösterir) ===== */
+const QS=[];RG.forEach((r,ri)=>[[0,8,40],[2,6,70],[3,1,180]].forEach(([mi,n,g],k)=>QS.push({id:"q"+ri+mi,ri,mi,n,g:Math.floor(g*Math.pow(ri+1,1.6)),sc:k==2?1:0,t:r.m[mi][0]})));
+QS.push({id:"qa",ri:-1,mi:-1,n:60,g:400,sc:1,t:"herhangi bir canavar"});
+const QV=[
+{id:"v1",h:"Savaş",k:"crit",n:30,txt:"30 kritik vuruş yap",g:150,m:{kirik:5}},
+{id:"v2",h:"Savaş",k:"crit",n:150,txt:"150 kritik vuruş yap",g:600,ch:1},
+{id:"v3",h:"Savaş",k:"dmg",abs:1,n:500,txt:"Tek vuruşta 500 hasar ver",g:300,ch:1},
+{id:"v4",h:"Demirci",k:"fok",n:5,txt:"5 başarılı yükseltme yap",g:200,m:{kirik:8}},
+{id:"v5",h:"Demirci",k:"fok",n:25,txt:"25 başarılı yükseltme yap",g:900,sc:2},
+{id:"v6",h:"Toplayıcı",k:"mat",n:20,txt:"20 malzeme topla",g:150},
+{id:"v7",h:"Toplayıcı",k:"mat",n:100,txt:"100 malzeme topla",g:500,m:{ruh:2,kan:2}},
+{id:"v8",h:"Kule",k:"tower",abs:1,n:5,txt:"Kulede 5. kata ulaş",g:300,ch:1},
+{id:"v9",h:"Kule",k:"tower",abs:1,n:15,txt:"Kulede 15. kata ulaş",g:900,ch:2},
+{id:"v10",h:"Gelişim",k:"lvl",abs:1,n:10,txt:"10. seviyeye ulaş",g:200,m:{kirik:10}},
+{id:"v11",h:"Gelişim",k:"lvl",abs:1,n:25,txt:"25. seviyeye ulaş",g:800,sc:1},
+{id:"v12",h:"Gelişim",k:"lvl",abs:1,n:40,txt:"40. seviyeye ulaş",g:2000,ch:2},
+{id:"v13",h:"Ganimet",k:"drop3",n:3,txt:"3 adet GR-III veya üstü eşya bul",g:300},
+{id:"v14",h:"Ganimet",k:"chest",n:5,txt:"5 sandık aç",g:250,sc:1},
+{id:"v15",h:"Hazırlık",k:"pot",n:10,txt:"10 iksir kullan",g:100}];
+const qpOf=(p,q)=>{if(!p.q||typeof p.q!=="object")p.q={};return p.q[q.id]||(p.q[q.id]={p:0,c:0})};
+function evQ(p,k,a){
+  a=a===undefined?1:a;
+  QV.forEach(q=>{if(q.k!=k)return;const s=qpOf(p,q);if(s.c||s.p>=q.n)return;s.p=Math.min(q.n,q.abs?Math.max(s.p,a):s.p+a)});
+  if(k!="tower"&&k!="lvl"&&k!="dmg"&&p.dl&&Array.isArray(p.dl.q))p.dl.q.forEach(q=>{if(q.k==k&&!q.c&&q.p<q.n)q.p=Math.min(q.n,q.p+a)});
+}
+function killQ(p,k){
+  if(p.dl&&Array.isArray(p.dl.q))p.dl.q.forEach(q=>{if(q.p<q.n&&(q.k=="any"||(q.k=="elite"&&k.el)||(q.k=="tower"&&k.tw)))q.p++});
+  QS.forEach(q=>{if(q.ri<0||(q.ri==k.ri&&q.mi==k.mi)){const s=qpOf(p,q);if(s.p<q.n)s.p++}});
+}
+/* savaş/işlem çıktısındaki olayları görev ilerlemesine işle */
+function questOut(p,out){for(const e of out||[]){if(e.ev)evQ(p,e.ev[0],e.ev[1]);else if(e.kill)killQ(p,e.kill)}}
+function rollDaily(p,rng,t){
+  if(!p.dl||typeof p.dl!=="object"||Array.isArray(p.dl))p.dl={d:"",s:0,c:0,q:[]};
+  const d=p.dl;if(d.d==t)return false;
+  const y=new Date(Date.parse(t+"T00:00:00Z")-864e5).toISOString().slice(0,10);
+  if(d.l!=y&&d.l!=t)d.s=0;
+  d.d=t;d.c=0;
+  d.q=[{k:"any",n:15,g:60+p.lv*15},{k:"elite",n:2,g:100+p.lv*25,ch:1},{k:"tower",n:3,g:80+p.lv*20},
+    [{k:"crit",n:12,g:90+p.lv*15},{k:"fok",n:2,g:100+p.lv*15,m:{kirik:5}},{k:"mat",n:12,g:80+p.lv*10},{k:"pot",n:3,g:70+p.lv*10}][rng.RI(0,3)]].map(q=>({...q,p:0,c:0}));
+  return true;
+}
+const sellV=i=>3+i.rl*2+i.p*3+i.g*i.rl;
+const junkOf=(p,i)=>i.g<=2||(i.rc!=p.cls&&i.g<=3);
+function salvageYield(i){
+  const out={kirik:Math.max(1,Math.floor(i.rl/4)+i.g+i.p)};
+  const regIdx=Math.min(3,Math.floor((i.rl-1)/10));
+  const regMat=NT[regIdx]||"zehir";
+  if(i.g>=2||i.rl>=11)out[regMat]=Math.max(1,Math.floor(i.g/2));
+  if(i.g>=4)out.kan=i.g-3;
+  if(i.g==5)out.ruh=1+Math.floor(i.p/5);
+  return out;
+}
+/* yığın eşyalar: anahtar -> [okuma, yazma, satış fiyatı] */
+const STK_SELL={pot_hp_S:3,pot_hp_M:8,pot_hp_L:20,pot_mp_S:2,pot_mp_M:6,pot_mp_L:16,scroll:50,chest:0,mat_kirik:2,mat_oz:4,mat_zehir:4,mat_zirh:4,mat_tuy:4,mat_kan:15,mat_ruh:25};
+function _stkGet(p,k){
+  if(k==="scroll")return p.sc||0;if(k==="chest")return p.ch||0;
+  if(k.startsWith("pot_"))return (p.pot[k.slice(4,6)]||{})[k.slice(7)]||0;
+  return p.mat[k.slice(4)]||0;
+}
+function _stkSet(p,k,v){
+  if(k==="scroll")p.sc=v;else if(k==="chest")p.ch=v;
+  else if(k.startsWith("pot_"))p.pot[k.slice(4,6)][k.slice(7)]=v;
+  else p.mat[k.slice(4)]=v;
+}
+const _rewTxt=(g,sc,ch,m)=>"+"+g+" 🪙"+(sc?" +📜":"")+(ch?" +🎁":"");
+function _grantQ(p,q){
+  p.gold+=q.g;p.sc+=q.sc||0;p.ch+=q.ch||0;
+  Object.entries(q.m||{}).forEach(([k,n])=>{p.mat[k]=(p.mat[k]||0)+n});
+}
+const _bad=(out,m)=>{out.push({toast:m});out.ok=false;return out};
+/* tek eko işlemi. body.a: sell | salvage | bulk | stack | buy | claim | sync.  dönüş dizisi: .ok, .info */
+function ecoDo(p,body,rng,t,now){
+  const out=[];out.ok=false;const a=body.a;
+  normPotOf(p);
+  if(a==="sell"||a==="salvage"){
+    if(!Number.isInteger(body.i)||body.i<0||body.i>=p.inv.length)return _bad(out,"Eşya bulunamadı");
+    const i=p.inv[body.i];
+    if(a==="sell"){p.gold+=sellV(i);p.inv.splice(body.i,1);out.push({toast:"Satıldı"})}
+    else{
+      const y=salvageYield(i);
+      Object.entries(y).forEach(([k,v])=>{p.mat[k]=(p.mat[k]||0)+v;out.push({ev:["mat",v]})});
+      p.inv.splice(body.i,1);out.push({snd:"hit"});
+      out.push({toast:"🔨 Parçalandı: "+Object.entries(y).map(([k,v])=>MT[k][0]+"+"+v).join(" ")});
+    }
+    out.ok=true;return out;
+  }
+  if(a==="bulk"){
+    const l=p.inv.filter(i=>junkOf(p,i));
+    if(!l.length)return _bad(out,"Satılacak düşük eşya yok");
+    if(body.m==="salvage"){
+      const tot={};
+      l.forEach(i=>{const y=salvageYield(i);Object.entries(y).forEach(([k,v])=>{tot[k]=(tot[k]||0)+v;p.mat[k]=(p.mat[k]||0)+v;out.push({ev:["mat",v]})})});
+      p.inv=p.inv.filter(i=>!junkOf(p,i));out.push({snd:"hit"});
+      out.push({toast:"🔨 Parçalandı: "+Object.entries(tot).map(([k,v])=>MT[k][0]+"+"+v).join(" ")});
+    }else if(body.m==="sell"){
+      let s=0;l.forEach(i=>{s+=sellV(i)});p.inv=p.inv.filter(i=>!junkOf(p,i));p.gold+=s;
+      out.push({toast:"Satıldı: +"+s+" 🪙"});
+    }else return _bad(out,"Geçersiz istek");
+    out.ok=true;return out;
+  }
+  if(a==="stack"){
+    const k=body.key,c=body.cnt;
+    if(typeof k!=="string"||!Object.prototype.hasOwnProperty.call(STK_SELL,k)||!Number.isInteger(c)||c<1)return _bad(out,"Geçersiz istek");
+    if(_stkGet(p,k)<c)return _bad(out,"Yeterli adet yok");
+    _stkSet(p,k,_stkGet(p,k)-c);p.gold+=STK_SELL[k]*c;
+    out.push({toast:"Satıldı: +"+(STK_SELL[k]*c)+" 🪙"});out.ok=true;return out;
+  }
+  if(a==="buy"){
+    const tt=body.t;let cost;
+    if(tt==="sc")cost=150;
+    else if((tt==="hp"||tt==="mp")&&["S","M","L"].includes(body.sz))cost=POT_DEF[tt][body.sz].cost;
+    else return _bad(out,"Geçersiz istek");
+    if(p.gold<cost)return _bad(out,"Yetersiz altın");
+    p.gold-=cost;
+    if(tt==="sc")p.sc++;else p.pot[tt][body.sz]=(p.pot[tt][body.sz]||0)+1;
+    out.push({snd:"pot"});out.push({toast:"Satın alındı"});out.ok=true;return out;
+  }
+  if(a==="claim"){
+    const kd=body.kind;
+    if(kd==="q"||kd==="v"){
+      const q=(kd==="q"?QS:QV).find(x=>x.id===body.id);
+      if(!q)return _bad(out,"Görev bulunamadı");
+      const s=qpOf(p,q);
+      if(s.c||s.p<q.n)return _bad(out,"Görev henüz tamamlanmadı");
+      s.c=1;_grantQ(p,q);out.push({snd:"lvl"});out.push({toast:"Görev ödülü: +"+q.g+" 🪙"+(q.sc?" +📜":"")+(q.ch?" +🎁":"")});
+      out.ok=true;return out;
+    }
+    if(kd==="dq"){
+      const q=p.dl&&Array.isArray(p.dl.q)?p.dl.q[body.i]:null;
+      if(!q||!Number.isInteger(body.i))return _bad(out,"Görev bulunamadı");
+      if(q.c||q.p<q.n)return _bad(out,"Görev henüz tamamlanmadı");
+      q.c=1;p.gold+=q.g;if(q.ch)p.ch++;
+      Object.entries(q.m||{}).forEach(([k,n])=>{p.mat[k]=(p.mat[k]||0)+n});
+      out.push({snd:"lvl"});out.push({toast:"+"+q.g+" 🪙"+(q.ch?" +🎁":"")});out.ok=true;return out;
+    }
+    if(kd==="d"){
+      const d=p.dl;if(!d||d.c)return _bad(out,"Bugünkü ödül alındı");
+      const i=d.s%7,g=[50,100,150,200,300,400,500][i]*(1+Math.floor(p.lv/5));
+      d.c=1;d.s++;d.l=t;p.gold+=g;if(i==6){p.sc++;p.ch++}
+      out.push({snd:"lvl"});out.push({toast:"Giriş ödülü: +"+g+" 🪙"+(i==6?" +📜 +🎁":"")});out.ok=true;return out;
+    }
+    return _bad(out,"Geçersiz istek");
+  }
+  if(a==="sync"){
+    out.ok=true;
+    const last=p.sts;
+    if(last){
+      const m=(now-last)/6e4;
+      if(m>=10){
+        const h=Math.min(8,m/60),g=Math.floor(h*p.lv*12);
+        p.gold+=g;if(h>=1)p.pot.hp.S=(p.pot.hp.S||0)+1;if(h>=4)p.ch++;
+        out.push({toast:"Sen yokken +"+g+" 🪙"+(h>=1?" +🧪":"")+(h>=4?" +🎁":"")});
+      }
+    }
+    return out;
+  }
+  return _bad(out,"Geçersiz istek");
+}
+function normPotOf(p){
+  if(!p.pot||typeof p.pot!=="object")p.pot={};
+  ["hp","mp"].forEach(t=>{p.pot[t]=Object.assign({S:0,M:0,L:0},p.pot[t]&&typeof p.pot[t]==="object"?p.pot[t]:{})});
+  if(!p.mat||typeof p.mat!=="object")p.mat={};
+}
+
+const KZ={QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
 (typeof globalThis!=="undefined"?globalThis:window).KZ=KZ;
 if(typeof module!=="undefined"&&module.exports)module.exports=KZ;

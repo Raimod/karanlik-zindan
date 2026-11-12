@@ -128,21 +128,71 @@ end;
 $$;
 revoke all on function public.kz_items_err(jsonb,jsonb) from public, anon, authenticated;
 
+-- Ekonomi kilidi (srv_lock >= 3): altın, iksir, parşömen, sandık, malzeme istemcide yalnızca AZALABİLİR (harcama);
+-- artışlar sunucudan gelir (savaş, satış, ödül...). Görev/günlük durumu ve sunucu saati (sts) istemcide değişmez.
+create or replace function public.kz_pristine(ns jsonb)
+returns boolean language plpgsql stable set search_path = public as $$
+declare t text; sz text; m record;
+begin
+  if public.kz_n(ns,'gold') > 300 or public.kz_n(ns,'sc') <> 0 or public.kz_n(ns,'ch') <> 0 then return false; end if;
+  foreach t in array array['hp','mp'] loop
+    if public.kz_n(ns->'pot'->t,'S') > 3 or public.kz_n(ns->'pot'->t,'M') <> 0 or public.kz_n(ns->'pot'->t,'L') <> 0 then return false; end if;
+  end loop;
+  if jsonb_typeof(ns->'mat') = 'object' then
+    for m in select * from jsonb_each(ns->'mat') loop
+      if jsonb_typeof(m.value) = 'number' and (m.value#>>'{}')::numeric <> 0 then return false; end if;
+    end loop;
+  end if;
+  if coalesce(ns->'q','{}'::jsonb) <> '{}'::jsonb then return false; end if;
+  if coalesce(ns->'dl'->>'d','') <> '' or public.kz_n(ns->'dl','s') <> 0 or public.kz_n(ns->'dl','c') <> 0
+     or (jsonb_typeof(ns->'dl'->'q') = 'array' and jsonb_array_length(ns->'dl'->'q') > 0) then return false; end if;
+  if public.kz_n(ns,'sts') <> 0 then return false; end if;
+  return true;
+end;
+$$;
+revoke all on function public.kz_pristine(jsonb) from public, anon, authenticated;
+
+create or replace function public.kz_eco_err(ns jsonb, os jsonb)
+returns text language plpgsql stable set search_path = public as $$
+declare t text; sz text; m record;
+begin
+  if public.kz_n(ns,'gold') > public.kz_n(os,'gold') then return 'ilerleme degistirilemez (altin)'; end if;
+  if public.kz_n(ns,'sc') > public.kz_n(os,'sc') then return 'ilerleme degistirilemez (parsomen)'; end if;
+  if public.kz_n(ns,'ch') > public.kz_n(os,'ch') then return 'ilerleme degistirilemez (sandik)'; end if;
+  foreach t in array array['hp','mp'] loop
+    foreach sz in array array['S','M','L'] loop
+      if public.kz_n(ns->'pot'->t,sz) > public.kz_n(os->'pot'->t,sz) then return 'ilerleme degistirilemez (iksir)'; end if;
+    end loop;
+  end loop;
+  if jsonb_typeof(ns->'mat') = 'object' then
+    for m in select * from jsonb_each(ns->'mat') loop
+      if jsonb_typeof(m.value) = 'number' and (m.value#>>'{}')::numeric > public.kz_n(os->'mat', m.key) then
+        return 'ilerleme degistirilemez (malzeme)'; end if;
+    end loop;
+  end if;
+  if coalesce(ns->'q','{}'::jsonb) <> coalesce(os->'q','{}'::jsonb) then return 'ilerleme degistirilemez (gorev)'; end if;
+  if coalesce(ns->'dl','{}'::jsonb) <> coalesce(os->'dl','{}'::jsonb) then return 'ilerleme degistirilemez (gunluk)'; end if;
+  if public.kz_n(ns,'sts') <> public.kz_n(os,'sts') then return 'ilerleme degistirilemez (sure)'; end if;
+  return null;
+end;
+$$;
+revoke all on function public.kz_eco_err(jsonb,jsonb) from public, anon, authenticated;
+
 -- İlerleme alanları kilidi: seviye, tecrübe, kule, boss, öldürme/elit/kadim sayaçları yalnızca sunucu değiştirir.
 create or replace function public.kz_lock_err(ns jsonb, os jsonb)
 returns text language plpgsql stable security definer set search_path = public as $$
-declare same boolean; fresh boolean; e text;
+declare same boolean; fresh boolean; e text; lvl numeric := public.kz_cfg('srv_lock',0);
 begin
   same := os is not null and jsonb_typeof(os) = 'object'
           and (os->>'name') = (ns->>'name') and (os->>'cls') = (ns->>'cls');
-  if public.kz_cfg('srv_lock',0) >= 2 then
+  if lvl >= 2 then
     e := public.kz_items_err(ns, case when same then os else null end);
     if e is not null then return e; end if;
   end if;
   fresh := public.kz_n(ns,'lv') = 1 and public.kz_n(ns,'xp') = 0 and public.kz_n(ns,'tw') = 0
        and public.kz_n(ns->'st','k') = 0 and public.kz_n(ns->'st','e') = 0 and public.kz_n(ns->'st','l') = 0
        and coalesce(ns->'boss','{}'::jsonb) = '{}'::jsonb;
-  if fresh then return null; end if;                       -- yeni (ya da sıfırlanmış) karakter
+  if fresh and (lvl < 3 or public.kz_pristine(ns)) then return null; end if;   -- yeni (ya da sıfırlanmış) karakter
   if not same then return 'yeni karakter baslangic seviyesinde olmali'; end if;
   if public.kz_n(ns,'lv') <> public.kz_n(os,'lv') or public.kz_n(ns,'xp') <> public.kz_n(os,'xp') then
     return 'ilerleme degistirilemez (seviye/tecrube)'; end if;
@@ -152,6 +202,10 @@ begin
     return 'ilerleme degistirilemez (sayaclar)'; end if;
   if coalesce(ns->'boss','{}'::jsonb) <> coalesce(os->'boss','{}'::jsonb) then
     return 'ilerleme degistirilemez (boss)'; end if;
+  if lvl >= 3 then
+    e := public.kz_eco_err(ns, os);
+    if e is not null then return e; end if;
+  end if;
   return null;
 end;
 $$;

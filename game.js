@@ -1,4 +1,4 @@
-const GAME_VERSION="1.5.6";
+const GAME_VERSION="1.6.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -7,8 +7,6 @@ int(){this.t(880,"sine",.08,.3);this.t(1100,"square",.2,.25,80)},pot(){this.t(33
 lvl(){[261,329,392,523,659].forEach((f,i)=>this.t(f,"triangle",.25,.25,i*80))},elite(){[392,523,659,1046].forEach((f,i)=>this.t(f,"square",.35,.25,i*110))}};
 
 /* ---------- VERİ ---------- */
-const QS=[];RG.forEach((r,ri)=>[[0,8,40],[2,6,70],[3,1,180]].forEach(([mi,n,g],k)=>QS.push({id:"q"+ri+mi,ri,mi,n,g:Math.floor(g*Math.pow(ri+1,1.6)),sc:k==2?1:0,t:r.m[mi][0]})));
-QS.push({id:"qa",ri:-1,mi:-1,n:60,g:400,sc:1,t:"herhangi bir canavar"});
 
 /* ---------- UNVANLAR (TITLES) ---------- */
 
@@ -449,11 +447,10 @@ function selectAndPlaySlot(idx){
   armed="";
   $("cs-screen").style.display="none";
   sync();
-  daily();
-  offline();
   saveAll();
   nav();
   view();
+  ecoSync();
   toast("Hoş geldin, "+P.name+"!");
 }
 
@@ -565,7 +562,7 @@ v.innerHTML=headerCard+subNav+content;
 }
 
 function equipTitle(tid){P.title=tid;A.pot();sync();save();view();toast("Unvan kuşanıldı!")}
-function resetGame(){if(armed!="rs"){armed="rs";view();return}const keepArt=P.art,keepName=P.name,keepCls=P.cls;P=NEW();P.art=keepArt;P.name=keepName;P.cls=keepCls;armed="";sync();daily();P.hp=P.maxHp;P.mp=P.maxMp;save();view();toast("Karakter sıfırlandı.")}
+function resetGame(){if(armed!="rs"){armed="rs";view();return}const keepArt=P.art,keepName=P.name,keepCls=P.cls;P=NEW();P.art=keepArt;P.name=keepName;P.cls=keepCls;armed="";sync();P.hp=P.maxHp;P.mp=P.maxMp;save();view();toast("Karakter sıfırlandı.");ecoSync()}
 
 let bagFilter="all"; // "all" | "eq" | "stk" | "junk"
 let bagSort="default"; // "default" | "grade" | "power" | "level" | "slot" | "name"
@@ -678,41 +675,27 @@ v.innerHTML=`<div class="cd" style="padding:9px">
 </div>
 <p class="mu" style="font-size:9px;margin-top:5px">İksir, sandık, ot ve artı basma malzemeleri tek yuvada toplanır (50 ekipman sınırından yer kaplamaz).</p></div>`}
 
-const junk=i=>i.g<=2||(i.rc!=P.cls&&i.g<=3);
-const sellV=i=>3+i.rl*2+i.p*3+i.g*i.rl;
+const junk=i=>junkOf(P,i);
 
-function salvageYield(i){
-  const out={kirik:Math.max(1,Math.floor(i.rl/4)+i.g+i.p)};
-  const regIdx=Math.min(3,Math.floor((i.rl-1)/10));
-  const regMat=NT[regIdx]||"zehir";
-  if(i.g>=2||i.rl>=11)out[regMat]=Math.max(1,Math.floor(i.g/2));
-  if(i.g>=4)out.kan=i.g-3;
-  if(i.g==5)out.ruh=1+Math.floor(i.p/5);
-  return out;
+async function salvageItem(n){
+  closeM();
+  const r=await ecoCall({op:"eco",a:"salvage",i:n});
+  if(r){hud();view()}
 }
 
-function salvageItem(n){
-  const i=P.inv[n];if(!i)return;
-  const y=salvageYield(i);
-  Object.entries(y).forEach(([k,v])=>{P.mat[k]=(P.mat[k]||0)+v;ev("mat",v)});
-  P.inv.splice(n,1);
-  A.hit();closeM();hud();save();view();
-  toast("🔨 Parçalandı: "+Object.entries(y).map(([k,v])=>MT[k][0]+"+"+v).join(" "));
+async function bulk(){
+  const l=P.inv.filter(junk);if(armed!="bk"){armed="bk";view();return}
+  armed="";
+  const r=await ecoCall({op:"eco",a:"bulk",m:"sell"});
+  if(r){hud();view()}else view();
 }
 
-function bulk(){const l=P.inv.filter(junk);if(armed!="bk"){armed="bk";view();return}let t=0;l.forEach(i=>t+=sellV(i));P.inv=P.inv.filter(i=>!junk(i));P.gold+=t;armed="";toast("Satıldı: +"+t+" 🪙");hud();save();view()}
-
-function bulkSalvage(){
+async function bulkSalvage(){
   const l=P.inv.filter(junk);if(!l.length)return;
   if(armed!="sv"){armed="sv";view();return}
-  const tot={};
-  l.forEach(i=>{
-    const y=salvageYield(i);
-    Object.entries(y).forEach(([k,v])=>{tot[k]=(tot[k]||0)+v;P.mat[k]=(P.mat[k]||0)+v;ev("mat",v)});
-  });
-  P.inv=P.inv.filter(i=>!junk(i));
-  armed="";A.hit();hud();save();view();
-  toast("🔨 Parçalandı: "+Object.entries(tot).map(([k,v])=>MT[k][0]+"+"+v).join(" "));
+  armed="";
+  const r=await ecoCall({op:"eco",a:"bulk",m:"salvage"});
+  if(r){hud();view()}else view();
 }
 
 const open=r=>(r==0||P.boss[r-1])&&P.lv>=RG[r].req;
@@ -796,7 +779,7 @@ async function reroll(){
 }
 
 /* ---------- ŞEHİR & YETENEK ---------- */
-function qp(q){return P.q[q.id]||(P.q[q.id]={p:0,c:0})}
+function qp(q){return (P.q&&P.q[q.id])||{p:0,c:0}}
 let citySub="shop"; // "shop" | "alch"
 function setCitySub(s){citySub=s;armed="";view()}
 function cCity(v){
@@ -826,9 +809,9 @@ const alchHtml=`
   </div>`;
 v.innerHTML=subNav+(citySub=="shop"?shopHTML():alchHtml);
 }
-function claim(id){const q=QS.find(x=>x.id==id),s=qp(q);if(s.c||s.p<q.n)return;s.c=1;P.gold+=q.g;P.sc+=q.sc;A.lvl();toast("Görev ödülü: +"+q.g+" 🪙"+(q.sc?" +📜":""));hud();save();view()}
+async function claim(id){const r=await ecoCall({op:"eco",a:"claim",kind:"q",id});if(r){hud();view()}}
 function fount(){P.hp=P.maxHp;P.mp=P.maxMp;A.pot();hud();save();toast("Can ve mana doldu")}
-function buy(t,c,sz="S"){if(P.gold<c)return toast("Yetersiz altın");P.gold-=c;if(t=="sc")P.sc++;else P.pot[t][sz]=(P.pot[t][sz]||0)+1;A.pot();hud();save();view();toast("Satın alındı")}
+async function buy(t,c,sz="S"){if(P.gold<c)return toast("Yetersiz altın");const r=await ecoCall({op:"eco",a:"buy",t,sz});if(r){hud();view()}}
 function cSkills(v){v.innerHTML=skillsHTML()}
 function upSk(i){if(P.sp<=0)return;P.sp--;P.sr[i]=(P.sr[i]||0)+1;A.lvl();save();view()}
 
@@ -875,18 +858,18 @@ function usePot(t,sz="S"){
   if((P.pot[t][sz]||0)>0)inspStack("pot_"+t+"_"+sz);else{closeM();view()}
 }
 
-function sellStack(key,cnt){
+async function sellStack(key,cnt){
   const st=STACK_DEFS.find(x=>x.key===key);if(!st)return;
-  const cur=st.get();if(cur<cnt)return;
-  st.set(cur-cnt);
-  P.gold+=st.sell*cnt;
-  hud();save();toast("Satıldı: +"+(st.sell*cnt)+" 🪙");
+  if(st.get()<cnt)return;
+  const r=await ecoCall({op:"eco",a:"stack",key,cnt});
+  if(!r)return;
+  hud();
   if(st.get()>0)inspStack(key);else{closeM();view()}
 }
 const closeM=()=>$("im").style.display="none";
 function equip(n){const i=P.inv[n],o=P.eq[i.slot];P.eq[i.slot]=i;P.inv.splice(n,1);if(o)P.inv.push(o);closeM();sync();save();view();toast(i.name+" kuşanıldı")}
 function unequip(k){if(P.inv.length>=50)return toast("Çanta dolu");P.inv.push(P.eq[k]);P.eq[k]=null;closeM();sync();save();view()}
-function sell(n){const i=P.inv[n];P.gold+=sellV(i);P.inv.splice(n,1);closeM();hud();save();view()}
+async function sell(n){closeM();const r=await ecoCall({op:"eco",a:"sell",i:n});if(r){hud();view()}}
 
 /* ---------- SAVAŞ ---------- */
 let CB={on:false,auto:false,fast:false},aT=null;
@@ -894,9 +877,7 @@ const RNG=mkRng(()=>Math.random());
 /* Motorun döndürdüğü olayları ekranda uygula (sıra korunur) */
 function applyEv(out){for(const e of out){if(e.lg!==undefined)lg(e.lg);else if(e.fx)fx(e.fx[0],e.fx[1]);else if(e.snd)A[e.snd]();else if(e.toast)toast(e.toast);else if(e.shake)shake();else if(e.vig)vig();else if(e.ev)ev(e.ev[0],e.ev[1]);else if(e.kill)onKill(e.kill)}}
 /* Öldürme: günlük ve normal görev ilerlemesi */
-function onKill(k){
- P.dl.q.forEach(q=>{if(q.p<q.n&&(q.k=="any"||(q.k=="elite"&&k.el)||(q.k=="tower"&&k.tw)))q.p++});
- QS.forEach(q=>{if(q.ri<0||(q.ri==k.ri&&q.mi==k.mi)){const s=qp(q);if(s.p<q.n){s.p++;if(s.p==q.n)toast("📜 Görev tamamlandı! Şehirden ödülünü al.")}}})}
+function onKill(){}
 /* ---- Savaş sunucuda oynanır (Supabase 'battle' fonksiyonu). Burası sonucu ekranda oynatır. ---- */
 let battleBusy=false,bStarting=false,autoRun=false;
 const bSleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -1222,19 +1203,17 @@ function drop(m,fg){applyEv(dropItem(P,m,fg,RNG))}
 /* ---------- GÜNLÜK, SANDIK, KULE ---------- */
 const TN={poison:"🤢 Zehirli",armor:"🪨 Zırhlı (kesinti kırar)",swift:"💨 Çevik",regen:"💚 Yenilenir",drain:"🧛 Can çalar",boss:"👑 Boss · 3 faz"};
 const today=()=>new Date().toISOString().slice(0,10);
-function daily(){const d=P.dl,t=today();if(d.d==t)return;const y=new Date(Date.now()-864e5).toISOString().slice(0,10);if(d.l!=y&&d.l!=t)d.s=0;d.d=t;d.c=0;
-d.q=[{k:"any",n:15,g:60+P.lv*15},{k:"elite",n:2,g:100+P.lv*25,ch:1},{k:"tower",n:3,g:80+P.lv*20},[{k:"crit",n:12,g:90+P.lv*15},{k:"fok",n:2,g:100+P.lv*15,m:{kirik:5}},{k:"mat",n:12,g:80+P.lv*10},{k:"pot",n:3,g:70+P.lv*10}][RI(0,3)]].map(q=>({...q,p:0,c:0}));save()}
-function offline(){const m=(Date.now()-(P.ts||Date.now()))/6e4;if(m<10)return;const h=Math.min(8,m/60),g=Math.floor(h*P.lv*12);P.gold+=g;if(h>=1)P.pot.hp.S=(P.pot.hp.S||0)+1;if(h>=4)P.ch++;
-toast("Sen yokken +"+g+" 🪙"+(h>=1?" +🧪":"")+(h>=4?" +🎁":""));save();hud()}
+function daily(){} /* günlük görev yenileme artık sunucuda */
+async function ecoSync(){const r=await ecoCall({op:"eco",a:"sync"});if(r){hud();nav();view()}}
+function offline(){}
 function dailyHTML(){const d=P.dl,dn=d.c?((d.s-1)%7)+1:d.s%7,rw=["50","100","150","200","300","400","📜🎁"],lb={any:"canavar öldür",elite:"elit öldür",tower:"kule katı geç",crit:"kritik vuruş yap",fok:"başarılı yükseltme yap",mat:"malzeme topla",pot:"iksir kullan"};
 return`<div class="cd" style="background:linear-gradient(135deg,#6b4a0a44,var(--pn))"><div class="ct">📅 Günlük giriş <span class="g" style="font-size:11px">Seri: ${d.s} gün</span></div>
 <div style="display:flex;gap:4px;margin-bottom:9px">${rw.map((x,i)=>`<div style="flex:1;text-align:center;font-size:9px;padding:5px 0;border-radius:6px;background:${i<dn?"#34d39933":"#0006"}">${i+1}<br>${x}</div>`).join("")}</div>
 <button class="btn" ${d.c?"disabled":""} onclick="claimD()">${d.c?"Bugünkü ödül alındı":"Giriş ödülünü al"}</button>
 <div class="ct" style="margin:12px 0 6px;font-size:12px">Günlük görevler</div>${d.q.map((q,i)=>`<div class="q" style="cursor:pointer" onclick="goQ('${q.c||q.p>=q.n?"":q.k}')"><div style="flex:1"><b>${q.n}× ${lb[q.k]}</b><div class="mu">${q.g}🪙${q.ch?" + 🎁":""}</div><div class="pg"><i style="width:${q.p/q.n*100}%"></i></div></div>${q.c?'<span class="mu">Alındı</span>':`<button class="btn" ${q.p>=q.n?"":"disabled"} onclick="event.stopPropagation();claimDQ(${i})">${q.p}/${q.n}</button>`}</div>`).join("")}
 ${P.ch?`<button class="btn v" style="margin-top:6px" onclick="chestUI()">🎁 ${P.ch} sandık aç</button>`:""}</div>`}
-function claimD(){const d=P.dl;if(d.c)return;const i=d.s%7,g=[50,100,150,200,300,400,500][i]*(1+Math.floor(P.lv/5));d.c=1;d.s++;d.l=today();P.gold+=g;if(i==6){P.sc++;P.ch++}A.lvl();toast("Giriş ödülü: +"+g+" 🪙"+(i==6?" +📜 +🎁":""));hud();save();view()}
-function claimDQ(i){const q=P.dl.q[i];if(q.c||q.p<q.n)return;q.c=1;P.gold+=q.g;if(q.ch)P.ch++;Object.entries(q.m||{}).forEach(([k,n])=>P.mat[k]=(P.mat[k]||0)+n);A.lvl();toast("+"+q.g+" 🪙"+(q.ch?" +🎁":""));hud();save();view()}
-function dq(m){P.dl.q.forEach(q=>{if(q.p<q.n&&(q.k=="any"||(q.k=="elite"&&m.el)||(q.k=="tower"&&CB.tw)))q.p++})}
+async function claimD(){const r=await ecoCall({op:"eco",a:"claim",kind:"d"});if(r){hud();view()}}
+async function claimDQ(i){const r=await ecoCall({op:"eco",a:"claim",kind:"dq",i});if(r){hud();view()}}
 let chOpenCnt=1;
 function setChQty(n){
   chOpenCnt=Math.max(1,Math.min(P.ch||1,Math.floor(Number(n)||1)));
@@ -1342,27 +1321,10 @@ function useMat(n){Object.keys(n).forEach(k=>P.mat[k]-=n[k])}
 function needHTML(p){if(p>=15)return"";return`<div class="q" style="flex-wrap:wrap;margin:6px 0">Gereken: ${Object.entries(need(p)).map(([k,n])=>`<b style="color:${(P.mat[k]||0)>=n?"#4ade80":"#f87171"}">${MT[k][0]}${MT[k][1]} ${P.mat[k]||0}/${n}</b>`).join(" · ")}</div>`}
 const matLine=()=>Object.keys(MT).map(k=>MT[k][0]+" "+(P.mat[k]||0)).join(" &nbsp;");
 function gm(k,n){P.mat[k]=(P.mat[k]||0)+n;ev("mat",n);lg(MT[k][0]+" +"+n+" "+MT[k][1])}
-const QV=[
-{id:"v1",h:"Savaş",k:"crit",n:30,txt:"30 kritik vuruş yap",g:150,m:{kirik:5}},
-{id:"v2",h:"Savaş",k:"crit",n:150,txt:"150 kritik vuruş yap",g:600,ch:1},
-{id:"v3",h:"Savaş",k:"dmg",abs:1,n:500,txt:"Tek vuruşta 500 hasar ver",g:300,ch:1},
-{id:"v4",h:"Demirci",k:"fok",n:5,txt:"5 başarılı yükseltme yap",g:200,m:{kirik:8}},
-{id:"v5",h:"Demirci",k:"fok",n:25,txt:"25 başarılı yükseltme yap",g:900,sc:2},
-{id:"v6",h:"Toplayıcı",k:"mat",n:20,txt:"20 malzeme topla",g:150},
-{id:"v7",h:"Toplayıcı",k:"mat",n:100,txt:"100 malzeme topla",g:500,m:{ruh:2,kan:2}},
-{id:"v8",h:"Kule",k:"tower",abs:1,n:5,txt:"Kulede 5. kata ulaş",g:300,ch:1},
-{id:"v9",h:"Kule",k:"tower",abs:1,n:15,txt:"Kulede 15. kata ulaş",g:900,ch:2},
-{id:"v10",h:"Gelişim",k:"lvl",abs:1,n:10,txt:"10. seviyeye ulaş",g:200,m:{kirik:10}},
-{id:"v11",h:"Gelişim",k:"lvl",abs:1,n:25,txt:"25. seviyeye ulaş",g:800,sc:1},
-{id:"v12",h:"Gelişim",k:"lvl",abs:1,n:40,txt:"40. seviyeye ulaş",g:2000,ch:2},
-{id:"v13",h:"Ganimet",k:"drop3",n:3,txt:"3 adet GR-III veya üstü eşya bul",g:300},
-{id:"v14",h:"Ganimet",k:"chest",n:5,txt:"5 sandık aç",g:250,sc:1},
-{id:"v15",h:"Hazırlık",k:"pot",n:10,txt:"10 iksir kullan",g:100}];
-function ev(k,a=1){QV.forEach(q=>{if(q.k!=k)return;const s=qp(q);if(s.c||s.p>=q.n)return;s.p=Math.min(q.n,q.abs?Math.max(s.p,a):s.p+a);if(s.p>=q.n)toast("📜 Görev tamam: "+q.txt)});
-if(k!="tower"&&k!="lvl"&&k!="dmg")P.dl.q.forEach(q=>{if(q.k==k&&!q.c&&q.p<q.n)q.p=Math.min(q.n,q.p+a)})}
+function ev(){} /* görev ilerlemesi artık sunucuda işlenir */
 function qRow(q,fn,head){const s=qp(q),d=s.p>=q.n,gk=(d||s.c)?"":(q.k||"kill"),rw=q.g+"🪙"+(q.sc?" +📜"+(q.sc>1?q.sc:""):"")+(q.ch?" +🎁"+(q.ch>1?q.ch:""):"")+Object.entries(q.m||{}).map(([k,n])=>" +"+MT[k][0]+n).join("");
 return`<div class="q" style="cursor:pointer" onclick="goQ('${gk}')"><div style="flex:1"><b>${head}</b><div class="mu">${q.txt||q.n+"× "+q.t} · ${rw}</div><div class="pg"><i style="width:${Math.min(100,s.p/q.n*100)}%"></i></div></div>${s.c?'<span class="mu">Alındı</span>':`<button class="btn" ${d?"":"disabled"} onclick="event.stopPropagation();${fn}('${q.id}')">${d?"Al":s.p+"/"+q.n}</button>`}</div>`}
-function claimV(id){const q=QV.find(x=>x.id==id),s=qp(q);if(s.c||s.p<q.n)return;s.c=1;P.gold+=q.g;P.sc+=q.sc||0;P.ch+=q.ch||0;Object.entries(q.m||{}).forEach(([k,n])=>P.mat[k]=(P.mat[k]||0)+n);A.lvl();toast("Ödül alındı: +"+q.g+" 🪙");hud();save();view()}
+async function claimV(id){const r=await ecoCall({op:"eco",a:"claim",kind:"v",id});if(r){hud();view()}}
 let questSub="daily"; // "daily" | "reg" | "chal"
 function setQuestSub(s){questSub=s;view()}
 function cQuests(v){ev("lvl",P.lv);ev("tower",P.tw);
@@ -1634,10 +1596,11 @@ async function newGame(){
   SLOTS[targetCreateSlot]=created;
   activeSlot=targetCreateSlot;
   P=created;
-  sync();daily();P.hp=P.maxHp;P.mp=P.maxMp;
+  sync();P.hp=P.maxHp;P.mp=P.maxMp;
   $("cs-screen").style.display="none";
   saveAll();nav();view();
   toast("Hoş geldin, "+P.name+"!");
+  ecoSync();
 }
 
 /* ---------- KÜL PARÇACIKLARI ---------- */

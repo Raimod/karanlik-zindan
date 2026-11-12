@@ -83,3 +83,16 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 
 ## 1.5.6
 - index.html içindeki ?v= önbellek numarası 1.5.4/1.5.5'te güncellenmemişti, tarayıcı eski dosyaları gösteriyordu. Her sürümde index.html'deki ?v= numarasını da değiştir.
+
+## 1.6.0 — Ekonomi sunucuda (aşama 3b-2)
+- Yeni "eco" işlemi (battle fonksiyonu): satış, parçalama, toplu satış/parçalama, yığın satışı, iksir/parşömen alma,
+  görev ödülü (bölge/meydan okuma/günlük), günlük giriş ödülü, günlük görev yenileme, çevrimdışı ödül ("sync").
+- Görev ilerlemesi (öldürme, kritik, malzeme, kule...) savaş sırasında SUNUCUDA sayılır (engine.js: evQ/killQ/questOut).
+- Çevrimdışı ödül sunucu saatine göre (kayıttaki "sts"). Günlük sıfırlama UTC (TR 03:00) aynen duruyor.
+- Veritabanı: sql/savas.sql (yeni sürüm: kz_pristine, kz_eco_err) + sql/savas_siki3.sql (srv_lock=3).
+  Kilit 3: altın/iksir/parşömen/sandık/malzeme telefondan sadece AZALIR; q, dl, sts telefondan değişmez.
+- Geri almak: update public.kz_config set val = 2 where key = 'srv_lock';
+- Edge Function'ı mutlaka yeniden yükle (edge/battle/index.ts = battle-index.ts), çünkü engine.js ve handler.js değişti.
+- Kapsam dışı (hâlâ telefonda): Tüccar dükkânı eşya alımı, karakter yetenek/nitelik puanı, iksirin savaş dışı içilmesi
+  (artık "iksir kullan" görevine sayılmaz), kaydı kod ile içe aktarma (kilit yine reddeder).
+- Çalıştırma sırası: kurulum, topluluk, koruma, sunucu, savas, filtre, savas_siki, savas_siki2, savas_siki3.
