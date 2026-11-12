@@ -80,3 +80,6 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 
 ## 1.5.5
 - Karakter oluşturma ekranında uyarılar (ad alınmış, uygunsuz, eksik ad) ekranın arkasında kalıp görünmüyordu; bildirimler artık en üstte.
+
+## 1.5.6
+- index.html içindeki ?v= önbellek numarası 1.5.4/1.5.5'te güncellenmemişti, tarayıcı eski dosyaları gösteriyordu. Her sürümde index.html'deki ?v= numarasını da değiştir.
