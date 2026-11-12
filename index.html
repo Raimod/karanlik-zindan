@@ -77,10 +77,24 @@ button:disabled{opacity:.4}
 .pg{height:5px;background:#000a;border-radius:3px;margin-top:4px}.pg i{display:block;height:100%;background:var(--xp);border-radius:3px}
 .em{width:64px;height:64px;border-radius:50%;background:radial-gradient(#3a2f5c,#15111f);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:32px}
 textarea{user-select:text;-webkit-user-select:text;width:100%;height:70px;background:#000;border:1px solid var(--ln);border-radius:8px;color:#fff;font-size:10px;padding:6px;margin:8px 0}
+#sp{position:fixed;inset:0;z-index:300;background:radial-gradient(circle at 50% 38%,#2a1c3d 0%,#0b0a10 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;transition:opacity .6s}
+#sp.out{opacity:0;pointer-events:none}
+#sp svg{animation:spf 2.4s ease-in-out infinite;filter:drop-shadow(0 0 18px #e6b45099)}
+@keyframes spf{50%{transform:translateY(-8px) scale(1.05);filter:drop-shadow(0 0 30px #e6b450dd)}}
+#sp h1{font-family:var(--hd);font-size:26px;letter-spacing:6px;color:var(--gold);margin-top:18px;text-align:center;animation:spt 1.5s ease-out both}
+@keyframes spt{from{opacity:0;letter-spacing:20px}to{opacity:1;letter-spacing:6px}}
+#sp .sb2{font-size:11px;letter-spacing:8px;color:var(--mu);margin-top:6px;animation:spt 2s ease-out both}
+.spb{width:220px;height:6px;background:#ffffff1a;border-radius:4px;overflow:hidden;margin-top:36px}
+.spb i{display:block;height:100%;width:0;background:linear-gradient(90deg,#a8741a,#f3cf7a);animation:spl 2.2s ease-in-out forwards}
+@keyframes spl{to{width:100%}}
+#spt{font-size:11px;color:var(--mu);margin-top:16px;text-align:center;max-width:260px;min-height:30px;animation:spt 1.2s .4s ease-out both;letter-spacing:0}
+#sp .sk2{position:absolute;bottom:calc(20px + env(safe-area-inset-bottom,0px));font-size:10px;color:#ffffff40}
 </style>
 </head>
 <body>
-<canvas id="bg"></canvas><div id="vg"></div><div id="tt"></div>
+<canvas id="bg"></canvas>
+<div id="sp"><svg viewBox="0 0 100 100" width="104" height="104"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3cf7a"/><stop offset="1" stop-color="#a8741a"/></linearGradient></defs><path d="M50 6L14 18v30c0 24 16 38 36 46 20-8 36-22 36-46V18z" fill="#15111f" stroke="url(#sg)" stroke-width="3"/><path d="M30 68L70 28M70 68L30 28" stroke="url(#sg)" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="48" r="7" fill="#15111f" stroke="url(#sg)" stroke-width="3"/></svg>
+<h1>KARANLIK ZİNDAN</h1><div class="sb2">RPG</div><div class="spb"><i></i></div><div id="spt"></div><div class="sk2">Geçmek için dokun</div></div><div id="vg"></div><div id="tt"></div>
 <div class="app">
 <header>
   <div class="r"><div><span class="lvb" id="hl"></span><span class="nm" id="hn"></span><span class="cb" id="hc"></span></div>
@@ -432,6 +446,11 @@ function backupHTML(){return`<div class="cd"><div class="ct">💾 Kayıt yedeği
 function expSave(){const c=btoa(unescape(encodeURIComponent(JSON.stringify(P))));$("bk").value=c;try{navigator.clipboard.writeText(c).then(()=>toast("Kod kopyalandı"),()=>toast("Kodu elle kopyala"))}catch(e){toast("Kodu elle kopyala")}}
 function impSave(){const t=$("bk").value.trim();if(!t)return toast("Önce kodu yapıştır");
 try{const o=JSON.parse(decodeURIComponent(escape(atob(t))));if(typeof o.lv!="number"||!CL[o.cls])throw 0;P=Object.assign(NEW(),o);if(o.ap===undefined)P.ap=P.lv*3;sync();daily();save();hud();view();toast("Kayıt yüklendi: "+P.name)}catch(e){toast("Geçersiz yedek kodu")}}
+/* ---------- AÇILIŞ EKRANI ---------- */
+(function(){const TP=["Kesinti yeteneği, telgraf hazırlayan canavarın saldırısını bozar.","Zırhlı canavarın zırhını kesinti kırar.","Koruma parşömeni eşyanı kırılmaktan korur.","Her gün giriş yaparak seri ödülü kazan.","Elit eşyaların seviye şartı yükselttikçe artar.","Kuledeki her 5. katta boss ve sandık seni bekler.","Efsunlu eşyalar sadece savaştan düşer, tüccarda satılmaz."],sp=$("sp");let d=0;
+$("spt").innerText="İpucu: "+TP[RI(0,TP.length-1)];
+function cl(){if(d)return;d=1;sp.classList.add("out");setTimeout(()=>sp.remove(),700)}
+setTimeout(cl,2400);sp.onclick=cl})();
 /* ---------- BAŞLANGIÇ ---------- */
 function showIntro(){const g=$("cg");g.innerHTML=Object.entries(CL).map(([k,c])=>`<div id="co${k}" class="q" style="display:block;margin:0;border:1px solid ${k==sel?"var(--gold)":"transparent"}" onclick="pick('${k}')"><b class="g">${c.e} ${c.n}</b><div class="mu">${c.d}</div></div>`).join("");$("in").style.display="flex"}
 function pick(k){sel=k;showIntro()}
