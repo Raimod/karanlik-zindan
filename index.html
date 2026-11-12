@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Karanlık Zindan RPG</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0a10;--pn:#16141f;--ln:#2c2740;--gold:#e6b450;--tx:#ece7f5;--mu:#8d86a6;--hp:#e5484d;--mp:#3b82f6;--xp:#34d399;--hd:"Cinzel",Georgia,serif;--bs:-apple-system,"Segoe UI",Roboto,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--tx);font-family:var(--bs);user-select:none}
+body{display:flex;justify-content:center;min-height:100%}
+#bg{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+#vg{position:fixed;inset:0;pointer-events:none;z-index:90;box-shadow:inset 0 0 0 rgba(229,72,77,0);transition:box-shadow .15s}
+#vg.h{box-shadow:inset 0 0 90px rgba(229,72,77,.6)}
+.app{width:100%;max-width:480px;min-height:100vh;display:flex;flex-direction:column;position:relative;z-index:1;background:rgba(11,10,16,.9);border:0 solid var(--ln);border-width:0 1px;padding-top:env(safe-area-inset-top,0px)}
+header{position:sticky;top:0;z-index:20;padding:10px 14px;background:#120f1b;border-bottom:1px solid var(--ln)}
+.r{display:flex;justify-content:space-between;align-items:center}
+.lvb{background:var(--gold);color:#000;font-weight:800;font-size:11px;padding:2px 7px;border-radius:3px;margin-right:6px}
+.nm{font-family:var(--hd);font-weight:800;font-size:15px}
+.cb{font-size:10px;color:var(--mu);margin-left:6px}
+.bar{height:13px;background:#000a;border-radius:7px;overflow:hidden;position:relative;margin-top:5px;border:1px solid #fff1}
+.bar i{display:block;height:100%;transition:width .3s}
+.bar b{position:absolute;inset:0;text-align:center;font-size:9px;line-height:12px;text-shadow:0 1px 2px #000}
+.hpf{background:linear-gradient(90deg,#8f1d22,var(--hp))}.mpf{background:linear-gradient(90deg,#1e40af,var(--mp))}.xpf{background:var(--xp)}
+main{flex:1;padding:12px 12px calc(84px + env(safe-area-inset-bottom,0px))}
+nav{position:fixed;bottom:0;width:100%;max-width:480px;display:grid;grid-template-columns:repeat(6,1fr);background:#120f1bf5;border-top:1px solid var(--ln);z-index:25;padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{background:none;border:0;color:var(--mu);padding:8px 0 7px;font-size:10px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button span{font-size:18px}nav button.a{color:var(--gold)}
+.cd{background:var(--pn);border:1px solid var(--ln);border-radius:12px;padding:12px;margin-bottom:12px;position:relative;overflow:hidden}
+.ct{font-family:var(--hd);font-weight:800;font-size:14px;margin-bottom:9px;display:flex;justify-content:space-between;align-items:center}
+.mu{color:var(--mu)}.g{color:var(--gold)}
+.eg{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.sl,.bc{aspect-ratio:1;background:#0006;border:1px solid #fff1;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3px;position:relative;font-size:8px;text-align:center;line-height:1.1}
+.sl svg,.bc svg{width:20px;height:20px;fill:#fff;opacity:.45;margin-bottom:3px}
+.sl.off{opacity:.4;border-style:dashed}.bc.sel{outline:2px solid var(--gold)}.bc.mm{background:#e5484d1f}
+.pl{position:absolute;top:2px;right:4px;font-weight:800;color:var(--gold);font-size:9px}
+.cl{position:absolute;top:2px;left:3px;font-size:7px;font-weight:800}
+.g1{border-color:#64748b!important}.g2{border-color:#22c55e!important}.g3{border-color:#38bdf8!important}.g4{border-color:#a855f7!important;box-shadow:inset 0 0 10px #a855f755}
+.g5{border-color:var(--gold)!important;animation:ep 2.4s infinite}
+@keyframes ep{50%{box-shadow:0 0 12px #c084fc,inset 0 0 10px var(--gold);border-color:#c084fc}0%,100%{box-shadow:0 0 6px var(--gold)}}
+.bg5{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.btn{background:linear-gradient(135deg,#c98a1c,var(--gold));border:0;color:#000;font-weight:800;padding:10px;border-radius:8px;width:100%;font-size:13px}
+.btn.d{background:linear-gradient(135deg,#a3191f,var(--hp));color:#fff}.btn.b{background:#2563eb;color:#fff}.btn.v{background:#7c3aed;color:#fff}.btn.s{background:#2a2540;color:var(--tx)}
+button:disabled{opacity:.4}
+.rg{border-radius:12px;margin-bottom:12px;border:1px solid var(--ln);position:relative;overflow:hidden;background:#0b0a10}
+.rg.lk{filter:grayscale(.9);opacity:.6}
+.bn{position:absolute;inset:0}.bn svg{width:100%;height:100%}
+.ri{position:relative;padding:12px;background:linear-gradient(180deg,#0000,#000a)}
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.mb{background:#000a;border:1px solid #fff2;border-radius:8px;padding:5px 7px;color:var(--tx);display:flex;gap:7px;align-items:center;text-align:left}
+.mb svg{width:34px;height:34px;flex-shrink:0}
+.mc{text-align:center;padding:14px 12px 10px;min-height:230px}
+.mav{width:120px;height:120px;margin:6px auto;position:relative;animation:hv 3s infinite ease-in-out;filter:drop-shadow(0 6px 10px #000)}
+@keyframes hv{50%{transform:translateY(-6px)}}
+.mav.sk{animation:sk .25s}@keyframes sk{25%{transform:translate(-8px,4px);filter:brightness(2)}75%{transform:translate(8px,-4px);filter:brightness(2)}}
+.mav svg{width:100%;height:100%}
+.au{position:absolute;left:50%;top:50px;width:150px;height:150px;margin-left:-75px;border-radius:50%;border:2px dashed #f43f5e;opacity:0;animation:rt 2s linear infinite;pointer-events:none}
+.tl .au{opacity:1}@keyframes rt{to{transform:rotate(360deg)}}
+.tb{display:none;background:#be123c;font-size:11px;font-weight:800;padding:4px 10px;border-radius:20px;width:fit-content;margin:4px auto;box-shadow:0 0 12px #f43f5e99}
+.rel{position:relative}
+.fl{position:absolute;inset:0;pointer-events:none}
+.fn{position:absolute;font-weight:900;font-size:18px;text-shadow:0 2px 4px #000;animation:fu .85s forwards}
+@keyframes fu{0%{opacity:0;transform:translateY(20px)}20%{opacity:1}100%{opacity:0;transform:translateY(-45px)}}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0}
+.sb{background:#1c1830;border:1px solid #fff2;border-radius:9px;padding:8px;color:var(--tx);text-align:left}
+.sb b{font-size:12px;display:flex;justify-content:space-between}.sb small{font-size:9px;color:var(--mu);display:block;margin-top:2px}
+.pr{display:flex;gap:6px;margin-top:8px}.pr button{flex:1;background:#000a;border:1px solid #fff2;border-radius:7px;padding:7px 2px;color:var(--tx);font-size:10px;font-weight:700}
+.log{background:#000a;border-radius:8px;height:105px;overflow-y:auto;padding:7px;font-size:10px;line-height:1.45}
+.log div{border-bottom:1px solid #fff1;padding:1px 0}
+.mo{position:fixed;inset:0;background:#000d;display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
+.mm2{width:100%;max-width:400px;background:#17141f;border:1px solid var(--ln);border-radius:14px;padding:16px;max-height:90vh;overflow:auto}
+#tt{position:fixed;top:calc(58px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:120;display:flex;flex-direction:column;gap:6px;pointer-events:none;width:max-content;max-width:92%}
+.t{background:#120f1bf5;border:1px solid var(--gold);font-size:11px;font-weight:700;padding:7px 13px;border-radius:20px}
+.q{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#0006;border-radius:8px;padding:8px;margin-bottom:6px;font-size:11px}
+.q button{width:auto;padding:6px 10px;font-size:11px}
+.pg{height:5px;background:#000a;border-radius:3px;margin-top:4px}.pg i{display:block;height:100%;background:var(--xp);border-radius:3px}
+.em{width:64px;height:64px;border-radius:50%;background:radial-gradient(#3a2f5c,#15111f);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:32px}
+textarea{user-select:text;-webkit-user-select:text;width:100%;height:70px;background:#000;border:1px solid var(--ln);border-radius:8px;color:#fff;font-size:10px;padding:6px;margin:8px 0}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas><div id="vg"></div><div id="tt"></div>
+<div class="app">
+<header>
+  <div class="r"><div><span class="lvb" id="hl"></span><span class="nm" id="hn"></span><span class="cb" id="hc"></span></div>
+  <div style="font-size:12px;font-weight:700"><span class="g">🪙 <span id="hg"></span></span> &nbsp;<span style="color:#a5b4fc">🎒 <span id="hb"></span>/50</span></div></div>
+  <div class="bar"><i class="hpf" id="hh"></i><b id="ht"></b></div>
+  <div class="bar"><i class="mpf" id="hm"></i><b id="hmt"></b></div>
+  <div class="bar" style="height:5px"><i class="xpf" id="hx"></i></div>
+</header>
+<main id="mv"></main>
+<nav id="nv"></nav>
+</div>
+<div class="mo" id="im"><div class="mm2" id="ic"></div></div>
+<div class="mo" id="in" style="display:none"><div class="mm2">
+  <h2 style="font-family:var(--hd);color:var(--gold);text-align:center;margin-bottom:6px">KARANLIK ZİNDAN</h2>
+  <p class="mu" style="font-size:11px;text-align:center;margin-bottom:12px">Kahramanının adını yaz ve sınıfını seç.</p>
+  <input id="cn" value="Savaşçı" maxlength="14" style="width:100%;padding:10px;background:#000;border:1px solid var(--ln);border-radius:8px;color:#fff;font-weight:700;margin-bottom:10px">
+  <div id="cg" style="display:grid;gap:6px;margin-bottom:12px"></div>
+  <button class="btn" onclick="newGame()">Maceraya başla</button>
+</div></div>
+
+<script>
+const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
+/* ---------- SES ---------- */
+const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
+hit(){this.t(130,"sawtooth",.12,.2)},crit(){this.t(420,"triangle",.1,.25);this.t(660,"square",.25,.25,60)},
+int(){this.t(880,"sine",.08,.3);this.t(1100,"square",.2,.25,80)},pot(){this.t(330,"sine",.15,.2);this.t(520,"sine",.25,.2,90)},
+lvl(){[261,329,392,523,659].forEach((f,i)=>this.t(f,"triangle",.25,.25,i*80))},elite(){[392,523,659,1046].forEach((f,i)=>this.t(f,"square",.35,.25,i*110))}};
+/* ---------- VERİ ---------- */
+const SL=["weapon","offhand","helm","chest","pants","boots","necklace","ring"],SN={weapon:"Silah",offhand:"Sol El",helm:"Kask",chest:"Zırh",pants:"Pantolon",boots:"Çizme",necklace:"Kolye",ring:"Yüzük"};
+const CL={
+tank:{n:"Tank",e:"🛡️",d:"Ağır zırh ustası, darbe soğuran ve sersemleten öncü.",b:{hp:420,mp:90,str:16,agi:8,vit:20,int:5},
+ sk:[{n:"Kalkan Darbesi",mp:20,m:1.4,i:1,d:"Telgrafı bozar, düşmanı sersemletir"},{n:"Kalkan Duvarı",mp:30,m:.6,sh:1,d:"3 tur hasar emen kalkan"},{n:"Meydan Okuma",mp:25,m:1.8,d:"Yıkıcı vuruş"},{n:"Yıkılmaz İrade",mp:45,m:2.8,d:"Nihai savunma darbesi"}],
+ it:["Ağır Çelik Kılıç","Kule Kalkanı","Demir Miğfer","Ağır Plaka Zırh","Çelik Dizlik","Ağır Demir Çizme","Dayanıklılık Gerdanlığı","Kaya Yüzüğü"]},
+mage:{n:"Büyücü",e:"🔮",d:"Alev ve buzla yıkan arkana ustası.",b:{hp:250,mp:210,str:6,agi:9,vit:9,int:22},
+ sk:[{n:"Alev Patlaması",mp:30,m:2.2,dot:1,d:"3 tur yakar"},{n:"Buzul Halka",mp:40,m:1.6,i:1,d:"Donduruır, telgrafı bozar"},{n:"Arkana Kalkanı",mp:35,m:.5,sh:1,d:"Mana bariyeri"},{n:"Kıyamet Meteoru",mp:75,m:4.2,d:"Devasa büyü darbesi"}],
+ it:["Kristal Asa","Odak Küresi","Arkana Tacı","Büyü Dokuma Cübbe","Efsunlu Pantolon","Astral Sandalet","Saf Mana Kolyesi","Yıldız Tozu Yüzüğü"]},
+archer:{n:"Okçu",e:"🏹",d:"Yüksek kritik ve zehirli oklar.",b:{hp:310,mp:120,str:10,agi:22,vit:12,int:7},
+ sk:[{n:"Zehirli Ok",mp:22,m:1.5,dot:1,d:"3 tur zehirler"},{n:"Kiriş Darbesi",mp:25,m:1.3,i:1,d:"Hızlı atış, telgrafı bozar"},{n:"Zayıf Nokta",mp:35,m:2.4,crit:1,d:"Garanti kritik"},{n:"Ok Yağmuru",mp:60,m:3.6,d:"Ölümcül ok yağmuru"}],
+ it:["Kompozit Avcı Yayı","Sadak & Bıçak","Deri Kapüşon","Sertleştirilmiş Yelek","Kamuflaj Pantolon","Sessiz İzci Çizmesi","Şahin Gözü Kolyesi","Rüzgâr Nişancı Yüzüğü"]},
+assassin:{n:"Suikastçı",e:"🗡️",d:"Kritik uzmanı, kanatan ve kaçan gölge.",b:{hp:280,mp:110,str:12,agi:24,vit:10,int:6},
+ sk:[{n:"Gölge Kesiği",mp:24,m:1.9,dot:1,d:"3 tur kanatır"},{n:"Kör Edici Toz",mp:28,m:1.1,i:1,d:"Telgrafı iptal eder"},{n:"Gölgelere Karış",mp:30,m:.8,sh:1,d:"Darbeleri sıyırır"},{n:"Gölge İnfazı",mp:65,m:4.4,d:"Ölüm vuruşu"}],
+ it:["Gölge Hançeri","Bilek Bıçağı","Yüz Maskesi","Gece Hayaleti Zırhı","Esnek Pantolon","Gölge Adımı Çizmesi","Engerek Gerdanlığı","Ölümcül Vuruş Yüzüğü"]},
+healer:{n:"Şifacı",e:"✨",d:"Kutsal ışık, şifa ve koruyucu kubbe.",b:{hp:340,mp:180,str:9,agi:8,vit:15,int:14},
+ sk:[{n:"Kutsal Işık",mp:25,m:1.6,d:"Işık hasarı"},{n:"İlahi Baston",mp:22,m:1.2,i:1,d:"Telgrafı bozar"},{n:"Kutsal Lütuf",mp:35,m:0,heal:1,d:"Canın %45’ini yeniler"},{n:"İlahi Kubbe",mp:70,m:1,sh:1,d:"Büyük ışık kubbesi"}],
+ it:["Kutsal Topuz","Dua Kitabı","Işık Tacı","Ruhban Cübbesi","Arınma Pantolonu","Kutsal Sandalet","Hayat Madalyonu","Lütuf Yüzüğü"]}};
+const G={1:{t:"GR-I",n:"Sıradan",m:1,c:"#64748b"},2:{t:"GR-II",n:"İşlenmiş",m:1.15,c:"#22c55e"},3:{t:"GR-III",n:"Usta İşi",m:1.3,c:"#38bdf8"},4:{t:"GR-IV",n:"Kusursuz",m:1.5,c:"#a855f7"},5:{t:"👑 ELİT",n:"Kadim Elit",m:1.75,c:"#e6b450"}};
+const RG=[
+{n:"Çırak Ormanı",req:1,ore:"Çırak",pw:25,h:130,m:[["Yaban Domuzu",2,340,42,10,1,3,18],["Goblin Çırağı",5,750,85,25,2,5,40],["Orman Kurdu",8,1450,155,45,4,8,75],["Haydut Reisi",10,3200,260,75,15,25,220]]},
+{n:"Zehirli Madenler",req:11,ore:"Çelik",pw:70,h:38,m:[["Mağara Akrebi",12,3600,320,110,8,14,280],["Maden Golemi",15,6200,460,190,12,20,420],["Goblin Kazıcı Başı",18,9500,640,240,18,30,620],["Zehirli Kraliçe",20,18000,920,340,40,70,1200]]},
+{n:"Batık Çöl Harabeleri",req:21,ore:"Obsidyen",pw:150,h:28,m:[["Kum Yılanı",22,12000,850,380,22,38,1100],["Lanetli Mumya",25,18500,1150,520,30,50,1600],["Antik Muhafız",28,26000,1520,700,42,70,2400],["Firavun Ruhu",30,48000,2200,980,90,160,4800]]},
+{n:"Donmuş Ruhlar Zirvesi",req:31,ore:"Kristal",pw:280,h:200,m:[["Buzul Kurdu",32,34000,1950,1100,55,90,5200],["Donmuş Ruh",35,52000,2600,1450,75,120,7800],["Buzul Yetisi",38,76000,3500,1900,110,180,11500],["Buz Devi",40,135000,4900,2600,220,380,22000]]},
+{n:"Ejderha Yarığı",req:41,ore:"Ejderha",pw:550,h:4,m:[["Lav Golemi",42,95000,4200,2400,140,240,22000],["Kıyamet İblisi",45,145000,5800,3200,200,350,34000],["Ejderha Muhafızı",48,220000,7800,4400,300,520,52000],["Kadim Kara Ejderha",50,450000,11500,6500,800,1500,120000]]}];
+RG.forEach((r,ri)=>{r.id=ri;r.mobs=r.m.map((a,mi)=>({id:ri+"_"+mi,ri,mi,name:a[0],lv:a[1],hp:a[2],mx:a[2],atk:a[3],def:a[4],g:[a[5],a[6]],xp:a[7],el:mi==3}))});
+const QS=[];RG.forEach((r,ri)=>[[0,8,40],[2,6,70],[3,1,180]].forEach(([mi,n,g],k)=>QS.push({id:"q"+ri+mi,ri,mi,n,g:Math.floor(g*Math.pow(ri+1,1.6)),sc:k==2?1:0,t:r.m[mi][0]})));
+QS.push({id:"qa",ri:-1,mi:-1,n:60,g:400,sc:1,t:"herhangi bir canavar"});
+/* ---------- DURUM ---------- */
+const NEW=()=>({name:"Kahraman",cls:"tank",lv:1,xp:0,gold:300,hp:1,mp:1,maxHp:1,maxMp:1,pot:{hp:3,mp:3},sc:0,eq:{},inv:[],sr:{},sp:1,q:{},boss:{},st:{k:0,e:0,l:0,d:0,dm:0},dl:{d:"",s:0,c:0,q:[]},stk:0,tw:0,ts:0,ch:0,shop:{d:"",it:[]},ap:3,at:{str:0,dex:0,int:0,vit:0},mat:{}});
+let P=NEW(),tab="character",SF=null,fsrc="eq",sel="tank",armed="";
+const KEY="kz_rpg_v2";
+function save(){P.ts=Date.now();try{localStorage.setItem(KEY,JSON.stringify(P))}catch(e){}}
+function load(){try{const s=localStorage.getItem(KEY);if(s){const o=JSON.parse(s);P=Object.assign(NEW(),o);if(o.ap===undefined)P.ap=P.lv*3;return true}}catch(e){}return false}
+/* ---------- FORMÜLLER ---------- */
+const reqXp=l=>l>=50?1e12:Math.floor(140*Math.pow(l,2.38)*(l>25?Math.pow(1.085,l-25):1)*(l>40?Math.pow(1.18,l-40):1));
+function killXp(x,ml,pl){const d=pl-ml;if(d>=7)return 0;if(d>=4)return Math.floor(x*.25);if(d>=2)return Math.floor(x*.65);if(ml-pl>=6)return Math.floor(x*.35);return x}
+const effLv=i=>i.g==5?Math.min(50,i.rl+i.p*2):i.rl;
+const pw=i=>Math.floor(i.bp*G[i.g].m*(1+i.p*.12));
+function D(){const c=CL[P.cls].b,s=1+P.lv*.06;
+let atk=20+P.lv*3+(c.str*2.5+c.agi*1.5+c.int*2)*s,arm=10+c.vit*2*s,hp=c.hp+P.lv*25+c.vit*15,mp=c.mp+P.lv*15+c.int*10,cr=5+c.agi*.4+P.lv*.1,pa=0,pd=0;
+const a=P.at,w=CW[P.cls];atk+=a.str*w.str+a.dex*w.dex+a.int*w.int;arm+=a.vit*1.5+a.str*.4;hp+=a.vit*18;mp+=a.int*12;cr+=a.dex*.25;
+SL.forEach(k=>{const i=P.eq[k];if(!i||effLv(i)>P.lv)return;const p=pw(i);
+ if(k=="weapon")atk+=p;else if(k=="necklace")hp+=p*4;else if(k=="ring")mp+=p*3;else arm+=p;
+ (i.af||[]).forEach(a=>{if(a.t=="atk")pa+=a.v;if(a.t=="def")pd+=a.v;if(a.t=="crit")cr+=a.v})});
+return{atk:Math.floor(atk*(1+pa/100)),arm:Math.floor(arm*(1+pd/100)),hp:Math.floor(hp),mp:Math.floor(mp),cr:Math.min(65,Math.floor(cr))}}
+function sync(){const d=D();P.maxHp=d.hp;P.maxMp=d.mp;P.hp=Math.min(P.hp,P.maxHp);P.mp=Math.min(P.mp,P.maxMp);hud()}
+/* ---------- HUD ---------- */
+function hud(){const x=reqXp(P.lv);
+$("hl").innerText="LV."+P.lv;$("hn").innerText=P.name;$("hc").innerText=CL[P.cls].n;$("hg").innerText=P.gold.toLocaleString();$("hb").innerText=P.inv.length;
+$("hh").style.width=Math.max(0,P.hp/P.maxHp*100)+"%";$("hm").style.width=Math.max(0,P.mp/P.maxMp*100)+"%";$("hx").style.width=Math.min(100,P.xp/x*100)+"%";
+$("ht").innerText=P.hp+" / "+P.maxHp+" HP";$("hmt").innerText=P.mp+" / "+P.maxMp+" MP"}
+const TABS=[["character","🧙","Karakter"],["inventory","🎒","Çanta"],["map","🗺️","Harita"],["forge","🔨","Demirci"],["city","🏰","Şehir"],["quests","📜","Görev"]];
+function nav(){$("nv").innerHTML=TABS.map(t=>`<button class="${tab==t[0]?"a":""}" onclick="go('${t[0]}')"><span>${t[1]}</span>${t[2]}</button>`).join("")}
+function go(t){tab=t;armed="";nav();view()}
+function view(){const v=$("mv");if(CB.on){combatUI(v);return}({character:cChar,inventory:cBag,map:cMap,forge:cForge,city:cCity,skills:cSkills,quests:cQuests})[tab](v)}
+function toast(m){const e=document.createElement("div");e.className="t";e.innerText=m;$("tt").appendChild(e);setTimeout(()=>e.remove(),2400)}
+/* ---------- GÖRSELLER (SVG) ---------- */
+function banner(h){return`<svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="b${h}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="hsl(${h},50%,24%)"/><stop offset="1" stop-color="hsl(${h},40%,8%)"/></linearGradient></defs><rect width="400" height="120" fill="url(#b${h})"/><circle cx="325" cy="30" r="15" fill="hsl(${h},70%,82%)" opacity=".85"/><path d="M0 120V70L60 36 110 74 170 28 240 78 300 44 400 82V120Z" fill="hsl(${h},35%,13%)"/><path d="M0 120V92L80 66 150 94 230 68 320 96 400 74V120Z" fill="hsl(${h},30%,6%)"/></svg>`}
+function mobSVG(m){const h=RG[m.ri].h,i=m.mi,id="g"+m.id,e=m.el,c1=`hsl(${h+i*14},45%,${30+i*4}%)`,c2=`hsl(${h+i*14},55%,13%)`,ey=e?"#ffd166":"#ff5d5d";
+const hr=i%2?`<path d="M26 30L14 6 38 24ZM74 30L86 6 62 24Z" fill="#e8dcc0"/>`:`<path d="M20 42L4 28 26 30ZM80 42L96 28 74 30Z" fill="${c1}"/>`;
+const sp=i>1?`<path d="M30 80L36 95 44 83 50 97 56 83 64 95 70 80Z" fill="${c2}"/>`:"";
+return`<svg viewBox="0 0 100 100"><defs><radialGradient id="${id}" cx="50%" cy="35%"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></radialGradient></defs>${e?`<circle cx="50" cy="54" r="46" fill="none" stroke="#e6b450" stroke-width="1.5" stroke-dasharray="3 4" opacity=".8"/>`:""}${hr}${sp}<ellipse cx="50" cy="56" rx="33" ry="31" fill="url(#${id})" stroke="#000" stroke-opacity=".5"/><path d="M29 50Q38 41 47 52L34 57ZM71 50Q62 41 53 52L66 57Z" fill="${ey}"/><path d="M33 72Q50 84 67 72L62 70 58 77 50 71 42 77 38 70Z" fill="#0b0a10"/><path d="M40 73L42 77 44 73ZM56 73L58 77 60 73Z" fill="#fff"/>${e?`<path d="M34 24L40 12 46 22 50 8 54 22 60 12 66 24Z" fill="#e6b450"/>`:""}</svg>`}
+const IC={weapon:"M14.5 2.5l7 7-8.5 8.5-7-7zM9.5 16l3.5 3.5-7 2.5z",offhand:"M12 2L4 5v6c0 5 3.4 9.8 8 11 4.6-1.2 8-6 8-11V5z",helm:"M12 3a9 9 0 00-9 9v3h18v-3a9 9 0 00-9-9z",chest:"M12 2L8 5H4v7l3 2v6h10v-6l3-2V5h-4z",pants:"M6 2l1 18 4-2 1 4 1-4 4 2 1-18z",boots:"M4 3v13l4 3 6-1 2 3h4v-7l-5-2V3z",necklace:"M12 2a7 7 0 00-7 7c0 4 7 11 7 11s7-7 7-11a7 7 0 00-7-7z",ring:"M12 2a8 8 0 100 16 8 8 0 000-16zm0 12a4 4 0 110-8 4 4 0 010 8z"};
+const ico=s=>`<svg viewBox="0 0 24 24"><path d="${IC[s]}"/></svg>`;
+/* ---------- SEKMELER ---------- */
+function cChar(v){const d=D(),c=CL[P.cls],s=P.st;
+const eq=SL.map(k=>{const i=P.eq[k];if(!i)return`<div class="sl">${ico(k)}<span class="mu">${SN[k]}</span></div>`;
+return`<div class="sl g${i.g} ${effLv(i)>P.lv?"off":""}" onclick="inspEq('${k}')"><span class="pl">+${i.p}</span>${ico(k)}<span style="color:${G[i.g].c};font-weight:700">${i.name}</span></div>`}).join("");
+const box=(a,b,c2)=>`<div style="background:#0006;padding:8px;border-radius:8px;font-size:12px"><span class="mu">${a}</span><b style="float:right;color:${c2||"#fff"}">${b}</b></div>`;
+v.innerHTML=`<div class="cd"><div class="r"><div style="display:flex;gap:12px;align-items:center"><div class="em">${c.e}</div><div><div class="nm" style="font-size:17px">${P.name}</div><div class="mu" style="font-size:11px">${c.n} · Seviye ${P.lv}</div></div></div></div>
+<p class="mu" style="font-size:11px;margin-top:8px">${c.d}</p></div>
+<div class="cd"><div class="ct">Donanım</div><div class="eg">${eq}</div></div>
+<div class="cd"><div class="ct">Nitelikler</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">${box("Saldırı",d.atk,"#e5484d")}${box("Zırh",d.arm,"#38bdf8")}${box("Kritik","%"+d.cr,"#e6b450")}${box("Yetenek puanı",P.sp,"#a855f7")}</div></div>
+${statsHTML()}${skillsHTML()}<div class="cd"><div class="ct">Kayıtlar</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">${box("Öldürme",s.k)}${box("Elit öldürme",s.e)}${box("Kadim eşya",s.l)}${box("En yüksek vuruş",s.d)}${box("Yenilgi",s.dm)}${box("Açılan bölge",Object.keys(P.boss).length+1+"/5")}</div>
+<button class="btn s" style="margin-top:10px" onclick="resetGame()">${armed=="rs"?"Emin misin? Tekrar dokun":"Oyunu sıfırla"}</button></div>${backupHTML()}`}
+function resetGame(){if(armed!="rs"){armed="rs";view();return}try{localStorage.removeItem(KEY)}catch(e){}P=NEW();armed="";showIntro()}
+function bagCell(i,k,extra){const g=G[i.g],ok=i.rc==P.cls;return`<div class="bc g${i.g} ${ok?"":"mm"} ${extra||""}" onclick="${k}"><span class="cl" style="color:${ok?"#4ade80":"#f87171"}">${CL[i.rc].n.slice(0,3)}</span>${better(i)?'<span style="position:absolute;bottom:2px;right:3px;color:#4ade80;font-size:10px;font-weight:900">▲</span>':""}<span class="pl">+${i.p}</span>${ico(i.slot)}<span style="color:${g.c};font-weight:700;font-size:7px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;width:100%">${i.name}</span></div>`}
+function cBag(v){let c="";for(let n=0;n<50;n++){const i=P.inv[n];c+=i?bagCell(i,`insp(${n})`):`<div class="bc" style="opacity:.25"></div>`}
+const cnt=P.inv.filter(junk).length;
+v.innerHTML=`<div class="cd"><div class="ct"><span>Sırt çantası</span><span class="g" style="font-size:11px">${P.inv.length}/50</span></div><div class="bg5" style="max-height:360px;overflow:auto">${c}</div>
+<button class="btn d" style="margin-top:10px" ${cnt?"":"disabled"} onclick="bulk()">${armed=="bk"?"Onayla: "+cnt+" eşyayı sat":"Düşük dereceleri toplu sat ("+cnt+")"}</button>
+<p class="mu" style="font-size:9px;margin-top:6px">GR-I, GR-II ve sınıfına uymayan GR-III eşyalar satılır. GR-IV ve Elit asla satılmaz.</p></div>`}
+const junk=i=>i.g<=2||(i.rc!=P.cls&&i.g<=3);
+const sellV=i=>3+i.rl*2+i.p*3+i.g*i.rl;
+function bulk(){const l=P.inv.filter(junk);if(armed!="bk"){armed="bk";view();return}let t=0;l.forEach(i=>t+=sellV(i));P.inv=P.inv.filter(i=>!junk(i));P.gold+=t;armed="";toast("Satıldı: +"+t+" 🪙");hud();save();view()}
+const open=r=>(r==0||P.boss[r-1])&&P.lv>=RG[r].req;
+function cMap(v){v.innerHTML=towerCard()+RG.map((r,ri)=>{const o=open(ri),why=P.lv<r.req?"🔒 Lv."+r.req:(!o?"🔒 "+RG[ri-1].mobs[3].name+" yen":"AÇIK");
+return`<div class="rg ${o?"":"lk"}"><div class="bn">${banner(r.h)}</div><div class="ri"><div class="r"><div><div class="nm" style="font-size:15px">${r.n}</div><div style="font-size:9px;color:#cbd5e1">Maden: ${r.ore}</div></div><span style="font-size:10px;font-weight:800;color:${o?"#4ade80":"#f87171"}">${why}</span></div>
+<div class="mg">${r.mobs.map(m=>`<button class="mb" ${o?"":"disabled"} onclick="startCombat(${ri},${m.mi})">${mobSVG(m)}<div><div style="font-size:11px;font-weight:700;color:${m.el?"var(--gold)":"#fff"}">${m.el?"👑 ":""}${m.name}</div><div style="font-size:9px;color:#cbd5e1">Lv.${m.lv} · ${m.hp.toLocaleString()} HP</div></div></button>`).join("")}</div></div></div>`}).join("")}
+/* ---------- DEMİRCİ ---------- */
+function cForge(v){let src="";const mk=(i,k)=>`<div class="bc g${i.g} ${SF===i?"sel":""}" onclick="${k}"><span class="pl">+${i.p}</span>${ico(i.slot)}<span style="color:${G[i.g].c};font-size:7px;font-weight:700">${i.name}</span></div>`;
+if(fsrc=="eq")SL.forEach(k=>{if(P.eq[k])src+=mk(P.eq[k],`selF('${k}')`)});else P.inv.forEach((i,n)=>src+=mk(i,`selF(${n})`));
+let act=`<p class="mu" style="font-size:11px;text-align:center;padding:14px">Yükseltmek için bir eşya seç.</p>`;
+if(SF){const i=SF,cost=8+i.rl*6+i.p*14,ch=i.p>=10?30-(i.p-10)*4:100-i.p*6,ne=i.g==5?Math.min(50,i.rl+(i.p+1)*2):i.rl;
+const aff=(i.af||[]).map((a,n)=>`<div class="q"><span>✨ ${a.n} (+%${a.v})</span><button class="btn ${a.l?"":"s"}" onclick="lockA(${n})">${a.l?"🔒 Kilitli":"Açık"}</button></div>`).join("");
+act=`<div style="border-top:1px solid var(--ln);margin-top:12px;padding-top:12px"><div class="r"><div><b style="color:${G[i.g].c}">${i.name} +${i.p}</b><div class="mu" style="font-size:10px">${G[i.g].n} · Gerekli Lv.${effLv(i)} · Başarı %${ch}</div></div><b class="g" style="font-size:11px">${cost} 🪙</b></div>
+${i.g==5?`<div class="q" style="color:var(--gold)">👑 +${i.p+1} olunca seviye şartı Lv.${effLv(i)} → Lv.${ne}${ne>P.lv?" (kuşanılamaz olur, bonusu pasifleşir!)":""}</div>`:""}
+<p class="mu" style="font-size:10px;margin:6px 0">+6 üstü başarısızlıkta eşya düşebilir (+10 üstü kırılabilir). Koruma parşömenin: <b class="g">${P.sc}</b></p>
+${needHTML(i.p)}<button class="btn" onclick="upg()">Ocakta yükselt (+${i.p+1})</button>
+${aff?`<div class="ct" style="margin-top:12px;font-size:12px;color:#c084fc">Efsun dönüştürücü</div>${aff}<button class="btn v" onclick="reroll()">Efsunları çevir (45 🪙)</button>`:""}</div>`}
+v.innerHTML=`<div class="cd"><div class="ct">Demirci ocağı <span class="g" style="font-size:11px">+15 sınırı</span></div><div class="mu" style="font-size:10px;margin-bottom:8px">${matLine()}</div>
+<div class="pr" style="margin:0 0 10px"><button style="${fsrc=="eq"?"border-color:var(--gold);color:var(--gold)":""}" onclick="fsrc='eq';SF=null;view()">Kuşanılanlar</button><button style="${fsrc=="bag"?"border-color:var(--gold);color:var(--gold)":""}" onclick="fsrc='bag';SF=null;view()">Çantadakiler</button></div>
+<div class="bg5" style="max-height:170px;overflow:auto">${src||'<p class="mu" style="font-size:10px">Eşya yok.</p>'}</div>${act}</div>`}
+function selF(k){SF=fsrc=="eq"?P.eq[k]:P.inv[k];view()}
+function rm(i){SL.forEach(k=>{if(P.eq[k]===i)P.eq[k]=null});const n=P.inv.indexOf(i);if(n>-1)P.inv.splice(n,1)}
+function upg(){const i=SF;if(!i)return;if(i.p>=15)return toast("Maksimum +15");const cost=8+i.rl*6+i.p*14,nd=need(i.p);if(!hasMat(nd))return toast("Yetersiz malzeme");if(P.gold<cost)return toast("Yetersiz altın");P.gold-=cost;useMat(nd);
+const ch=i.p>=10?30-(i.p-10)*4:100-i.p*6;
+if(R(100)<=ch){i.p++;ev("fok");A.crit();toast("🔥 Başarılı! +"+i.p)}else{A.hit();
+ if(i.p>=6&&Math.random()<(i.p>=10?.25:.4)){if(P.sc>0){P.sc--;toast("📜 Parşömen eşyanı korudu")}else if(i.p>=10){rm(i);SF=null;toast("💥 Eşya ocakta parçalandı!")}else{i.p--;toast("Başarısız: eşya +"+i.p+" seviyesine düştü")}}else toast("Başarısız, seviye atlamadı")}
+sync();save();view()}
+function lockA(n){SF.af[n].l=!SF.af[n].l;view()}
+function reroll(){if(P.gold<45)return toast("Yetersiz altın");P.gold-=45;SF.af.forEach(a=>{if(!a.l)a.v=RI(1,10)});A.pot();toast("Efsunlar yenilendi");sync();save();view()}
+/* ---------- ŞEHİR & GÖREV ---------- */
+function qp(q){return P.q[q.id]||(P.q[q.id]={p:0,c:0})}
+function cCity(v){const qs=QS.filter(q=>q.ri<0||open(q.ri)||P.lv>=RG[q.ri].req).map(q=>{const s=qp(q),d=s.p>=q.n;
+return`<div class="q"><div style="flex:1"><b>${q.ri<0?"Gezgin":RG[q.ri].n}</b><div class="mu">${q.n}× ${q.t} · ${q.g}🪙${q.sc?" + 📜":""}</div><div class="pg"><i style="width:${Math.min(100,s.p/q.n*100)}%"></i></div></div>${s.c?'<span class="mu">Alındı</span>':`<button class="btn" ${d?"":"disabled"} onclick="claim('${q.id}')">${s.p}/${q.n}</button>`}</div>`}).join("");
+v.innerHTML=shopHTML()+`<div class="cd" style="background:linear-gradient(135deg,#12305a66,var(--pn))"><div class="ct">⛲ Yaşam pınarı <span style="color:#38bdf8;font-size:11px">Ücretsiz</span></div><p class="mu" style="font-size:11px;margin-bottom:9px">Can ve manayı tamamen doldurur.</p><button class="btn b" onclick="fount()">Pınardan iç</button></div>
+<div class="cd"><div class="ct">🧪 Simyacı</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;text-align:center">
+<div class="q" style="display:block"><b style="color:#e5484d">Can</b><div class="mu">%40 can</div><button class="btn" style="margin-top:5px;padding:6px" onclick="buy('hp',15)">15 🪙</button></div>
+<div class="q" style="display:block"><b style="color:#3b82f6">Mana</b><div class="mu">%50 mana</div><button class="btn b" style="margin-top:5px;padding:6px" onclick="buy('mp',12)">12 🪙</button></div>
+<div class="q" style="display:block"><b style="color:#c084fc">Parşömen</b><div class="mu">Koruma</div><button class="btn v" style="margin-top:5px;padding:6px" onclick="buy('sc',150)">150 🪙</button></div></div></div>
+`}
+function claim(id){const q=QS.find(x=>x.id==id),s=qp(q);if(s.c||s.p<q.n)return;s.c=1;P.gold+=q.g;P.sc+=q.sc;A.lvl();toast("Görev ödülü: +"+q.g+" 🪙"+(q.sc?" +📜":""));hud();save();view()}
+function fount(){P.hp=P.maxHp;P.mp=P.maxMp;A.pot();hud();save();toast("Can ve mana doldu")}
+function buy(t,c){if(P.gold<c)return toast("Yetersiz altın");P.gold-=c;if(t=="sc")P.sc++;else P.pot[t]++;A.pot();hud();save();view();toast("Satın alındı")}
+function cSkills(v){const c=CL[P.cls];v.innerHTML=`<div class="cd"><div class="ct">Yetenekler <span class="g" style="font-size:11px">SP: ${P.sp}</span></div>`+c.sk.map((s,i)=>{const r=P.sr[i]||0,t=r>=50?"S":r>=40?"A":r>=30?"B":r>=20?"C":r>=10?"D":"E";
+return`<div class="q"><div><b>${s.n}</b> <span class="g">[${t} · ${r}/50]</span><div class="mu">${s.d} · ${s.mp} MP · hasar +%${r*5}${r>=50?" +%25 S bonusu":""}</div></div><button class="btn" ${P.sp>0&&r<50?"":"disabled"} onclick="upSk(${i})">+1</button></div>`}).join("")+`</div>`}
+function upSk(i){if(P.sp<=0)return;P.sp--;P.sr[i]=(P.sr[i]||0)+1;A.lvl();save();view()}
+/* ---------- EŞYA ---------- */
+function insp(n){const i=P.inv[n];if(!i)return;const ok=i.rc==P.cls,el=effLv(i),cur=P.eq[i.slot];
+$("ic").innerHTML=`<div style="text-align:center;margin-bottom:10px"><b style="color:${G[i.g].c};font-size:15px">${i.name} +${i.p}</b><div class="mu" style="font-size:11px">${G[i.g].n} ${G[i.g].t} · ${SN[i.slot]}</div></div>
+<div class="q" style="display:block;line-height:1.6">Sınıf: <b style="color:${ok?"#4ade80":"#f87171"}">${CL[i.rc].n}</b><br>Seviye: <b style="color:${P.lv>=el?"#4ade80":"#f87171"}">Lv.${el}</b> (sen: ${P.lv})<br>Güç: <b class="g">${pw(i)}</b>${cur?` <span class="mu">(kuşanılan: ${pw(cur)})</span>`:""}${(i.af||[]).map(a=>`<br><span style="color:#c084fc">✨ ${a.n} +%${a.v}</span>`).join("")}</div>
+<div class="r" style="gap:8px"><button class="btn" style="flex:2" ${ok&&P.lv>=el?"":"disabled"} onclick="equip(${n})">${!ok?"Sınıf uyumsuz":P.lv<el?"Seviye yetersiz":"Kuşan"}</button><button class="btn d" style="flex:1" onclick="sell(${n})">Sat ${sellV(i)}🪙</button></div><button class="btn s" style="margin-top:8px" onclick="closeM()">Kapat</button>`;$("im").style.display="flex"}
+function inspEq(k){const i=P.eq[k];$("ic").innerHTML=`<div style="text-align:center;margin-bottom:10px"><b style="color:${G[i.g].c}">${i.name} +${i.p}</b><div class="mu" style="font-size:11px">Güç ${pw(i)}${effLv(i)>P.lv?" · seviye yetersiz, pasif":""}</div></div><button class="btn" onclick="unequip('${k}')">Çantaya çıkar</button><button class="btn s" style="margin-top:8px" onclick="closeM()">Kapat</button>`;$("im").style.display="flex"}
+const closeM=()=>$("im").style.display="none";
+function equip(n){const i=P.inv[n],o=P.eq[i.slot];P.eq[i.slot]=i;P.inv.splice(n,1);if(o)P.inv.push(o);closeM();sync();save();view();toast(i.name+" kuşanıldı")}
+function unequip(k){if(P.inv.length>=50)return toast("Çanta dolu");P.inv.push(P.eq[k]);P.eq[k]=null;closeM();sync();save();view()}
+function sell(n){const i=P.inv[n];P.gold+=sellV(i);P.inv.splice(n,1);closeM();hud();save();view()}
+/* ---------- SAVAŞ ---------- */
+let CB={on:false,auto:false,fast:false},aT=null;
+function startCombat(ri,mi,keep,tw){const m=tw?towerMob(tw):{...RG[ri].mobs[mi]};m.tr=m.el?"boss":["poison","armor","swift","regen","drain"][(m.ri+m.mi)%5];if(P.hp<=0)P.hp=1;
+CB={...CB,on:true,over:false,busy:false,ri:m.ri,mi:m.mi,mob:m,tw:tw||0,pz:0,pzT:0,ph:0,armor:m.tr=="armor",sh:0,shT:0,dot:0,dotT:0,tele:false,stun:false,rage:false,log:keep?CB.log:[]};
+view();if(!keep)lg("⚔️ <b>"+m.name+"</b> ile dövüş başladı!");upd()}
+function lg(t){CB.log.unshift(t);if(CB.log.length>40)CB.log.pop();const b=$("lg");if(b)b.innerHTML=CB.log.map(x=>"<div>"+x+"</div>").join("")}
+function combatUI(v){const m=CB.mob,c=CL[P.cls];
+v.innerHTML=`<div class="cd mc" id="mc"><div class="bn" style="opacity:.55">${banner(RG[CB.ri].h)}</div><div class="rel"><div class="au"></div><div class="mav" id="mav">${mobSVG(m)}<div class="fl" id="fl"></div></div>
+<div class="nm" style="font-size:16px;color:${m.el?"var(--gold)":"#fff"}">${m.el?"👑 ":""}${m.name} <span class="mu" style="font-size:11px;font-family:var(--bs)">Lv.${m.lv}</span></div>
+<div class="bar" style="max-width:280px;margin:7px auto;height:11px"><i class="hpf" id="mh"></i><b id="mt"></b></div><div class="tb" id="tb"></div><div id="st" style="font-size:10px;min-height:14px"></div></div></div>
+<div class="pr" style="margin:0"><button onclick="pot('hp')" id="ph"></button><button onclick="pot('mp')" id="pm"></button><button onclick="autoT()" id="pa"></button><button onclick="CB.fast=!CB.fast;upd()" id="pf"></button><button onclick="flee()">🏃</button></div>
+<div class="sg"><button class="sb" style="grid-column:span 2;text-align:center" onclick="act(-1)"><b style="justify-content:center">Temel saldırı · 0 MP</b></button>${c.sk.map((s,i)=>`<button class="sb" id="s${i}" onclick="act(${i})"><b><span>${s.n}</span><span style="color:#60a5fa">${s.mp}</span></b><small>${s.i?"⚡ ":""}${s.d}</small></button>`).join("")}</div>
+<div class="log" id="lg"></div><div id="ov"></div>`;$("lg").innerHTML=CB.log.map(x=>"<div>"+x+"</div>").join("")}
+function upd(){if(!CB.on||!$("mh"))return;const m=CB.mob;
+$("mh").style.width=m.hp/m.mx*100+"%";$("mt").innerText=m.hp.toLocaleString()+" / "+m.mx.toLocaleString();
+$("mc").classList.toggle("tl",!!CB.tele);const tb=$("tb");tb.style.display=CB.tele?"block":"none";tb.innerText="⚠️ GÜÇLÜ DARBE HAZIRLANIYOR! Kesinti yap!";
+$("st").innerHTML=[TN[m.tr]||"",CB.pzT>0?"🤢 Zehir "+CB.pz+" ("+CB.pzT+")":"",CB.rage?"🔥 <b style=color:#f43f5e>ÖFKE</b>":"",CB.sh>0?"🛡️ Kalkan "+CB.sh+" ("+CB.shT+")":"",CB.dotT>0?"☠️ Yanma "+CB.dot+" ("+CB.dotT+")":"",CB.stun?"💫 Sersem":""].filter(Boolean).join(" · ");
+CL[P.cls].sk.forEach((s,i)=>$("s"+i).disabled=P.mp<s.mp||CB.over);
+$("ph").innerText="🧪 "+P.pot.hp;$("pm").innerText="💧 "+P.pot.mp;$("pa").innerText=CB.auto?"⏸ Oto":"▶ Oto";$("pf").innerText=CB.fast?"⏩ x2":"⏩ x1";hud()}
+function fx(t,c){const f=$("fl");if(!f)return;const s=document.createElement("span");s.className="fn";s.style.cssText=`color:${c};left:${30+R(40)}%;top:${20+R(20)}%`;s.innerText=t;f.appendChild(s);setTimeout(()=>s.remove(),850)}
+function shake(){const a=$("mav");if(!a)return;a.classList.add("sk");setTimeout(()=>a.classList.remove("sk"),250)}
+function vig(){const e=$("vg");e.classList.add("h");setTimeout(()=>e.classList.remove("h"),200)}
+function act(i){if(!CB.on||CB.over||CB.busy)return;const c=CL[P.cls],s=i<0?{n:"Temel saldırı",mp:0,m:1}:c.sk[i],rk=i<0?0:P.sr[i]||0,rm=(1+rk*.05)*(rk>=50?1.25:1);
+if(P.mp<s.mp)return toast("Yetersiz mana!");P.mp-=s.mp;const d=D(),m=CB.mob;
+if(s.i&&CB.tele){CB.tele=false;CB.stun=true;CB.armor=false;A.int();lg("⚡ <b style=color:#e6b450>KESİNTİ!</b> Düşmanın hazırlığı bozuldu, tur kaybetti.");fx("KESİNTİ!","#e6b450")}
+if(s.heal){const h=Math.floor(P.maxHp*.45*(1+P.at.int*.01));P.hp=Math.min(P.maxHp,P.hp+h);A.pot();lg("💚 +"+h+" HP");fx("+"+h,"#22c55e")}
+if(s.sh){CB.sh=Math.floor(P.maxHp*.35*rm);CB.shT=3;lg("🛡️ Kalkan açtın ("+CB.sh+")")}
+if(s.m>0){const ld=m.lv-P.lv;let pen=ld>=3?Math.max(.25,1-(ld-2)*.12):1,x=Math.floor(d.atk*s.m*rm*(1-m.def/(m.def+200))*pen),gl=ld>=5&&Math.random()<.4;if(gl)x=Math.floor(x*.35);
+ const cr=s.crit||R(100)<d.cr;if(cr){x=Math.floor(x*1.8);A.crit();ev("crit")}else A.hit();if(CB.armor)x=Math.floor(x*.6);x=Math.max(5,x);m.hp=Math.max(0,m.hp-x);P.st.d=Math.max(P.st.d,x);ev("dmg",x);shake();fx(cr?"💥"+x:x,cr?"#e6b450":"#fff");
+ lg((cr?"⚡ ":"")+(gl?"🛡️ ":"")+s.n+": <b style=color:#e5484d>"+x+"</b> hasar")}
+if(s.dot){CB.dot=Math.max(3,Math.floor(d.atk*.3*rm));CB.dotT=3}
+upd();if(m.hp<=0){win();return}
+CB.busy=true;setTimeout(mobTurn,CB.fast?120:380)}
+function mobTurn(){CB.busy=false;if(!CB.on||CB.over)return;const m=CB.mob;
+if(m.tr=="regen")m.hp=Math.min(m.mx,m.hp+Math.floor(m.mx*.03));
+if(CB.pzT>0){P.hp=Math.max(0,P.hp-CB.pz);CB.pzT--;lg("🤢 Zehir: <b style=color:#a3e635>"+CB.pz+"</b> hasar");if(P.hp<=0){upd();lose();return}}
+if(CB.dotT>0){m.hp=Math.max(0,m.hp-CB.dot);CB.dotT--;lg("☠️ Etki: <b style=color:#a3e635>"+CB.dot+"</b> hasar");fx(CB.dot,"#a3e635");if(m.hp<=0){upd();win();return}}
+if(m.el&&CB.ph<2&&m.hp<=m.mx*(CB.ph?.33:.66)){CB.ph++;CB.rage=true;m.atk=Math.floor(m.atk*1.3);lg("🔥 <b style=color:#f43f5e>"+m.name+" "+(CB.ph+1)+". faza geçti!</b> Daha sert vuruyor.");fx((CB.ph+1)+". FAZ!","#f43f5e")}
+if(CB.stun){CB.stun=false;lg("💫 "+m.name+" sersemledi, saldıramadı.")}
+else if(CB.tele){CB.tele=false;hit(Math.floor(m.atk*2.5),true)}
+else if(R(1)<(CB.rage?.5:m.el?.38:.25)){CB.tele=true;lg("⚠️ <b style=color:#f43f5e>"+m.name+"</b> güçlü bir saldırı hazırlıyor!")}
+else{hit(m.atk,false);if(m.tr=="swift"&&R(1)<.3)hit(Math.floor(m.atk*.6),false);if(m.tr=="poison"){CB.pz=Math.max(8,Math.floor(m.atk*.15));CB.pzT=3;lg("🤢 Zehirlendin!")}}
+if(CB.shT>0&&--CB.shT==0)CB.sh=0;
+upd();if(P.hp<=0)lose()}
+function hit(a,t){const m=CB.mob,ld=m.lv-P.lv,ar=D().arm;if(ld>=3)a=Math.floor(a*(1+(ld-2)*.15));a=Math.max(8,Math.floor(a*(1-ar/(ar+180))));vig();
+if(CB.sh>0){const b=Math.min(CB.sh,a);CB.sh-=b;a-=b;lg("🛡️ Kalkan <b style=color:#38bdf8>"+b+"</b> hasarı emdi")}
+if(a>0){P.hp=Math.max(0,P.hp-a);if(m.tr=="drain")m.hp=Math.min(m.mx,m.hp+Math.floor(a*.5));A.hit();lg(t?"💥 <b style=color:#f43f5e>[AĞIR DARBE]</b> "+a+" hasar aldın!":"🩸 "+a+" hasar aldın")}}
+function win(){CB.over=true;CB.busy=false;const m=CB.mob,g=RI(m.g[0],m.g[1]),x=killXp(m.xp,m.lv,P.lv);P.gold+=g;P.xp+=x;P.st.k++;P.stk++;if(P.stk%10==0){P.ch++;lg("🔥 10’lu seri: sandık!")}dq(m);if(m.el){P.st.e++;if(!CB.tw)P.boss[m.ri]=true}
+lg("🎉 <b>"+m.name+"</b> yenildi! +"+g+"🪙 "+(x?"+"+x+" XP":"(0 XP, seviye farkı)"));
+QS.forEach(q=>{if(q.ri<0||(q.ri==m.ri&&q.mi==m.mi)){const s=qp(q);if(s.p<q.n){s.p++;if(s.p==q.n)toast("📜 Görev tamamlandı! Şehirden ödülünü al.")}}});
+if(m.el&&!CB.tw&&m.ri<4&&!P.boss[m.ri+1])lg("🗝️ Yeni bölgenin kapısı açıldı!");
+while(P.xp>=reqXp(P.lv)&&P.lv<50){P.xp-=reqXp(P.lv);P.lv++;P.sp+=2;P.ap+=3;ev("lvl",P.lv);A.lvl();toast("🌟 Seviye "+P.lv+"! (+2 SP, +3 nitelik)");sync();P.hp=P.maxHp;P.mp=P.maxMp}
+if(R(1)<.15){const t=R(1)<.5?"hp":"mp";P.pot[t]++;lg("🧪 1× "+(t=="hp"?"Can":"Mana")+" iksiri buldun")}
+matDrop(m);if(CB.tw){ev("tower",CB.tw);P.tw=Math.max(P.tw,CB.tw);if(CB.tw%5==0){P.ch++;lg("🎁 Kat ödülü: sandık!")}}if(m.el&&!CB.tw){P.ch++;lg("🎁 Elit sandığı düştü!")}if(m.el||R(100)<12)drop(m);
+sync();save();upd();const o=$("ov");
+if(o)o.innerHTML=`<div class="pr" style="margin-top:8px"><button class="btn" style="color:#000" onclick="${CB.tw?`startCombat(0,0,1,${CB.tw+1})`:`startCombat(${m.ri},${m.mi},1)`}">${CB.tw?"🗼 Sonraki kat":"⚔️ Tekrar savaş"}</button><button class="btn s" onclick="endC()">Harita</button>${P.ch?`<button class="btn s" onclick="chestUI()">🎁 ${P.ch}</button>`:""}</div>`;
+if(CB.auto)setTimeout(()=>{if(CB.on&&CB.over&&CB.auto)startCombat(m.ri,m.mi,1,CB.tw?CB.tw+1:0)},CB.fast?400:800)}
+function lose(){CB.over=true;stopAuto();const l=Math.floor(P.gold*.1);P.gold-=l;P.st.dm++;P.stk=0;P.hp=Math.max(1,Math.floor(P.maxHp*.3));CB.on=false;sync();save();toast("Yenildin! -"+l+" 🪙, şehirde uyandın");go("city")}
+function endC(){CB.on=false;stopAuto();go("map")}
+function flee(){CB.on=false;stopAuto();toast("Savaştan kaçtın");go("map")}
+function pot(t){if(CB.over)return;if(P.pot[t]<=0)return toast("İksirin kalmadı");P.pot[t]--;A.pot();ev("pot");
+if(t=="hp"){const r=Math.floor(P.maxHp*.4);P.hp=Math.min(P.maxHp,P.hp+r);fx("+"+r,"#22c55e");lg("🧪 +"+r+" HP")}else{const r=Math.floor(P.maxMp*.5);P.mp=Math.min(P.maxMp,P.mp+r);lg("💧 +"+r+" MP")}upd()}
+/* oto savaş */
+function autoT(){CB.auto=!CB.auto;if(CB.auto){aT=setInterval(auto,CB.fast?450:850);if(CB.over)startCombat(CB.ri,CB.mi,1)}else stopAuto();upd()}
+function stopAuto(){CB.auto=false;clearInterval(aT);aT=null}
+function auto(){if(!CB.on||CB.over||CB.busy)return;
+if(P.hp<P.maxHp*.35){if(P.pot.hp>0)return pot("hp");if(P.hp<P.maxHp*.2){lg("⛔ Oto savaş durdu: can kritik");stopAuto();upd();return}}
+const sk=CL[P.cls].sk;
+if(CB.tele){const k=sk.findIndex(s=>s.i&&P.mp>=s.mp);if(k>-1)return act(k)}
+if(CB.sh<=0&&CB.shT==0){const k=sk.findIndex(s=>s.sh&&P.mp>=s.mp&&R(1)<.3);if(k>-1)return act(k)}
+if(P.maxHp-P.hp>P.maxHp*.5){const k=sk.findIndex(s=>s.heal&&P.mp>=s.mp);if(k>-1)return act(k)}
+let b=-1,bm=0;sk.forEach((s,i)=>{if(!s.heal&&P.mp>=s.mp&&s.m*(1+(P.sr[i]||0)*.05)>bm&&s.mp<=P.mp*.6){bm=s.m;b=i}});
+if(b<0&&P.mp<12&&P.pot.mp>0)return pot("mp");act(b)}
+/* ---------- GANİMET ---------- */
+function drop(m,fg){if(P.inv.length>=50){lg("⚠️ Çanta dolu, eşya kayboldu!");return}
+const ks=Object.keys(CL),rc=R(1)<.6?P.cls:ks[RI(0,4)],si=RI(0,7),sl=SL[si],r=RG[m.ri];let g=1,x=R(100);
+if(m.el)g=x<=2.5?5:x<=15?4:x<=40?3:x<=70?2:1;else g=x<=.4?5:x<=5?4:x<=18?3:x<=45?2:1;
+if(fg)g=Math.max(g,fg);const ac=(()=>{const y=R(100);return y<=1?4:y<=5?3:y<=13?2:y<=28?1:0})(),P0=[["atk","Saldırı Gücü"],["def","Zırh Direnci"],["crit","Kritik Vuruş"]],af=[];
+for(let n=0;n<ac;n++){const p=P0[RI(0,2)];af.push({t:p[0],n:p[1],v:RI(1,10),l:false})}
+const it={name:r.ore+" "+CL[rc].it[si],slot:sl,rc,rl:r.req,g,p:0,bp:r.pw,af};P.inv.push(it);P.st.l+=g==5?1:0;if(g>=3)ev("drop3");
+if(g==5){A.elite();toast("👑 KADİM ELİT EŞYA: "+it.name+"!");lg("👑 <b style=color:#e6b450>[JACKPOT]</b> "+it.name)}else lg("📦 <b style=color:"+G[g].c+">"+it.name+" ["+G[g].t+"]</b>"+(rc==P.cls?" ✅":""))}
+/* ---------- GÜNLÜK, SANDIK, KULE ---------- */
+const TN={poison:"🤢 Zehirli",armor:"🪨 Zırhlı (kesinti kırar)",swift:"💨 Çevik",regen:"💚 Yenilenir",drain:"🧛 Can çalar",boss:"👑 Boss · 3 faz"};
+const today=()=>new Date().toISOString().slice(0,10);
+function daily(){const d=P.dl,t=today();if(d.d==t)return;const y=new Date(Date.now()-864e5).toISOString().slice(0,10);if(d.l!=y&&d.l!=t)d.s=0;d.d=t;d.c=0;
+d.q=[{k:"any",n:15,g:60+P.lv*15},{k:"elite",n:2,g:100+P.lv*25,ch:1},{k:"tower",n:3,g:80+P.lv*20},[{k:"crit",n:12,g:90+P.lv*15},{k:"fok",n:2,g:100+P.lv*15,m:{kirik:5}},{k:"mat",n:12,g:80+P.lv*10},{k:"pot",n:3,g:70+P.lv*10}][RI(0,3)]].map(q=>({...q,p:0,c:0}));save()}
+function offline(){const m=(Date.now()-(P.ts||Date.now()))/6e4;if(m<10)return;const h=Math.min(8,m/60),g=Math.floor(h*P.lv*12);P.gold+=g;if(h>=1)P.pot.hp++;if(h>=4)P.ch++;
+toast("Sen yokken +"+g+" 🪙"+(h>=1?" +🧪":"")+(h>=4?" +🎁":""));save();hud()}
+function dailyHTML(){const d=P.dl,dn=d.c?((d.s-1)%7)+1:d.s%7,rw=["50","100","150","200","300","400","📜🎁"],lb={any:"canavar öldür",elite:"elit öldür",tower:"kule katı geç",crit:"kritik vuruş yap",fok:"başarılı yükseltme yap",mat:"malzeme topla",pot:"iksir kullan"};
+return`<div class="cd" style="background:linear-gradient(135deg,#6b4a0a44,var(--pn))"><div class="ct">📅 Günlük giriş <span class="g" style="font-size:11px">Seri: ${d.s} gün</span></div>
+<div style="display:flex;gap:4px;margin-bottom:9px">${rw.map((x,i)=>`<div style="flex:1;text-align:center;font-size:9px;padding:5px 0;border-radius:6px;background:${i<dn?"#34d39933":"#0006"}">${i+1}<br>${x}</div>`).join("")}</div>
+<button class="btn" ${d.c?"disabled":""} onclick="claimD()">${d.c?"Bugünkü ödül alındı":"Giriş ödülünü al"}</button>
+<div class="ct" style="margin:12px 0 6px;font-size:12px">Günlük görevler</div>${d.q.map((q,i)=>`<div class="q" style="cursor:pointer" onclick="goQ('${q.c||q.p>=q.n?"":q.k}')"><div style="flex:1"><b>${q.n}× ${lb[q.k]}</b><div class="mu">${q.g}🪙${q.ch?" + 🎁":""}</div><div class="pg"><i style="width:${q.p/q.n*100}%"></i></div></div>${q.c?'<span class="mu">Alındı</span>':`<button class="btn" ${q.p>=q.n?"":"disabled"} onclick="event.stopPropagation();claimDQ(${i})">${q.p}/${q.n}</button>`}</div>`).join("")}
+${P.ch?`<button class="btn v" style="margin-top:6px" onclick="chestUI()">🎁 ${P.ch} sandık aç</button>`:""}</div>`}
+function claimD(){const d=P.dl;if(d.c)return;const i=d.s%7,g=[50,100,150,200,300,400,500][i]*(1+Math.floor(P.lv/5));d.c=1;d.s++;d.l=today();P.gold+=g;if(i==6){P.sc++;P.ch++}A.lvl();toast("Giriş ödülü: +"+g+" 🪙"+(i==6?" +📜 +🎁":""));hud();save();view()}
+function claimDQ(i){const q=P.dl.q[i];if(q.c||q.p<q.n)return;q.c=1;P.gold+=q.g;if(q.ch)P.ch++;Object.entries(q.m||{}).forEach(([k,n])=>P.mat[k]=(P.mat[k]||0)+n);A.lvl();toast("+"+q.g+" 🪙"+(q.ch?" +🎁":""));hud();save();view()}
+function dq(m){P.dl.q.forEach(q=>{if(q.p<q.n&&(q.k=="any"||(q.k=="elite"&&m.el)||(q.k=="tower"&&CB.tw)))q.p++})}
+function chestUI(){if(P.ch<=0){closeM();view();return}$("ic").innerHTML=`<div style="text-align:center"><b class="g" style="font-size:15px">🎁 Sandık seç (${P.ch})</b><div class="mu" style="font-size:11px;margin:6px 0 10px">Üçünden birini aç</div><div class="pr" style="margin:0">${[0,1,2].map(()=>`<button style="font-size:34px;padding:14px 0" onclick="openCh()">🧰</button>`).join("")}</div></div><button class="btn s" style="margin-top:10px" onclick="closeM();view()">Sonra</button>`;$("im").style.display="flex"}
+function openCh(){if(P.ch<=0)return;P.ch--;ev("chest");CB.log=CB.log||[];const x=R(100);let t;
+if(x<18&&P.inv.length<50){drop(RG[Math.min(4,Math.floor((P.lv-1)/10))].mobs[0],3);const i=P.inv[P.inv.length-1];t=`<b style="color:${G[i.g].c}">${i.name} [${G[i.g].t}]</b>`}
+else if(x<30){P.sc++;t="📜 Koruma parşömeni"}
+else if(x<55){P.pot.hp+=2;P.pot.mp+=2;t="🧪 2 Can + 💧 2 Mana iksiri"}
+else{const g=RI(P.lv*25,P.lv*60)+50;P.gold+=g;t="🪙 "+g+" altın"}
+A.elite();hud();save();$("ic").innerHTML=`<div style="text-align:center;padding:10px 0"><div style="font-size:42px">🎁</div><div style="font-size:14px;margin-top:8px">${t}</div></div><button class="btn" onclick="chestUI()">${P.ch?"Sıradaki sandık ("+P.ch+")":"Tamam"}</button>`}
+function towerMob(f){const r=Math.min(4,Math.floor((P.lv-1)/10)),b=f%5==0,t=RG[r].mobs[b?3:f%3],s=1+f*.07;
+return{...t,id:"t"+f,lv:Math.min(60,P.lv+Math.floor(f/4)),hp:Math.floor(t.hp*s),mx:Math.floor(t.hp*s),atk:Math.floor(t.atk*s),def:Math.floor(t.def*s),xp:Math.floor(t.xp*s*.6),el:b,name:(b?"Kule Muhafızı ":"")+t.name+" · Kat "+f}}
+function towerCard(){return`<div class="cd" style="background:linear-gradient(135deg,#3b1d6e66,var(--pn))"><div class="ct">🗼 Sonsuz Kule <span class="g" style="font-size:11px">Rekor: Kat ${P.tw}</span></div><p class="mu" style="font-size:11px;margin-bottom:8px">Her kat zorlaşır. 5 katta bir boss ve sandık.</p><button class="btn v" onclick="startCombat(0,0,0,${P.tw+1})">Kat ${P.tw+1}’e çık</button></div>`}
+const better=i=>i.rc==P.cls&&effLv(i)<=P.lv&&pw(i)>(P.eq[i.slot]?pw(P.eq[i.slot]):0);
+/* ---------- NPC: TÜCCAR MAREN ---------- */
+const shopR=()=>Math.min(4,Math.floor((P.lv-1)/10)),price=i=>sellV(i)*5+15;
+function genShop(){const r=RG[shopR()];P.shop={d:today(),r:shopR(),c:P.cls,it:SL.map((sl,si)=>{const x=R(100),g=1,af=[];
+
+return{name:r.ore+" "+CL[P.cls].it[si],slot:sl,rc:P.cls,rl:r.req,g,p:0,bp:r.pw,af}})};save()}
+function shopHTML(){let s=P.shop;if(s.d!=today()||s.r!=shopR()||s.c!=P.cls){genShop();s=P.shop}
+s.it.forEach(i=>{i.af=[];i.g=1});const n=SL.filter(k=>P.eq[k]).length,junkN=P.inv.filter(junk).length;
+const line=!P.eq.weapon?"Silahsız mı geziyorsun evlat? Tezgâha bir göz at, ilk parçayı hemen kuşanırsın.":P.inv.length>=45?"Çantan dolmuş! Fazlalıkları bana sat, yer aç.":n<8?"Eksik parçaların var. İyi ekipman, uzun ömür demek.":"Hepsi üstünde, aferin. Yine de bak, yeni mallar geldi.";
+const rows=s.it.map((i,k)=>{const c=price(i);return`<div class="q"><div style="flex:1"><b style="color:${G[i.g].c}">${i.name}</b>${better(i)?' <span style="color:#4ade80;font-weight:900">▲</span>':""}<div class="mu">${SN[i.slot]} · ${G[i.g].t} · güç ${pw(i)} · Lv.${i.rl}${i.af.map(a=>" · ✨"+a.n+" +%"+a.v).join("")}</div></div><button class="btn" ${P.gold>=c?"":"disabled"} onclick="buyShop(${k})">${c} 🪙</button></div>`}).join("");
+return`<div class="cd" style="background:linear-gradient(135deg,#5a2e1033,var(--pn))"><div class="ct"><span>🏪 Tüccar Maren</span><span class="mu" style="font-size:10px">Her gün yeni mal</span></div>
+<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px"><div class="em" style="width:46px;height:46px;font-size:24px;flex-shrink:0">🧔</div><div class="q" style="margin:0;flex:1;font-style:italic">“${line}”</div></div>
+${rows||'<p class="mu" style="font-size:11px;padding:8px">Tezgâh boş. Yenile.</p>'}
+<div class="pr"><button onclick="reShop()">🔄 Malları yenile (80 🪙)</button><button ${junkN?"":"disabled"} onclick="bulk()">${armed=="bk"?"Onayla: sat":"Düşükleri sat ("+junkN+")"}</button></div></div>`}
+function buyShop(k){const i=P.shop.it[k];if(!i)return;const c=price(i);if(P.gold<c)return toast("Yetersiz altın");if(P.inv.length>=50)return toast("Çanta dolu");
+P.gold-=c;P.inv.push(i);P.shop.it.splice(k,1);A.pot();
+if(!P.eq[i.slot]&&effLv(i)<=P.lv){equip(P.inv.length-1)}else{hud();save();view();toast(i.name+" çantana eklendi")}}
+function reShop(){if(P.gold<80)return toast("Yetersiz altın");P.gold-=80;genShop();A.pot();hud();view()}
+/* ---------- NİTELİKLER & YETENEKLER ---------- */
+const CW={tank:{str:2.8,dex:.8,int:.2},mage:{str:.2,dex:.5,int:3.2},archer:{str:.5,dex:3.2,int:.3},assassin:{str:1.2,dex:2.8,int:.2},healer:{str:.5,dex:.3,int:2.4}};
+const CP={tank:["vit","str"],mage:["int"],archer:["dex"],assassin:["dex"],healer:["int","vit"]};
+const SD={str:["STR","Güç"],dex:["DEX","Çeviklik"],int:["INT","Zekâ"],vit:["VIT","Canlılık"]};
+function statsHTML(){const c=CL[P.cls].b,w=CW[P.cls],bs={str:c.str,dex:c.agi,int:c.int,vit:c.vit},
+ef={str:"+"+w.str+" saldırı, +0.4 zırh",dex:"+"+w.dex+" saldırı, +%0.25 kritik",int:"+"+w.int+" saldırı, +12 mana, şifa +%1",vit:"+18 can, +1.5 zırh"};
+const tot=Object.values(P.at).reduce((a,b)=>a+b,0);
+return`<div class="cd"><div class="ct">Nitelikler <span class="g" style="font-size:11px">Puan: ${P.ap}</span></div>
+${Object.keys(SD).map(k=>`<div class="q"><div style="flex:1"><b>${SD[k][0]}${CP[P.cls].includes(k)?' <span class="g">★</span>':""}</b> <span class="mu">${SD[k][1]}</span> <b>${bs[k]+P.at[k]}</b><div class="mu">Taban ${bs[k]} + dağıtılan ${P.at[k]} · puan başı ${ef[k]}</div></div><button class="btn" style="width:auto;padding:6px 10px" ${P.ap>0?"":"disabled"} onclick="addStat('${k}',1)">+1</button><button class="btn s" style="width:auto;padding:6px 10px" ${P.ap>0?"":"disabled"} onclick="addStat('${k}',5)">+5</button></div>`).join("")}
+<p class="mu" style="font-size:10px">★ sınıfının ana niteliği. Her seviye +3 puan verir.</p>
+<button class="btn s" style="margin-top:8px" ${tot?"":"disabled"} onclick="respec()">${armed=="rp"?"Onayla: "+P.lv*30+" 🪙":"Puanları sıfırla ("+P.lv*30+" 🪙)"}</button></div>`}
+function addStat(k,n){n=Math.min(n,P.ap);if(n<=0)return;P.at[k]+=n;P.ap-=n;A.pot();sync();save();view()}
+function respec(){const c=P.lv*30;if(armed!="rp"){armed="rp";view();return}armed="";if(P.gold<c)return toast("Yetersiz altın");P.gold-=c;P.ap+=Object.values(P.at).reduce((a,b)=>a+b,0);P.at={str:0,dex:0,int:0,vit:0};sync();save();view();toast("Nitelikler sıfırlandı")}
+function skillsHTML(){const c=CL[P.cls],d=D();
+return`<div class="cd"><div class="ct">Yetenekler <span class="g" style="font-size:11px">SP: ${P.sp}</span></div>`+c.sk.map((s,i)=>{const r=P.sr[i]||0,t=r>=50?"S":r>=40?"A":r>=30?"B":r>=20?"C":r>=10?"D":"E",rm=(1+r*.05)*(r>=50?1.25:1),dm=s.m>0?" · ~"+Math.floor(d.atk*s.m*rm)+" hasar":s.heal?" · ~"+Math.floor(P.maxHp*.45*(1+P.at.int*.01))+" can":"";
+return`<div class="q"><div style="flex:1"><b>${s.n}</b> <span class="g">[${t} · ${r}/50]</span><div class="mu">${s.d} · ${s.mp} MP${dm}</div></div><button class="btn" style="width:auto;padding:6px 10px" ${P.sp>0&&r<50?"":"disabled"} onclick="upSk(${i})">+1</button></div>`}).join("")+`</div>`}
+/* ---------- MALZEME, GÖREV ÇEŞİTLİLİĞİ ---------- */
+const MT={kirik:["⚙️","Demir Kırığı"],zehir:["🧪","Zehir Bezi"],zirh:["🪨","Zırh Parçası"],tuy:["🪶","Çevik Tüy"],oz:["🌿","Yeşil Öz"],kan:["🩸","Kan Kristali"],ruh:["👻","Elit Ruhu"]};
+const TM={poison:"zehir",armor:"zirh",swift:"tuy",regen:"oz",drain:"kan"},NT=["zehir","zirh","tuy","oz"];
+function need(p){if(p<5)return{kirik:2+p*2};const k=NT[p%4];if(p<9)return{kirik:6,[k]:2};if(p<12)return{kirik:8,[k]:3,kan:2,ruh:p-8};return{kirik:12,[k]:4,kan:p-9,ruh:p-8}}
+const hasMat=n=>Object.keys(n).every(k=>(P.mat[k]||0)>=n[k]);
+function useMat(n){Object.keys(n).forEach(k=>P.mat[k]-=n[k])}
+function needHTML(p){if(p>=15)return"";return`<div class="q" style="flex-wrap:wrap;margin:6px 0">Gereken: ${Object.entries(need(p)).map(([k,n])=>`<b style="color:${(P.mat[k]||0)>=n?"#4ade80":"#f87171"}">${MT[k][0]}${MT[k][1]} ${P.mat[k]||0}/${n}</b>`).join(" · ")}</div>`}
+const matLine=()=>Object.keys(MT).map(k=>MT[k][0]+" "+(P.mat[k]||0)).join(" &nbsp;");
+function gm(k,n){P.mat[k]=(P.mat[k]||0)+n;ev("mat",n);lg(MT[k][0]+" +"+n+" "+MT[k][1])}
+function matDrop(m){if(R(100)<65)gm("kirik",RI(1,2));const k=TM[m.tr];if(k&&R(100)<40)gm(k,1);if(m.el){gm("ruh",RI(1,2));if(R(100)<50)gm("kan",1)}}
+const QV=[
+{id:"v1",h:"Savaş",k:"crit",n:30,txt:"30 kritik vuruş yap",g:150,m:{kirik:5}},
+{id:"v2",h:"Savaş",k:"crit",n:150,txt:"150 kritik vuruş yap",g:600,ch:1},
+{id:"v3",h:"Savaş",k:"dmg",abs:1,n:500,txt:"Tek vuruşta 500 hasar ver",g:300,ch:1},
+{id:"v4",h:"Demirci",k:"fok",n:5,txt:"5 başarılı yükseltme yap",g:200,m:{kirik:8}},
+{id:"v5",h:"Demirci",k:"fok",n:25,txt:"25 başarılı yükseltme yap",g:900,sc:2},
+{id:"v6",h:"Toplayıcı",k:"mat",n:20,txt:"20 malzeme topla",g:150},
+{id:"v7",h:"Toplayıcı",k:"mat",n:100,txt:"100 malzeme topla",g:500,m:{ruh:2,kan:2}},
+{id:"v8",h:"Kule",k:"tower",abs:1,n:5,txt:"Kulede 5. kata ulaş",g:300,ch:1},
+{id:"v9",h:"Kule",k:"tower",abs:1,n:15,txt:"Kulede 15. kata ulaş",g:900,ch:2},
+{id:"v10",h:"Gelişim",k:"lvl",abs:1,n:10,txt:"10. seviyeye ulaş",g:200,m:{kirik:10}},
+{id:"v11",h:"Gelişim",k:"lvl",abs:1,n:25,txt:"25. seviyeye ulaş",g:800,sc:1},
+{id:"v12",h:"Gelişim",k:"lvl",abs:1,n:40,txt:"40. seviyeye ulaş",g:2000,ch:2},
+{id:"v13",h:"Ganimet",k:"drop3",n:3,txt:"3 adet GR-III veya üstü eşya bul",g:300},
+{id:"v14",h:"Ganimet",k:"chest",n:5,txt:"5 sandık aç",g:250,sc:1},
+{id:"v15",h:"Hazırlık",k:"pot",n:10,txt:"10 iksir kullan",g:100}];
+function ev(k,a=1){QV.forEach(q=>{if(q.k!=k)return;const s=qp(q);if(s.c||s.p>=q.n)return;s.p=Math.min(q.n,q.abs?Math.max(s.p,a):s.p+a);if(s.p>=q.n)toast("📜 Görev tamam: "+q.txt)});
+if(k!="tower"&&k!="lvl"&&k!="dmg")P.dl.q.forEach(q=>{if(q.k==k&&!q.c&&q.p<q.n)q.p=Math.min(q.n,q.p+a)})}
+function qRow(q,fn,head){const s=qp(q),d=s.p>=q.n,gk=(d||s.c)?"":(q.k||"kill"),rw=q.g+"🪙"+(q.sc?" +📜"+(q.sc>1?q.sc:""):"")+(q.ch?" +🎁"+(q.ch>1?q.ch:""):"")+Object.entries(q.m||{}).map(([k,n])=>" +"+MT[k][0]+n).join("");
+return`<div class="q" style="cursor:pointer" onclick="goQ('${gk}')"><div style="flex:1"><b>${head}</b><div class="mu">${q.txt||q.n+"× "+q.t} · ${rw}</div><div class="pg"><i style="width:${Math.min(100,s.p/q.n*100)}%"></i></div></div>${s.c?'<span class="mu">Alındı</span>':`<button class="btn" ${d?"":"disabled"} onclick="event.stopPropagation();${fn}('${q.id}')">${d?"Al":s.p+"/"+q.n}</button>`}</div>`}
+function claimV(id){const q=QV.find(x=>x.id==id),s=qp(q);if(s.c||s.p<q.n)return;s.c=1;P.gold+=q.g;P.sc+=q.sc||0;P.ch+=q.ch||0;Object.entries(q.m||{}).forEach(([k,n])=>P.mat[k]=(P.mat[k]||0)+n);A.lvl();toast("Ödül alındı: +"+q.g+" 🪙");hud();save();view()}
+function cQuests(v){ev("lvl",P.lv);ev("tower",P.tw);
+const qs=QS.filter(q=>q.ri<0||P.lv>=RG[q.ri].req).map(q=>qRow(q,"claim",q.ri<0?"Gezgin":RG[q.ri].n)).join("");
+v.innerHTML=dailyHTML()+`<div class="cd"><div class="ct">Bölge görevleri</div>${qs}</div><div class="cd"><div class="ct">Meydan okumalar</div>${QV.map(q=>qRow(q,"claimV",q.h)).join("")}</div>`}
+/* ---------- GÖREVE GİT ---------- */
+const GH={fok:["forge","Eşyanı seç ve ocakta yükselt"],pot:["map","Savaşta iksir kullan"],any:["map","Bir av alanı seç"],kill:["map","Görevdeki canavarı bul"],elite:["map","Bir bölgenin elit canavarını seç"],tower:["map","Sonsuz Kule’ye çık"],crit:["map","Savaşa gir, kritik vur"],dmg:["map","Güçlü yeteneğini kullan"],mat:["map","Canavar avla, malzeme düşer"],lvl:["map","Canavar avla"],drop3:["map","Eşya avla, elitlerde şans yüksek"]};
+function goQ(k){if(!k)return;if(k=="chest"){if(P.ch>0){chestUI();return}toast("➡️ Elit veya kule bossu yenerek sandık kazan");go("map");return}const h=GH[k]||GH.any;toast("➡️ "+h[1]);go(h[0])}
+/* ---------- KAYIT YEDEĞİ ---------- */
+function backupHTML(){return`<div class="cd"><div class="ct">💾 Kayıt yedeği</div><p class="mu" style="font-size:10px">Dışa aktar: kodu kopyala ve bir yere sakla (not defteri, mesaj). İçe aktar: kodu yapıştırıp yükle.</p>
+<textarea id="bk" placeholder="Yedek kodu burada görünür veya buraya yapıştır"></textarea>
+<div class="pr"><button onclick="expSave()">📤 Dışa aktar</button><button onclick="impSave()">📥 İçe aktar</button></div></div>`}
+function expSave(){const c=btoa(unescape(encodeURIComponent(JSON.stringify(P))));$("bk").value=c;try{navigator.clipboard.writeText(c).then(()=>toast("Kod kopyalandı"),()=>toast("Kodu elle kopyala"))}catch(e){toast("Kodu elle kopyala")}}
+function impSave(){const t=$("bk").value.trim();if(!t)return toast("Önce kodu yapıştır");
+try{const o=JSON.parse(decodeURIComponent(escape(atob(t))));if(typeof o.lv!="number"||!CL[o.cls])throw 0;P=Object.assign(NEW(),o);if(o.ap===undefined)P.ap=P.lv*3;sync();daily();save();hud();view();toast("Kayıt yüklendi: "+P.name)}catch(e){toast("Geçersiz yedek kodu")}}
+/* ---------- BAŞLANGIÇ ---------- */
+function showIntro(){const g=$("cg");g.innerHTML=Object.entries(CL).map(([k,c])=>`<div id="co${k}" class="q" style="display:block;margin:0;border:1px solid ${k==sel?"var(--gold)":"transparent"}" onclick="pick('${k}')"><b class="g">${c.e} ${c.n}</b><div class="mu">${c.d}</div></div>`).join("");$("in").style.display="flex"}
+function pick(k){sel=k;showIntro()}
+function newGame(){P=NEW();P.name=$("cn").value.trim()||"Kahraman";P.cls=sel;sync();daily();P.hp=P.maxHp;P.mp=P.maxMp;$("in").style.display="none";save();nav();view();toast("Hoş geldin, "+P.name+"!")}
+/* ---------- KÜL PARÇACIKLARI ---------- */
+const cv=$("bg"),cx=cv.getContext("2d");let ps=[];
+function rs(){cv.width=innerWidth;cv.height=innerHeight}addEventListener("resize",rs);rs();
+for(let i=0;i<30;i++)ps.push({x:R(cv.width),y:R(cv.height),r:R(2)+1,v:R(.4)+.1});
+(function f(){cx.clearRect(0,0,cv.width,cv.height);cx.fillStyle="rgba(230,180,80,.35)";ps.forEach(p=>{cx.beginPath();cx.arc(p.x,p.y,p.r,0,7);cx.fill();p.y-=p.v;if(p.y<0)p.y=cv.height});requestAnimationFrame(f)})();
+/* başlat */
+addEventListener("DOMContentLoaded",()=>{nav();if(load()){sync();hud();offline();daily();view()}else showIntro()});
+</script>
+</body>
+</html>
