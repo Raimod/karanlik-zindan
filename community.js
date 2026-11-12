@@ -28,7 +28,7 @@ async function comPushLb(force){
   const key=JSON.stringify(b);
   if(!force&&key===COM.lastLb)return;
   try{
-    const r=await CLOUD.sb.from("leaderboard").upsert(Object.assign({user_id:CLOUD.user.id},b),{onConflict:"user_id"});
+    const r=await CLOUD.sb.rpc("kz_lb_refresh");
     if(!r.error)COM.lastLb=key;
   }catch(e){}
 }

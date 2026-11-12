@@ -122,15 +122,18 @@ async function cloudPush(quiet){
   if(!CLOUD.user||!CLOUD.sb||CLOUD.hold)return false;
   const ms=cloudStamp()||Date.now();
   try{
-    const r=await CLOUD.sb.from("saves").upsert(
-      {user_id:CLOUD.user.id,data:{v:GAME_VERSION,active:activeSlot,slots:SLOTS},updated_ms:ms,updated_at:new Date().toISOString()},
-      {onConflict:"user_id"});
+    const r=await CLOUD.sb.rpc("kz_save",{p_data:{v:GAME_VERSION,active:activeSlot,slots:SLOTS},p_ms:ms});
     if(r.error)throw r.error;
     cloudSyncSet(ms);CLOUD.lastSync=Date.now();CLOUD.msg="";
     if(typeof comPushLb==="function")comPushLb();
     if(!quiet)toast("☁️ Buluta kaydedildi");
     cloudUI();return true;
   }catch(e){
+    if(/cok sik kayit/i.test((e&&e.message)||"")){
+      /* çok sık kayıt: sessizce 10 sn sonra tekrar dene */
+      if(!CLOUD.timer)CLOUD.timer=setTimeout(()=>{CLOUD.timer=null;cloudPush(true)},10000);
+      return false;
+    }
     CLOUD.msg="Buluta kaydedilemedi: "+cloudErr(e);cloudUI();
     if(!quiet)toast("☁️ "+CLOUD.msg);
     return false;

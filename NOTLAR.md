@@ -17,6 +17,7 @@ Bu dosya, projede çalışan herkesin (Berkay, Claude, Gemini, GPT) okuması iç
 - `community.js`: Topluluk sekmesi (liderlik tablosu + genel sohbet). cloud.js'e bağlı, giriş gerekir
 - `sql/topluluk.sql`: liderlik + sohbet tabloları (kurulum.sql'den SONRA Supabase'te çalıştırılır)
 - `sql/koruma.sql`: hile koruması (sunucu her kayıtta altın/seviye/kule/eşya sınırlarını kontrol eder). topluluk.sql'den SONRA çalıştırılır; topluluk.sql tekrar çalıştırılırsa koruma.sql da tekrar çalıştırılmalı. Ayarlar kz_config tablosunda (guard_enabled=0 acil kapatma)
+- `sql/sunucu.sql`: kayıt ve liderliğe doğrudan yazmayı kapatır; yazma yalnızca kz_save / kz_lb_refresh fonksiyonlarından geçer (en son çalıştırılır; kurulum/topluluk tekrar çalıştırılırsa bunu da tekrar çalıştır)
 - `sql/kurulum.sql`: Supabase'e bir kez yapıştırılan veritabanı kodu (tablolar + erişim kuralları)
 
 ## Yol haritası
@@ -34,6 +35,7 @@ Bu dosya, projede çalışan herkesin (Berkay, Claude, Gemini, GPT) okuması iç
 
 ## Değişiklik günlüğü
 
+- 1.4.0: Aşama 2: sunucu kaydın sahibi. cloudPush -> rpc kz_save, comPushLb -> rpc kz_lb_refresh (liderlik kayıttan hesaplanır). Yeni hesaplar yalnızca yeni karakterle başlar (first_days=0). İki kayıt arası en az 5 sn (min_save_s); 'cok sik kayit' hatasında istemci sessizce yeniden dener.
 - 1.3.4: Hile koruması aşama 1 (sql/koruma.sql): sunucu, kayıtlar arası geçen süreye göre mantıksız ilerlemeyi reddeder. Eşya sınırları: rl/bp bölge sınırı, sahte elit eşya (st.l) engeli. Liderlik değerleri kayıtlı veriyle uyuşmak zorunda. Yeni eşya kuralları takas aşamasında gözden geçirilmeli (kz_item_err).
 - 1.3.3: Giriş zorunlu: hesapla giriş yapılmadan oyun açılmaz (cloud.js cloudGate). İstisna: daha önce giriş yapılmış cihaz çevrimdışıyken oynayabilir.
 - 1.3.2: Kullanıcı adı sadece giriş ekranında; sohbet ve düğmelerde karakter adı görünür (sohbet adı liderlik tablosundaki karakterden gelir).

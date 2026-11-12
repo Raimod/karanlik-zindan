@@ -24,6 +24,7 @@ insert into public.kz_config(key,val) values
   ('guard_enabled',1),     -- 1 açık, 0 kapalı
   ('kps',1.0),            -- saniyede en fazla kaç canavar öldürülebilir (cömert tahmin)
   ('slack_s',30),         -- her kayıtta ek tolerans süresi (saniye)
+  ('min_save_s',5),      -- iki kayıt arasında en az kaç saniye olmalı
   ('first_days',3),       -- ilk yüklemede (eski kayıt yokken) kaç günlük ilerleme kabul edilsin
   ('flat_gold_base',3000),-- tek seferlik ödüller (görev, günlük giriş) için sabit pay
   ('flat_gold_per_lv',400)
@@ -215,6 +216,11 @@ begin
     dt := least(greatest(extract(epoch from (now() - oldrow.updated_at)), 0), 86400 * 30);
   else
     dt := public.kz_cfg('first_days',3) * 86400;
+  end if;
+  -- Çok sık kayıt: her kayıtta eklenen tolerans ve tek seferlik paylar yığılmasın
+  if hasold and new.data is distinct from oldrow.data
+     and extract(epoch from (now() - oldrow.updated_at)) < public.kz_cfg('min_save_s',5) then
+    raise exception 'hile_korumasi: cok sik kayit';
   end if;
   dt := dt + public.kz_cfg('slack_s',30);
 
