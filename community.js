@@ -152,7 +152,7 @@ async function comSend(){
     await comLoadChat(true);
   }catch(e){
     const m=(e&&e.message)||"";
-    toast(/cok hizli/i.test(m)?"Çok hızlı yazıyorsun, 2 saniye bekle":"Mesaj gönderilemedi: "+cloudErr(e));
+    toast(/kufur/i.test(m)?"Mesajın uygunsuz içerik içeriyor":/cok hizli/i.test(m)?"Çok hızlı yazıyorsun, 2 saniye bekle":"Mesaj gönderilemedi: "+cloudErr(e));
   }
   COM.sending=false;
 }

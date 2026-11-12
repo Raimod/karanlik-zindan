@@ -1,4 +1,4 @@
-const GAME_VERSION="1.5.2";
+const GAME_VERSION="1.5.4";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -1607,13 +1607,26 @@ function syncCreateBtn(){
   const inp=$("cn"),btn=$("cn-btn");
   if(inp&&btn)btn.disabled=!inp.value.trim();
 }
-function newGame(){
+async function newGame(){
   const inp=$("cn");
   const charName=inp?inp.value.trim():"";
   if(!charName){
     toast("⚠️ Karakter oluşturmak için önce bir isim yazmalısın!");
     if(inp)inp.focus();
     return;
+  }
+  if((charName.match(/\p{L}/gu)||[]).length<3){
+    toast("⚠️ Karakter adında en az 3 harf olmalı (sadece rakam veya işaret olmaz)");
+    if(inp)inp.focus();
+    return;
+  }
+  if(typeof CLOUD!=="undefined"&&CLOUD.user&&CLOUD.sb){
+    const btn=$("cn-btn");if(btn)btn.disabled=true;
+    let st=null;
+    try{const r=await CLOUD.sb.rpc("kz_name_status",{p_name:charName});if(!r.error)st=r.data}catch(e){}
+    if(btn)btn.disabled=false;
+    if(st==="alinmis"){toast("⚠️ Bu karakter adı başka bir oyuncuda var, başka bir isim seç");if(inp)inp.focus();return}
+    if(st==="uygunsuz"){toast("⚠️ Bu isim uygun değil, başka bir isim seç");if(inp)inp.focus();return}
   }
   const created=NEW();
   created.name=charName;

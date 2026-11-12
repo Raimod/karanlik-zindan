@@ -42,6 +42,8 @@ Bu dosya, projede çalışan herkesin (Berkay, Claude, Gemini, GPT) okuması iç
 
 ## Değişiklik günlüğü
 
+- 1.5.3: Karakter adında en az 3 harf (Türkçe harfler dahil) şartı; kullanıcı adında en az bir harf (sadece rakamla hesap açılamaz). Yalnızca istemci kontrolü (sunucuda yok, eski kayıtlar bozulmasın diye). Test: tests/t23.js.
+
 - 1.5.2: Aşama 3b / 1. adım: eşya üretimi sunucuya taşındı. Demirci (yükseltme, efsun çevirme) ve sandık açma artık `battle` fonksiyonunun `forge` ve `chest` işlemleri (engine.js: forgeUpg, forgeReroll, chestOpen). Oyun işlemden önce bflush ile kaydı gönderir, sonucu ecoCall ile uygular. sql/savas.sql: kz_item_key, kz_items_err; sql/savas_siki2.sql srv_lock=2 yapar: çantadaki/kuşanılan her eşya ya önceki kayıtta aynen var olmalı (efsun kilidi `l` hariç) ya da düz (g=1, +0, efsunsuz, Tüccar türü) olmalı; güçlü eşya yalnızca sunucudan gelir. Kuşanma, atma, satma, efsun kilidi serbest. Testler: pgtest/t4.js (27), tests/t22.js (9). Hâlâ istemcide: altın/malzeme/iksir kazançları, görev ve günlük ödüller, satış geliri (aşama 3b/2).
 
 - 1.5.1: Çağrı tasarrufu (50 kişilik test, ücretsiz plan 500 bin çağrı/ay): MANUEL savaş artık telefonda oynanır; sunucu `start` ile tohum (seed) verir, telefon engine.js'i `seeded(seed,k)` ile oynar, savaş bitince hamle listesi `finish` ile gider, sunucu aynı tohumla baştan oynatır, sonuç ve ödülü (sunucuya özel rastgelelikle) o belirler. Savaş başına ~1 çağrı; zaferde sonraki savaş (`next`) önceden hazırlanır, "Tekrar savaş" çağrısız. Hamle listesi tutmazsa reddedilir. Tempo: savaş başına en az 1.5 sn, hamle başına 200 ms (telefon kendisi bekler). Oto savaş 5-8 savaşı tek çağrıda oynar; manuel<->oto geçişi hamleleri `auto` ile taşır. Manuel savaş sürerken bulut kaydı bekletilir. Sohbet yenileme 4 sn -> 8 sn. Yeni test: tests/t21.js.
@@ -68,3 +70,10 @@ Parçalar:
  4. Telefon sonucu oynatır; kz_save ilerleme alanlarını değiştiremez (savas_siki.sql) (YAPILDI, 1.5.0)
  5. Görev/sandık/satış/demirci kazançları sırayla sunucuya (aşama 3b)
 Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ücretsiz plan 500 bin çağrı/ay), oyun mantığı değişince Edge Function da güncellenmeli.
+
+
+## 1.5.4
+- Rakamlı kullanıcı adı kuralı geri alındı. Kullanıcı adları zaten benzersiz (Supabase Auth).
+- Benzersiz karakter adı + küfür filtresi (sql/filtre.sql). Çalıştırma sırası: kurulum, topluluk, koruma, sunucu, savas, savas_siki, savas_siki2, filtre. sunucu.sql tekrar çalışırsa filtre.sql de tekrar çalıştırılmalı.
+- Kelime eklemek: insert into public.kz_badwords(word,sub) values ('kelime',true);  (sub=true: kelime başka kelimenin içinde de yakalanır; false: sadece tam kelime)
+- Sohbet mesajlarında da küfür engellenir.
