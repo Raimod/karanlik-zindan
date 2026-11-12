@@ -77,3 +77,6 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 - Benzersiz karakter adı + küfür filtresi (sql/filtre.sql). Çalıştırma sırası: kurulum, topluluk, koruma, sunucu, savas, savas_siki, savas_siki2, filtre. sunucu.sql tekrar çalışırsa filtre.sql de tekrar çalıştırılmalı.
 - Kelime eklemek: insert into public.kz_badwords(word,sub) values ('kelime',true);  (sub=true: kelime başka kelimenin içinde de yakalanır; false: sadece tam kelime)
 - Sohbet mesajlarında da küfür engellenir.
+
+## 1.5.5
+- Karakter oluşturma ekranında uyarılar (ad alınmış, uygunsuz, eksik ad) ekranın arkasında kalıp görünmüyordu; bildirimler artık en üstte.
