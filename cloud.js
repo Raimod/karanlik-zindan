@@ -54,6 +54,7 @@ function cloudRetry(){CLOUD.state="loading";cloudUI();cloudInit()}
 /* ---- Hata mesajları (Türkçe) ---- */
 function cloudErr(e){
   const m=(e&&e.message)||String(e);
+  if(/hile_korumasi/i.test(m))return"Sunucu bu kaydı kabul etmedi: olağandışı ilerleme algılandı ("+m.replace(/^.*hile_korumasi:\s*/i,"").slice(0,60)+").";
   if(/already registered|already been registered/i.test(m))return"Bu kullanıcı adı alınmış.";
   if(/invalid login/i.test(m))return"Kullanıcı adı veya şifre yanlış.";
   if(/at least|weak|short/i.test(m))return"Şifre en az 6 karakter olmalı.";
