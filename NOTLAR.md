@@ -127,3 +127,9 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 - Hepsi sunucuda tek işlemde yapılır (kz_m_put): eşya kopyalanamaz. Pazar ve takas için seviye 5 gerekir.
 - Yeni dosyalar: pazar.js, sql/pazar.sql. Çalıştırma: Edge Function yeniden dağıt, SQL'de sql/pazar.sql (savas.sql ve liderlik.sql zaten çalışmış olmalı), dosyaları GitHub'a yükle (pazar.js dahil!).
 - Wiki güncellendi (Banka, Pazar, Takas, elit ödülü, sıralama, pratik araçlar).
+
+## 2.1.0 (Paket E)
+- Oto savaş sürerken diğer sekmelere bakılabilir (üstte mini şerit). Çanta/ekipman/nitelik değiştiren işlemler savaş sürerken kapalı.
+- Savaş ekranının altı: Günlük + Kazanımlar (öldürülen, altın, XP, hasar, kritik, düşenler).
+- Sandık ödülleri azaltıldı: altın ~yarıya, iksir paketi 1+1, nadir eşya %6, parşömen %6.
+- Yeni SQL yok. Edge Function yeniden dağıtılmalı (battle-index.ts), dosyalar GitHub'a yüklenmeli.

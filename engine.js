@@ -253,14 +253,14 @@ function dropItem(p,m,fg,rng){
   const ac=(()=>{const y=rng.R(100);return y<=1?4:y<=5?3:y<=13?2:y<=28?1:0})(),P0=[["atk","Saldırı Gücü"],["def","Zırh Direnci"],["crit","Kritik Vuruş"]],af=[];
   for(let n=0;n<ac;n++){const q=P0[rng.RI(0,2)];af.push({t:q[0],n:q[1],v:rng.RI(1,10),l:false})}
   const it={name:r.ore+" "+CL[rc].it[si],setOre:r.ore,slot:sl,rc,rl:r.req,g,p:0,bp:r.pw,af};
-  p.inv.push(it);p.st.l+=g==5?1:0;
+  p.inv.push(it);p.st.l+=g==5?1:0;out.push({loot:{k:"item",t:it.name+" ["+G[g].t+"]",c:G[g].c,g}});
   if(g>=3)out.push({ev:["drop3",1]});
   if(g==5){out.push({snd:"elite"});out.push({toast:"👑 KADİM ELİT EŞYA: "+it.name+"!"});_lg(out,"👑 <b style=color:#e6b450>[JACKPOT]</b> "+it.name)}
   else _lg(out,"📦 <b style=color:"+G[g].c+">"+it.name+" ["+G[g].t+"]</b>"+(rc==p.cls?" ✅":""));
   return out;
 }
 
-function _gmat(p,k,n,out){p.mat[k]=(p.mat[k]||0)+n;out.push({ev:["mat",n]});_lg(out,MT[k][0]+" +"+n+" "+MT[k][1])}
+function _gmat(p,k,n,out){p.mat[k]=(p.mat[k]||0)+n;out.push({ev:["mat",n]});out.push({loot:{k:"mat",t:MT[k][0]+" "+MT[k][1],n}});_lg(out,MT[k][0]+" +"+n+" "+MT[k][1])}
 function matDropOf(p,m,rng,out){
   if(rng.R(100)<65)_gmat(p,"kirik",rng.RI(1,2),out);
   const k=TM[m.tr];if(k&&rng.R(100)<40)_gmat(p,k,1,out);
@@ -274,6 +274,7 @@ function bWin(B,p,rng){
   p.gold+=g;p.xp+=x;p.st.k++;p.stk++;
   out.push({kill:{el:!!m.el,tw:B.tw,ri:m.ri,mi:m.mi}});
   if(m.el){p.st.e++;if(!B.tw)p.boss[m.ri]=true}
+  out.push({win:{g,x,el:!!m.el}});
   _lg(out,"🎉 <b>"+m.name+"</b> yenildi! +"+g+"🪙 "+(x?"+"+x+" XP":"(0 XP, seviye farkı)"));
   if(m.el&&!B.tw&&m.ri<4&&!p.boss[m.ri+1])_lg(out,"🗝️ Yeni bölgenin kapısı açıldı!");
   while(p.xp>=reqXp(p.lv)&&p.lv<50){
@@ -283,7 +284,7 @@ function bWin(B,p,rng){
     out.push({toast:"🌟 Seviye "+p.lv+"! (+"+dHp+" HP, +"+dMp+" MP, +2 SP, +3 AP)"});
     p.hp=p.maxHp;p.mp=p.maxMp;
   }
-  if(rng.R(1)<.16){const t=rng.R(1)<.5?"hp":"mp",r=rng.R(100),sz=r<65?"S":r<92?"M":"L",d=POT_DEF[t][sz];p.pot[t][sz]=(p.pot[t][sz]||0)+1;_lg(out,`${d.e} 1× <b style=color:${G[d.g].c}>${d.n}</b> buldun`)}
+  if(rng.R(1)<.16){const t=rng.R(1)<.5?"hp":"mp",r=rng.R(100),sz=r<65?"S":r<92?"M":"L",d=POT_DEF[t][sz];p.pot[t][sz]=(p.pot[t][sz]||0)+1;out.push({loot:{k:"pot",t:d.n,c:G[d.g].c}});_lg(out,`${d.e} 1× <b style=color:${G[d.g].c}>${d.n}</b> buldun`)}
   matDropOf(p,m,rng,out);
   if(B.tw){out.push({ev:["tower",B.tw]});p.tw=Math.max(p.tw,B.tw);if(B.tw%5==0){p.ch++;_lg(out,"🎁 Kat ödülü: sandık!")}}
   if(m.el?rng.R(100)<15:rng.R(100)<12)out.push(...dropItem(p,m,0,rng));
@@ -345,15 +346,15 @@ function chestOpen(p,n,rng){
   for(let k=0;k<n;k++){
     p.ch--;out.push({ev:["chest",1]});
     const x=rng.R(100);
-    if(x<10){
+    if(x<6){
       if(p.inv.length<50){
         const o=dropItem(p,RG[Math.min(4,Math.floor((p.lv-1)/10))].mobs[0],3,rng);
         for(const e of o)if(e.ev)out.push(e);
         res.items.push(p.inv[p.inv.length-1]);
-      }else{res.skipped++;const g=rng.RI(p.lv*20,p.lv*45)+40;p.gold+=g;res.gold+=g}
-    }else if(x<17){p.sc++;res.sc++}
-    else if(x<47){const r=rng.R(100),sz=r<60?"S":r<90?"M":"L";p.pot.hp[sz]=(p.pot.hp[sz]||0)+2;p.pot.mp[sz]=(p.pot.mp[sz]||0)+2;res.hp+=2;res.mp+=2}
-    else{const g=rng.RI(p.lv*25,p.lv*60)+50;p.gold+=g;res.gold+=g}
+      }else{res.skipped++;const g=rng.RI(p.lv*10,p.lv*22)+20;p.gold+=g;res.gold+=g}
+    }else if(x<12){p.sc++;res.sc++}
+    else if(x<42){const r=rng.R(100),sz=r<60?"S":r<90?"M":"L";p.pot.hp[sz]=(p.pot.hp[sz]||0)+1;p.pot.mp[sz]=(p.pot.mp[sz]||0)+1;res.hp+=1;res.mp+=1}
+    else{const g=rng.RI(p.lv*12,p.lv*30)+25;p.gold+=g;res.gold+=g}
   }
   out.push({snd:"elite"});out.res=res;out.ok=true;return out;
 }

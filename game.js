@@ -1,4 +1,4 @@
-const GAME_VERSION="2.0.0";
+const GAME_VERSION="2.1.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -487,8 +487,8 @@ $("hh").style.width=Math.max(0,P.hp/P.maxHp*100)+"%";$("hm").style.width=Math.ma
 $("ht").innerText=P.hp+" / "+P.maxHp+" HP";$("hmt").innerText=P.mp+" / "+P.maxMp+" MP"}
 const TABS=[["character","🧙","Karakter"],["inventory","🎒","Çanta"],["map","🗺️","Harita"],["forge","🔨","Demirci"],["city","🏰","Şehir"],["quests","📜","Görev"],["community","🌐","Topluluk"],["wiki","📖","Wiki"]];
 function nav(){$("nv").innerHTML=TABS.map(t=>`<button class="${tab==t[0]?"a":""}" onclick="go('${t[0]}')"><span>${t[1]}</span>${t[2]}</button>`).join("")}
-function go(t){tab=t;armed="";nav();view()}
-function view(){const v=$("mv");if(CB.on){combatUI(v);return}({character:cChar,inventory:cBag,map:cMap,forge:cForge,city:cCity,skills:cSkills,quests:cQuests,community:(typeof cCommunity==="function"?cCommunity:cCity),wiki:cWiki})[tab](v)}
+function go(t){tab=t;armed="";CB.nav=!!(CB.on&&t!=="map"&&(CB.auto||CB.nav));nav();view()}
+function view(){const v=$("mv");if(CB.on&&!(CB.nav&&tab!=="map")){combatUI(v);return}({character:cChar,inventory:cBag,map:cMap,forge:cForge,city:cCity,skills:cSkills,quests:cQuests,community:(typeof cCommunity==="function"?cCommunity:cCity),wiki:cWiki})[tab](v);if(CB.on)updMini(true)}
 function toast(m){const e=document.createElement("div");e.className="t";e.innerText=m;$("tt").appendChild(e);setTimeout(()=>e.remove(),2400)}
 
 /* ---------- GÖRSELLER (SVG) ---------- */
@@ -887,7 +887,7 @@ async function sell(n){closeM();const r=await ecoCall({op:"eco",a:"sell",i:n});i
 let CB={on:false,auto:false,fast:false},aT=null;
 const RNG=mkRng(()=>Math.random());
 /* Motorun döndürdüğü olayları ekranda uygula (sıra korunur) */
-function applyEv(out){for(const e of out){if(e.lg!==undefined)lg(e.lg);else if(e.fx)fx(e.fx[0],e.fx[1]);else if(e.snd)A[e.snd]();else if(e.toast)toast(e.toast);else if(e.shake)shake();else if(e.vig)vig();else if(e.ev)ev(e.ev[0],e.ev[1]);else if(e.kill)onKill(e.kill)}}
+function applyEv(out){for(const e of out){if(e.lg!==undefined)lg(e.lg);else if(e.fx)fx(e.fx[0],e.fx[1]);else if(e.snd)A[e.snd]();else if(e.toast)toast(e.toast);else if(e.shake)shake();else if(e.vig)vig();else if(e.ev){ssEv(e.ev[0],e.ev[1]);ev(e.ev[0],e.ev[1])}else if(e.win)ssWin(e.win);else if(e.loot)ssLoot(e.loot);else if(e.kill)onKill(e.kill)}}
 /* Öldürme: günlük ve normal görev ilerlemesi */
 function onKill(){}
 /* ---- Savaş sunucuda oynanır (Supabase 'battle' fonksiyonu). Burası sonucu ekranda oynatır. ---- */
@@ -921,6 +921,7 @@ async function bflush(){
 /* Demirci, sandık gibi tek adımlık işlemler sunucuda yapılır; sonuç kayda yazılır, burada gösterilir */
 let ecoBusy=false;
 async function ecoCall(body){
+  if(cbLocked()){cbWarn();return null}
   if(ecoBusy||battleBusy||bStarting)return null;
   ecoBusy=true;
   try{
@@ -958,7 +959,7 @@ async function bReplay(r,ctx){
       if(!CB.on||P!==ctx.P)break;
       if(!first&&!(ctx.auto&&!CB.auto))await bSleep(d());first=false;
       if(!CB.on||P!==ctx.P)break;
-      if(st.start){CB={...CB,on:true,over:false,...st.start,log:CB.log||[],acts:[],fin:false};view()}
+      if(st.start){CB={...CB,on:true,over:false,...st.start,log:CB.log||[],acts:[],fin:false};if(!(CB.nav&&tab!=="map"))view()}
       applySnap(st.s);applyEv(st.out);
       if(st.win){bShowWin(CB.mob);hud();saveAll(true)}
       if(st.lose!==undefined){
@@ -989,6 +990,7 @@ function adoptPre(ri,mi,tw){
 }
 async function startCombat(ri,mi,keep,tw){
   if(battleBusy||bStarting)return;
+  if(!keep&&!CB.on)SS=newSS();
   if(adoptPre(ri,mi,tw))return;
   CB.pre=null;
   bStarting=true;
@@ -1006,7 +1008,7 @@ async function startCombat(ri,mi,keep,tw){
     await bReplay(r,ctx);
   }finally{bStarting=false}
 }
-function lg(t){CB.log.unshift(t);if(CB.log.length>40)CB.log.pop();const b=$("lg");if(b)b.innerHTML=CB.log.map(x=>"<div>"+x+"</div>").join("")}
+function lg(t){CB.log.unshift(t);if(CB.log.length>40)CB.log.pop();if(CB.lt!=="gain")renderLG()}
 function combatUI(v){const m=CB.mob,c=CL[P.cls];
 v.innerHTML=`<div class="cd mc" id="mc"><div class="bn" style="opacity:.55">${banner(RG[CB.ri].h)}</div><div class="rel"><div class="au"></div><div class="mav" id="mav">${mobSVG(m)}<div class="fl" id="fl"></div></div>
 <div class="nm" style="font-size:16px;color:${m.el?"var(--gold)":"#fff"}">${m.el?"👑 ":""}${m.name} <span class="mu" style="font-size:11px;font-family:var(--bs)">Lv.${m.lv}</span></div>
@@ -1026,8 +1028,48 @@ v.innerHTML=`<div class="cd mc" id="mc"><div class="bn" style="opacity:.55">${ba
 </div>
 <div id="auto-bar" style="display:none;background:rgba(230,180,80,.12);border:1px solid rgba(230,180,80,.35);border-radius:7px;padding:4px 8px;margin-top:5px;font-size:9.5px;justify-content:space-between;align-items:center"></div>
 <div class="sg"><button class="sb" style="grid-column:span 2;text-align:center" onclick="act(-1)"><b style="justify-content:center">Temel saldırı · 0 MP</b></button>${c.sk.map((s,i)=>`<button class="sb" id="s${i}" onclick="act(${i})"><b><span>${s.n}</span><span style="color:#60a5fa">${s.mp}</span></b><small>${s.i?"⚡ ":""}${s.d}</small></button>`).join("")}</div>
-<div class="log" id="lg"></div><div id="ov"></div>`;$("lg").innerHTML=CB.log.map(x=>"<div>"+x+"</div>").join("")}
-function upd(){if(!CB.on||!$("mh"))return;const m=CB.mob;
+<div class="sub-tabs" style="margin:6px 0 4px;padding:3px"><button class="sub-tab" id="lt1" onclick="setLT('log')">📜 Günlük</button><button class="sub-tab" id="lt2" onclick="setLT('gain')">🏆 Kazanımlar</button></div><div class="log" id="lg"></div><div id="ov"></div>`;renderLG()}
+/* ---------- Oto savaş sürerken diğer sekmelere bakabilme ---------- */
+const cbLocked=()=>!!(CB.on&&(CB.auto||!CB.over));
+function cbWarn(){toast("⚔️ Savaş sürerken bu işlem yapılamaz. Önce ⏸ Oto'yu durdur ve savaşı bitir (bakmak serbest).");return true}
+function updMini(make){
+  const v=$("mv");if(!v||!CB.on||!(CB.nav&&tab!=="map"))return;
+  let b=$("cbm");
+  if(!b){if(!make)return;v.insertAdjacentHTML("afterbegin",'<div id="cbm" onclick="go(\'map\')" style="cursor:pointer;background:rgba(230,180,80,.13);border:1px solid rgba(230,180,80,.5);border-radius:9px;padding:6px 9px;margin-bottom:8px;font-size:10.5px"></div>');b=$("cbm")}
+  const m=CB.mob,pc=m?Math.max(0,Math.floor(m.hp/m.mx*100)):0;
+  b.innerHTML=`<div style="display:flex;justify-content:space-between;gap:6px"><span>${CB.auto?"🤖 <b>Oto savaş sürüyor</b>":"⏸ <b>Oto durdu</b>"}${m?" · "+(m.el?"👑 ":"")+m.name+" %"+pc:""}</span><span class="g">☠️ ${SS.k} · 🪙 +${SS.g.toLocaleString("tr-TR")}</span></div><div class="mu" style="font-size:9.5px">Savaşa dönmek için dokun · Bu sırada yalnızca bakabilirsin</div>`;
+}
+/* Savaş oturumu kazanımları (savaş ekranının "Kazanımlar" bölümü) */
+const newSS=()=>({t0:Date.now(),k:0,e:0,g:0,x:0,dmg:0,max:0,hits:0,crit:0,items:{},mats:{},pots:{},lvl:0});
+let SS=newSS();
+function ssEv(n,v){if(n==="dmg"){SS.dmg+=v;SS.hits++;if(v>SS.max)SS.max=v}else if(n==="crit")SS.crit++}
+function ssWin(w){SS.k++;if(w.el)SS.e++;SS.g+=w.g;SS.x+=w.x;if(CB.lt==="gain")renderLG()}
+function ssLoot(l){
+  const to=l.k==="item"?SS.items:l.k==="mat"?SS.mats:SS.pots;
+  const o=to[l.t]||(to[l.t]={n:0,c:l.c||"#fff",g:l.g||0});o.n+=l.n||1;
+  if(CB.lt==="gain")renderLG();
+}
+function gainHtml(){
+  const s=SS,mins=Math.max(1,(Date.now()-s.t0)/6e4),f=n=>Math.floor(n).toLocaleString("tr-TR");
+  const list=(o,ic)=>Object.entries(o).sort((a,b)=>(b[1].g||0)-(a[1].g||0)||b[1].n-a[1].n).map(([t,v])=>`<div style="color:${v.c}">${ic} ${t} <b>×${v.n}</b></div>`).join("");
+  const loot=list(s.items,"📦")+list(s.pots,"🧪")+list(s.mats,"🔹");
+  return`<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;margin-bottom:5px">
+    <div>☠️ Öldürülen: <b>${s.k}</b>${s.e?" (👑"+s.e+")":""}</div><div>🪙 Altın: <b class="g">+${f(s.g)}</b></div>
+    <div>✨ XP: <b>+${f(s.x)}</b></div><div>⏱️ Süre: <b>${Math.floor(mins)} dk</b></div>
+    <div>⚔️ Toplam hasar: <b>${f(s.dmg)}</b></div><div>💥 En yüksek: <b>${f(s.max)}</b></div>
+    <div>🎯 Ort. vuruş: <b>${s.hits?f(s.dmg/s.hits):0}</b></div><div>🔥 Kritik: <b>${s.crit}</b>${s.hits?" (%"+Math.round(s.crit/s.hits*100)+")":""}</div>
+    <div>🪙/dk: <b>${f(s.g/mins)}</b></div><div>☠️/dk: <b>${(s.k/mins).toFixed(1)}</b></div></div>
+    <div style="border-top:1px solid var(--ln);padding-top:4px">${loot||'<span class="mu">Henüz eşya/malzeme düşmedi</span>'}</div>
+    <button class="btn s" style="margin-top:5px;padding:3px;font-size:9.5px" onclick="SS=newSS();renderLG()">🔄 Sayacı sıfırla</button>`;
+}
+function setLT(m){CB.lt=m;renderLG()}
+function renderLG(){
+  const b=$("lg");if(!b)return;
+  const gm=CB.lt==="gain";
+  const t1=$("lt1"),t2=$("lt2");if(t1)t1.className="sub-tab"+(gm?"":" act");if(t2)t2.className="sub-tab"+(gm?" act":"");
+  b.innerHTML=gm?gainHtml():CB.log.map(x=>"<div>"+x+"</div>").join("");
+}
+function upd(){if(!CB.on)return;if(!$("mh")){updMini();return}const m=CB.mob;
 $("mh").style.width=m.hp/m.mx*100+"%";$("mt").innerText=m.hp.toLocaleString()+" / "+m.mx.toLocaleString();
 $("mc").classList.toggle("tl",!!CB.tele);const tb=$("tb");tb.style.display=CB.tele?"block":"none";tb.innerText="⚠️ AĞIR DARBE HAZIRLANIYOR! Kesinti yap!";
 $("st").innerHTML=[TN[m.tr]||"",CB.pzT>0?"🤢 Zehir "+CB.pz+" ("+CB.pzT+")":"",CB.rage?"🔥 <b style=color:#f43f5e>ÖFKE</b>":"",CB.sh>0?"🛡️ Kalkan "+CB.sh+" ("+CB.shT+")":"",CB.dotT>0?(CB.dotN||"☠️ Etki")+" "+CB.dot+" ("+CB.dotT+")":"",CB.stun?"💫 Sersem":""].filter(Boolean).join(" · ");
@@ -1455,6 +1497,7 @@ function cWiki(v){
           <li><b>👑 Elit Boss Fazları:</b> Bölge bossları ve Kule'nin 5. kat bossları <b>3 Fazlıdır</b>. Canları <b>%66</b> ve <b>%33</b> altına indiğinde faz atlar; saldırıları her fazda <b>+%30</b> artar ve ağır darbe ihtimali <b>%50</b> olur.</li>
           <li><b>Seviye Farkı Cezaları:</b> Canavardan 2–3 Lv yüksekte %65, 4–6 Lv yüksekte %25, 7+ Lv yüksekte <b>0 XP</b> alınır. Canavar 3+ Lv yüksekse hasar düşer, alınan hasar artar.</li>
           <li><b>🤖 Otomatik Savaş, Yetenek & İksir Seçimi:</b> Savaşta <b>▶ Oto</b> tuşuna basıldığında açılan ayar penceresinden sınıfının 4 yeteneğinden <b>hangilerinin otomatik kullanılıp hangilerinin kapatılacağı</b> (veya <i>Sadece Düz</i> saldırı modu), ayrıca otomatik kullanılacak <b>Can ve Mana iksiri boyutu</b> (Küçük, Orta, Büyük veya Kullanma) ile kullanım eşiği (%25–%70) seçilebilir. Manuel savaşta da iksir butonlarının yanındaki <b>K / O / B</b> tuşuyla boyut değiştirilebilir.</li>
+          <li><b>🏆 Oto Savaşta Gezinme ve Kazanımlar:</b> Oto savaş sürerken <b>Çanta, Karakter, Görev, Şehir, Topluluk ve Wiki</b> sekmelerine bakabilirsin; üstteki altın şeritte savaşın durumu görünür, dokununca savaşa dönersin. Bu sırada eşya kuşanma, satma, nitelik dağıtma gibi değişiklikler kapalıdır (önce ⏸ Oto'yu durdur). Savaş ekranının altı ikiye ayrılır: <b>📜 Günlük</b> ve <b>🏆 Kazanımlar</b> (öldürülen, altın, XP, toplam/en yüksek hasar, kritik oranı, dakikada kazanç, düşen eşya ve malzemeler).</li>
         </ul>
       </div>
       <div class="cd">
@@ -1541,7 +1584,7 @@ function cWiki(v){
           <li><b>🏦 Banka:</b> Şehir → Banka. Tüm karakterlerin ortak kasasıdır: en çok <b>100 ekipman</b> ve sınırsız altın saklar. Eşya ve altını istediğin zaman yatırıp çekebilirsin; bu sayede eşyaları kendi karakterlerin arasında taşıyabilirsin.</li>
           <li><b>🛒 Pazar (Tezgâh):</b> Seviye 5'ten itibaren ekipmanını fiyat belirleyip tezgâha koyarsın (en çok 10 tezgâh). Tezgâh <b>24 saat</b> açık kalır; sen çevrimdışı olsan da satış sürer. Satış gelirinden <b>%5 vergi</b> kesilir. Satılanların parasını <i>Tezgâhım → Satılanlar</i> bölümünden toplarsın. 24 saatte satılmayan eşya otomatik kapanır ve <b>⚠️ Süresi dolanlar</b> listesine düşer; oradan çantana alırsın. Süresi dolmadan tezgâhı istediğin an kapatabilirsin.</li>
           <li><b>🤝 Takas:</b> Bir oyuncuya karakter adıyla teklif gönderirsin: sen eşya ve/veya altın verirsin, karşılığında altın ve/ya en çok 5 eşya (istersen belirli bir bölme) istersin. Karşı taraf eşyayı kendi çantasından seçip verir. Teklif 24 saat geçerlidir (en çok 5 açık teklif); verdiklerin teklif süresince emanette durur. Kabul edilirse ödemeyi <i>Gönderdiklerim</i> bölümünden toplarsın; reddedilir ya da süresi dolarsa eşyanı geri alırsın.</li>
-          <li><b>🎁 Hazine Sandıkları (Tekli & Toplu Açım):</b> Sonsuz Kule'nin her 5. kat bossundan, günlük görevlerden ve 4+ saat çevrimdışı ödülden kazanılır (normal canavarlardan ve elit bosslardan düşmez). Çantada tek yuvada birikir ve toplu açılabilir; içinden <b>%53 Altın</b>, <b>%30 İksir Paketi</b> (2 Can + 2 Mana), <b>%10 Nadir Ekipman (GR-III+)</b> veya <b>%7 Koruma Parşömeni</b> çıkar.</li>
+          <li><b>🎁 Hazine Sandıkları (Tekli & Toplu Açım):</b> Sonsuz Kule'nin her 5. kat bossundan, günlük görevlerden ve 4+ saat çevrimdışı ödülden kazanılır (normal canavarlardan ve elit bosslardan düşmez). Çantada tek yuvada birikir ve toplu açılabilir; içinden <b>%58 Altın</b>, <b>%30 İksir Paketi</b> (1 Can + 1 Mana), <b>%6 Nadir Ekipman (GR-III+)</b> veya <b>%6 Koruma Parşömeni</b> çıkar.</li>
         </ul>
       </div>
       <div class="cd">
@@ -1696,3 +1739,9 @@ function autoEquip(){
   if(!n)return toast("Çantada kuşanılacak daha iyi eşya yok");
   A.pot();sync();save();view();toast("⚡ "+n+" eşya kuşanıldı");
 }
+
+/* Savaş sürerken çantayı/ekipmanı/niteliği değiştiren işlemler kapalı (bakmak serbest): sunucu kaydıyla çakışmasın */
+["equip","unequip","autoEquip","buyShop","fount","usePot","resetSk","upSk","addStat","respec","equipTitle","applyBagSortPermanent"].forEach(n=>{
+  const f=window[n];if(typeof f!=="function")return;
+  window[n]=function(){if(cbLocked())return cbWarn();return f.apply(this,arguments)};
+});

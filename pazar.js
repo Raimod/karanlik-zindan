@@ -58,6 +58,7 @@ async function mkRun(body){
 }
 /* tek adımlık sunucu işlemi: önce bekleyen ilerleme gönderilir, sonra sonuç buraya işlenir */
 async function mkCall(body){
+  if(cbLocked()){cbWarn();return null}
   if(ecoBusy||battleBusy||bStarting)return null;
   ecoBusy=true;
   try{
