@@ -1,4 +1,4 @@
-const GAME_VERSION="2.2.0";
+const GAME_VERSION="2.3.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -772,7 +772,7 @@ act=`<div style="border-top:1px solid var(--ln);margin-top:12px;padding-top:12px
 <p class="mu" style="font-size:10px;margin:6px 0">+6 üstü başarısızlıkta eşya düşebilir (+10 üstü kırılabilir). Koruma parşömenin: <b class="g">${P.sc}</b></p>
 <label class="q" style="cursor:pointer;gap:8px"><input type="checkbox" ${SFprot?"checked":""} ${P.sc>0?"":"disabled"} onchange="SFprot=this.checked;view()" style="width:18px;height:18px"><span style="flex:1;font-size:11px">📜 Koruma parşömeni kullan <span class="mu">(yalnızca eşya zarar görecekse harcanır)</span></span></label>
 ${needHTML(i.p)}<button class="btn" onclick="upg()">Ocakta yükselt (+${i.p+1})</button>
-${aff?`<div class="ct" style="margin-top:12px;font-size:12px;color:#c084fc">Efsun dönüştürücü</div>${aff}<button class="btn v" onclick="reroll()">Efsunları çevir (45 🪙)</button>`:""}</div>`}
+${aff?`<div class="ct" style="margin-top:12px;font-size:12px;color:#c084fc">Efsun dönüştürücü</div>${aff}<button class="btn v" onclick="reroll()">Efsunları çevir (${rerollCost(i)} 🪙)</button>`:""}</div>`}
 v.innerHTML=`<div class="cd"><div class="ct">Demirci ocağı <span class="g" style="font-size:11px">+15 sınırı</span></div><div class="mu" style="font-size:10px;margin-bottom:8px">${matLine()}</div>
 <div class="pr" style="margin:0 0 10px"><button style="${fsrc=="eq"?"border-color:var(--gold);color:var(--gold)":""}" onclick="fsrc='eq';SF=null;view()">Kuşanılanlar</button><button style="${fsrc=="bag"?"border-color:var(--gold);color:var(--gold)":""}" onclick="fsrc='bag';SF=null;view()">Çantadakiler</button></div>
 <div class="bg5" style="max-height:170px;overflow:auto">${src||'<p class="mu" style="font-size:10px">Eşya yok.</p>'}</div>${act}</div>`}
@@ -848,14 +848,14 @@ function upSk(i){if(P.sp<=0)return;P.sp--;P.sr[i]=(P.sr[i]||0)+1;A.lvl();save();
 function insp(n){const i=P.inv[n];if(!i)return;const ok=i.rc==P.cls,el=effLv(i),cur=P.eq[i.slot],sy=salvageYield(i);
 const syTxt=Object.entries(sy).map(([k,v])=>MT[k][0]+"+"+v).join(" ");
 $("ic").innerHTML=`<div style="text-align:center;margin-bottom:10px"><b style="color:${G[i.g].c};font-size:15px">${i.name} +${i.p}</b><div class="mu" style="font-size:11px">${G[i.g].n} ${G[i.g].t} · ${SN[i.slot]} (${i.setOre||i.name.split(" ")[0]} Seti)</div></div>
-<div class="q" style="display:block;line-height:1.6">Sınıf: <b style="color:${ok?"#4ade80":"#f87171"}">${CL[i.rc].n}</b><br>Seviye: <b style="color:${P.lv>=el?"#4ade80":"#f87171"}">Lv.${el}</b> (sen: ${P.lv})<br>Güç: <b class="g">${pw(i)}</b>${cur?` <span class="mu">(kuşanılan: ${pw(cur)})</span>`:""}${(i.af||[]).map(a=>`<br><span style="color:#c084fc">✨ ${a.n} +%${a.v}</span>`).join("")}</div>
+<div class="q" style="display:block;line-height:1.6">Sınıf: <b style="color:${ok?"#4ade80":"#f87171"}">${CL[i.rc].n}</b><br>Seviye: <b style="color:${P.lv>=el?"#4ade80":"#f87171"}">Lv.${el}</b> (sen: ${P.lv})<br>Güç: <b class="g">${pw(i)}</b>${cur?` <span class="mu">(kuşanılan: ${pw(cur)})</span>`:""}${i.slot=="weapon"?`<br>⚔️ <b style="color:#fbbf24">${wLine(i)}</b>${cur&&cur.slot=="weapon"?`<br><span class="mu" style="font-size:10px">Kuşanılan: ${wLine(cur)}</span>`:""}`:""}${(i.af||[]).map(a=>`<br><span style="color:#c084fc">✨ ${a.n} +%${a.v}</span>`).join("")}</div>
 <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px">
   <button class="btn" ${ok&&P.lv>=el?"":"disabled"} onclick="equip(${n})">${!ok?"Uyumsuz":P.lv<el?"Lv."+el:"Kuşan"}</button>
   <button class="btn em2" onclick="salvageItem(${n})">🔨 ${syTxt}</button>
   <button class="btn d" onclick="sell(${n})">${sellV(i)}🪙</button>
 </div>
 <button class="btn s" style="margin-top:8px" onclick="closeM()">Kapat</button>`;$("im").style.display="flex"}
-function inspEq(k){const i=P.eq[k];$("ic").innerHTML=`<div style="text-align:center;margin-bottom:10px"><b style="color:${G[i.g].c}">${i.name} +${i.p}</b><div class="mu" style="font-size:11px">Güç ${pw(i)} · ${i.setOre||i.name.split(" ")[0]} Seti${effLv(i)>P.lv?" · seviye yetersiz, pasif":""}</div></div><button class="btn" onclick="unequip('${k}')">Çantaya çıkar</button><button class="btn s" style="margin-top:8px" onclick="closeM()">Kapat</button>`;$("im").style.display="flex"}
+function inspEq(k){const i=P.eq[k];$("ic").innerHTML=`<div style="text-align:center;margin-bottom:10px"><b style="color:${G[i.g].c}">${i.name} +${i.p}</b><div class="mu" style="font-size:11px">Güç ${pw(i)} · ${i.setOre||i.name.split(" ")[0]} Seti${effLv(i)>P.lv?" · seviye yetersiz, pasif":""}</div>${k=="weapon"?`<div style="text-align:center;color:#fbbf24;font-size:12px;margin-top:4px">⚔️ ${wLine(i)}</div>`:""}${(i.af||[]).map(a=>`<div style="text-align:center;color:#c084fc;font-size:11px">✨ ${a.n} +%${a.v}</div>`).join("")}</div><button class="btn" onclick="unequip('${k}')">Çantaya çıkar</button><button class="btn s" style="margin-top:8px" onclick="closeM()">Kapat</button>`;$("im").style.display="flex"}
 
 function inspStack(key){
   const st=STACK_DEFS.find(x=>x.key===key);if(!st)return;
@@ -1361,20 +1361,29 @@ function towerCard(){return`<div class="cd" style="background:linear-gradient(13
 const better=i=>i.rc==P.cls&&effLv(i)<=P.lv&&pw(i)>(P.eq[i.slot]?pw(P.eq[i.slot]):0);
 
 /* ---------- NPC: TÜCCAR MAREN ---------- */
-const shopR=()=>Math.min(4,Math.floor((P.lv-1)/10)),price=i=>sellV(i)*5+15;
-function genShop(){const r=RG[shopR()];P.shop={d:today(),r:shopR(),c:P.cls,it:SL.map((sl,si)=>({name:r.ore+" "+CL[P.cls].it[si],setOre:r.ore,slot:sl,rc:P.cls,rl:r.req,g:1,p:0,bp:r.pw,af:[]}))};save()}
-function shopHTML(){let s=P.shop;if(s.d!=today()||s.r!=shopR()||s.c!=P.cls){genShop();s=P.shop}
-s.it.forEach(i=>{i.af=[];i.g=1});const n=SL.filter(k=>P.eq[k]).length,junkN=P.inv.filter(junk).length;
-const line=!P.eq.weapon?"Silahsız mı geziyorsun evlat? Tezgâha bir göz at, ilk parçayı hemen kuşanırsın.":P.inv.length>=45?"Çantan dolmuş! Fazlalıkları bana sat, yer aç.":n<8?"Eksik parçaların var. İyi ekipman, uzun ömür demek.":"Hepsi üstünde, aferin. Yine de bak, yeni mallar geldi.";
-const rows=s.it.map((i,k)=>{const c=price(i);return`<div class="q" style="padding:5px 8px;margin-bottom:4px"><div style="flex:1"><b style="color:${G[i.g].c};font-size:11px">${i.name}</b>${better(i)?' <span style="color:#4ade80;font-weight:900">▲</span>':""}<div class="mu" style="font-size:9.5px">${SN[i.slot]} · Güç ${pw(i)} · Lv.${i.rl}</div></div><button class="btn" style="padding:5px 9px;font-size:10.5px" ${P.gold>=c?"":"disabled"} onclick="buyShop(${k})">${c} 🪙</button></div>`}).join("");
-return`<div class="cd" style="background:linear-gradient(135deg,#5a2e1033,var(--pn))"><div class="ct"><span>🏪 Tüccar Maren</span><span class="mu" style="font-size:10px">Her gün yeni mal</span></div>
+const shopR=()=>Math.min(4,Math.floor((P.lv-1)/10)),shopCap=()=>10*(shopR()+1),price=i=>sellV(i)*5+15+Math.floor(i.rl*i.rl*.8);
+let shopSlot="weapon",shopAll=false;
+function setShopSlot(k){shopSlot=k;view()}
+function setShopAll(v){shopAll=!!v;view()}
+const shopList=()=>{const si=SL.indexOf(shopSlot),cap=shopCap(),cs=shopAll?[P.cls,...Object.keys(CL).filter(c=>c!=P.cls)]:[P.cls],o=[];
+TIERS.filter(t=>t==1).forEach(t=>cs.forEach(c=>o.push(tierItem(c,si,t))));return o};
+function shopHTML(){
+const n=SL.filter(k=>P.eq[k]).length,junkN=P.inv.filter(junk).length,cap=shopCap();
+const line=!P.eq.weapon?"Silahsız mı geziyorsun evlat? Tezgâha bir göz at, ilk parçayı hemen kuşanırsın.":P.inv.length>=45?"Çantan dolmuş! Fazlalıkları bana sat, yer aç.":n<8?"Eksik parçaların var. İyi ekipman, uzun ömür demek.":"Hepsi üstünde, aferin. Mallarım hiç değişmez, güvenebilirsin.";
+const tabs=SL.map(k=>`<button class="sub-tab ${shopSlot==k?"act":""}" style="padding:5px 7px;font-size:10.5px" onclick="setShopSlot('${k}')">${SN[k]}</button>`).join("");
+const rows=shopList().map(i=>{const c=price(i),cur=P.eq[i.slot];const bt=i.rc==P.cls&&effLv(i)<=P.lv&&pw(i)>(cur?pw(cur):0);
+const wl=i.slot=="weapon"?`<div class="mu" style="font-size:9.5px;color:#fbbf24">⚔️ ${wLine(i)}</div>`:"";
+return`<div class="q" style="padding:5px 8px;margin-bottom:4px"><div style="flex:1"><b style="color:${G[i.g].c};font-size:11px">${i.name}</b>${bt?' <span style="color:#4ade80;font-weight:900">▲</span>':""}<div class="mu" style="font-size:9.5px">${shopAll?CL[i.rc].n+" · ":""}Güç ${pw(i)} · Lv.${i.rl}</div>${wl}</div><button class="btn" style="padding:5px 9px;font-size:10.5px" ${P.gold>=c?"":"disabled"} onclick="buyShop('${i.rc}',${SL.indexOf(i.slot)},${i.rl})">${c} 🪙</button></div>`}).join("");
+return`<div class="cd" style="background:linear-gradient(135deg,#5a2e1033,var(--pn))"><div class="ct"><span>🏪 Tüccar Maren</span><span class="mu" style="font-size:10px">Sabit tezgâh · Lv.1 eşyalar</span></div>
 <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px"><div class="em" style="width:46px;height:46px;font-size:24px;flex-shrink:0">🧔</div><div class="q" style="margin:0;flex:1;font-style:italic">“${line}”</div></div>
-${rows||'<p class="mu" style="font-size:11px;padding:8px">Tezgâh boş. Yenile.</p>'}
-<div class="pr"><button onclick="reShop()">🔄 Malları yenile (80 🪙)</button><button ${junkN?"":"disabled"} onclick="bulk()">${armed=="bk"?"Onayla: sat":"Düşükleri sat ("+junkN+")"}</button></div></div>`}
-function buyShop(k){const i=P.shop.it[k];if(!i)return;const c=price(i);if(P.gold<c)return toast("Yetersiz altın");if(P.inv.length>=50)return toast("Çanta dolu");
-P.gold-=c;P.inv.push(i);P.shop.it.splice(k,1);A.pot();
-if(!P.eq[i.slot]&&effLv(i)<=P.lv){equip(P.inv.length-1)}else{hud();save();view();toast(i.name+" çantana eklendi")}}
-function reShop(){if(P.gold<80)return toast("Yetersiz altın");P.gold-=80;genShop();A.pot();hud();view()}
+<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${tabs}</div>
+<div class="pr" style="margin:0 0 8px"><button style="${shopAll?"":"border-color:var(--gold);color:var(--gold)"}" onclick="setShopAll(false)">${CL[P.cls].e} Sınıfım</button><button style="${shopAll?"border-color:var(--gold);color:var(--gold)":""}" onclick="setShopAll(true)">Tüm sınıflar</button></div>
+${rows}
+<p class="mu" style="font-size:10px;text-align:center;margin:6px 0">Üst seviye eşyalar yalnızca savaşta düşer.</p>
+<div class="pr"><button ${junkN?"":"disabled"} onclick="bulk()">${armed=="bk"?"Onayla: sat":"Düşükleri sat ("+junkN+")"}</button></div></div>`}
+function buyShop(rc,si,t){if(!CL[rc]||!(si>=0&&si<8)||!TIERS.includes(t)||t!=1)return;const i=tierItem(rc,si,t),c=price(i);if(P.gold<c)return toast("Yetersiz altın");if(P.inv.length>=50)return toast("Çanta dolu");
+P.gold-=c;P.inv.push(i);A.pot();
+if(!P.eq[i.slot]&&i.rc==P.cls&&effLv(i)<=P.lv){equip(P.inv.length-1)}else{hud();save();view();toast(i.name+" çantana eklendi")}}
 
 /* ---------- NİTELİKLER & YETENEKLER ---------- */
 const CP={tank:["vit","str"],mage:["int"],archer:["dex"],assassin:["dex"],healer:["int","vit"]};
@@ -1514,7 +1523,8 @@ function cWiki(v){
       <div class="cd">
         <div class="ct">3. Savaş Mekaniği ve Ağır Darbe / Kesinti</div>
         <ul class="wk-list">
-          <li><b>🎲 Dinamik Hasar Aralığı:</b> Saldırılar sabit tek bir sayı yerine dengeli bir hasar aralığında vurur. <b>Temel Saldırılar</b> yalnızca doğrudan fiziksel/büyü darbesi vurur (%85 – %115 aralığı); <b>İç Kanama, Yanma, Zehir, Kanama ve Kutsal Yanık</b> gibi zamanla hasar etkileri ise yalnızca ilgili <b>Sınıf Yetenekleri</b> (%90 – %110 aralığı) kullanıldığında uygulanır.</li>
+          <li><b>🎲 Dinamik Hasar Aralığı:</b> Saldırılar sabit tek bir sayı yerine dengeli bir hasar aralığında vurur. Aralık <b>silahına</b> bağlıdır: ağır silahlar (Tank, Büyücü, Şifacı) geniş aralıkta ve daha sert vurur; hızlı silahlar (Okçu, Suikastçı) dar aralıkta vurur. Yetenekler silah aralığının yaklaşık %70'ini kullanır. <b>İç Kanama, Yanma, Zehir, Kanama ve Kutsal Yanık</b> gibi zamanla hasar etkileri yalnızca ilgili <b>Sınıf Yetenekleri</b> kullanıldığında uygulanır.</li>
+          <li><b>⚔️ Silah Hızı:</b> Bir silaha dokununca <b>hasar aralığı</b> ve <b>saldırı hızı</b> görünür. Hızı 1'in üstündeki silahlar temel saldırıda bazen <b>art arda 2 vuruş</b> yapar (vuruş başı hasar biraz düşer); hızı 1'in altındaki silahlar tek ama daha ağır vurur. Yetenekler her zaman tek vuruştur.</li>
           <li><b>⚠️ Ağır Darbe Hazırlığı & ⚡ Kesinti:</b> Düşman <i>"AĞIR DARBE HAZIRLANIYOR!"</i> uyarısı verdiğinde bir sonraki tur <b>2.5× Hasar</b> vurur. Aynı turda <b>⚡ Kesinti</b> yeteneği kullanılırsa saldırı bozulur, düşman <b>sersemler</b> (tur kaybeder) ve varsa <b>Zırhlı</b> savunması kırılır.</li>
           <li><b>👑 Elit Boss Fazları:</b> Bölge bossları ve Kule'nin 5. kat bossları <b>3 Fazlıdır</b>. Canları <b>%66</b> ve <b>%33</b> altına indiğinde faz atlar; saldırıları her fazda <b>+%30</b> artar ve ağır darbe ihtimali <b>%50</b> olur.</li>
           <li><b>Seviye Farkı Cezaları:</b> Canavardan 2–3 Lv yüksekte %65, 4–6 Lv yüksekte %25, 7+ Lv yüksekte <b>0 XP</b> alınır. Canavar 3+ Lv yüksekse hasar düşer, alınan hasar artar.</li>
@@ -1586,6 +1596,8 @@ function cWiki(v){
         <ul class="wk-list">
           <li><b>Yükseltme (+15):</b> Her seviye taban gücü <b>+%12</b> artırır. <b>+6</b> üstünde başarısızlıkta 1 seviye düşebilir; <b>+10</b> üstünde kırılabilir. <b>📜 Koruma Parşömeni</b> düşmeyi ve kırılmayı engeller.</li>
           <li><b>Efsun Dönüştürücü:</b> Savaş ganimetlerinde 1–4 arası efsun çıkar. İstenen efsunlar <b>kilitlenerek</b> diğerleri 45 🪙 karşılığında yenilenebilir.</li>
+          <li><b>✨ Kilometre Taşı Silahları (Lv 10 / 30 / 50):</b> Bu seviyelerdeki silahlar iki özel efsunla düşer: <b>Düz Vuruş Ortalaması</b> (temel saldırı hasarını % artırır; en çok %20 / %35 / %50) ve <b>Beceri Vuruşu Ortalaması</b> (yetenek hasarını % artırır; en çok %12 / %21 / %30). Bu efsunlar yenilenebilir ama en üst değeri yakalamak <b>çok zordur</b>; değerler çoğunlukla alt-orta aralıkta çıkar. Çevirme ücreti her özel efsun için silahın seviyesiyle birlikte artar. Bu silahlar en çok bölge bosslarından (Haydut Reisi, Firavun Ruhu, Kadim Kara Ejderha) düşer; </li>
+          <li><b>📈 Eşya Kademeleri:</b> Eşyalar Lv 1, 5, 10, 15 … 50 olmak üzere <b>11 kademede</b> gelir. Canavarın seviyesi hangi kademenin düşeceğini belirler; üst kademe eşya her zaman bir öncekinden güçlüdür, yükseltilmiş (+) eski eşyan ise yeni kademeye yaklaşana kadar işe yarar.</li>
           <li><b>Eşya Parçalama:</b> İstenmeyen eşyalar parçalanarak <i>Demir Kırığı, Zehir Bezi, Zırh Parçası, Çevik Tüy, Yeşil Öz, Kan Kristali</i> ve <i>Elit Ruhu</i> elde edilir.</li>
         </ul>
       </div>`;
@@ -1594,7 +1606,7 @@ function cWiki(v){
       <div class="cd">
         <div class="ct">6. Şehir, Sonsuz Kule ve Sandıklar</div>
         <ul class="wk-list">
-          <li><b>🏪 Tüccar Maren:</b> Seviyene uygun bölgenin tüm 8 parça GR-I set eşyalarını satar. Her gün yenilenir veya 80 🪙 karşılığı tazelenebilir.</li>
+          <li><b>🏪 Tüccar Maren:</b> Tezgâhı <b>sabittir</b>, yenilenmez. Tüm sınıfların GR-I eşyalarını <b>kategori sekmeleriyle</b> (Silah, Sol El, Kask, Zırh, Pantolon, Çizme, Kolye, Yüzük) satar. Varsayılan olarak kendi sınıfının eşyaları görünür; <i>Tüm sınıflar</i> ile hepsini görebilirsin. Yalnızca <b>Lv 1</b> eşyalar satılır; üst seviye eşyalar savaşta düşer. Silahların hasar aralığı ve hızı satırında görünür.</li>
           <li><b>⛲ Yaşam Pınarı & 🧪 Simyacı (İksir Boyutları):</b> Pınar Can ve Manayı doldurur (seviyene göre altın ister: 20 + 8×seviye). İksirler 3 boyuttadır; boyut büyüdükçe etkisi ve fiyatı artar, yaratıklardan düşme şansı azalır (Düşme dağılımı: <b>%65 Küçük, %27 Orta, %8 Büyük</b>):<br>
 • <b>Can İksirleri:</b> Küçük (+150 HP · 10 🪙) · Orta (+400 HP · 25 🪙) · Büyük (+900 HP · 60 🪙)<br>
 • <b>Mana İksirleri:</b> Küçük (+60 MP · 8 🪙) · Orta (+180 MP · 20 🪙) · Büyük (+400 MP · 50 🪙)<br>

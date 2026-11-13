@@ -139,3 +139,6 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 - Çöp kuralları (P.jr): kalite (kendi/başka sınıf), efsun sayısı, artı sınırı; Toplu Sat/Parçala bu kurala göre. Otomatik sat/parçala (savaşta düşünce).
 - Savaş ekranı küçük telefonlarda sıkıştırıldı; Günlük/Kazanımlar alanı ekran boyuna göre büyür (kaydırma gerekmez).
 - Yeni SQL yok. Yeni dosya: ogretici.js. Edge Function yeniden dağıtılmalı.
+
+- 2.3.0 (Paket G): Tüccar Maren sabit ve kategorili (8 yuva sekmesi, sınıfım/tüm sınıflar). Eşyalar 11 kademede (1,5,10,…,50; engine.js TIERS/TBP/tierItem). Düşen eşyanın kademesi, canavarın bölgedeki seviyesinden gelir (kule/sandık da bölgeye göre). Silahlara hasar aralığı ve saldırı hızı eklendi (wInfo: sınıfa ve kademeye göre formülle, kayıtlı alan yok): hızlı silah temel saldırıda bazen 2 vuruş, yavaş silah tek ama sert vuruş. Lv 10/30/50 silahlar iki özel efsunla düşer (ba = düz vuruş %, sk = beceri %; üst sınırlar 20/12, 35/21, 50/30; değer = max·u³ ile çarpık). Çevirme ücreti = 45 + özel efsun başına seviye×8. sql/koruma.sql güncellendi (kz_item_err: yeni kademe sınırları, ba/sk efsun türleri) — SQL yeniden çalıştırılmalı.
+- 2.3.0 (düzeltme): Tüccar yalnızca Lv 1 eşya satar (8 kategori sekmesi aynı); üst kademeler savaşta düşer.

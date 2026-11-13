@@ -60,9 +60,9 @@ create or replace function public.kz_item_err(it jsonb, lv int)
 returns text language plpgsql immutable as $$
 declare
   r int := least(4, greatest(lv - 1, 0) / 10);
-  reqs int[] := array[1,11,21,31,41];
-  pws  int[] := array[25,70,150,280,550];
-  g numeric; p numeric; rl numeric; bp numeric; a jsonb;
+  reqs int[] := array[10,20,30,40,50];      -- bolgede dusebilecek en yuksek kademe
+  pws  int[] := array[62,130,250,440,650];
+  g numeric; at text; sc numeric; p numeric; rl numeric; bp numeric; a jsonb;
 begin
   if jsonb_typeof(it) <> 'object' then return 'bozuk esya'; end if;
   g := public.kz_n(it,'g'); p := public.kz_n(it,'p'); rl := public.kz_n(it,'rl'); bp := public.kz_n(it,'bp');
@@ -73,7 +73,18 @@ begin
   if jsonb_typeof(it->'af') = 'array' then
     if jsonb_array_length(it->'af') > 4 then return 'esya efsunu'; end if;
     for a in select * from jsonb_array_elements(it->'af') loop
-      if public.kz_n(a,'v') < 0 or public.kz_n(a,'v') > 10 then return 'esya efsun degeri'; end if;
+      at := a->>'t';
+      if at in ('atk','def','crit') then
+        if public.kz_n(a,'v') < 0 or public.kz_n(a,'v') > 10 then return 'esya efsun degeri'; end if;
+      elsif at in ('ba','sk') then
+        -- Ozel silah efsunu: yalnizca Lv 10/30/50 silahlarda; ust sinir kademeye gore
+        if (it->>'slot') is distinct from 'weapon' or rl not in (10,30,50) then return 'esya efsun turu'; end if;
+        sc := case when at = 'ba' then (case rl when 10 then 20 when 30 then 35 else 50 end)
+                   else (case rl when 10 then 12 when 30 then 21 else 30 end) end;
+        if public.kz_n(a,'v') < 0 or public.kz_n(a,'v') > sc then return 'esya efsun degeri'; end if;
+      else
+        return 'esya efsun turu';
+      end if;
     end loop;
   end if;
   return null;

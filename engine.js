@@ -61,6 +61,31 @@ const healAmt=p=>Math.floor((100+p.lv*30)*(1+p.at.int*.01));
 const effLv=i=>i.rl;
 const pw=i=>Math.floor(i.bp*G[i.g].m*(1+i.p*.12));
 
+/* ---------- KADEMELER (1-50), SİLAH HASAR ARALIĞI VE HIZI, ÖZEL EFSUNLAR ---------- */
+const TIERS=[1,5,10,15,20,25,30,35,40,45,50],TBP={1:25,5:38,10:62,15:92,20:130,25:180,30:250,35:340,40:440,45:550,50:650};
+const tierOf=lv=>{let t=1;for(const x of TIERS)if(x<=lv)t=x;return t};
+const oreIx=rl=>Math.min(4,Math.floor((Math.max(1,rl)-1)/10));
+const tierSuf=t=>{const o=oreIx(t),f=TIERS.filter(x=>oreIx(x)==o),k=f.indexOf(t);return k>0?" "+["","II","III"][k]:""};
+const mkName=(rc,si,t)=>RG[oreIx(t)].ore+" "+CL[rc].it[si]+tierSuf(t);
+const tierItem=(rc,si,t,g,af)=>({name:mkName(rc,si,t),setOre:RG[oreIx(t)].ore,slot:SL[si],rc,rl:t,g:g||1,p:0,bp:TBP[t],af:af||[]});
+/* Milestone silahlar (Lv 10/30/50): düz vuruş (ba) ve beceri vuruşu (sk) ortalamasını artıran özel efsunlar */
+const SPC={10:{ba:20,sk:12},30:{ba:35,sk:21},50:{ba:50,sk:30}};
+const SPN={ba:"Düz Vuruş Ortalaması",sk:"Beceri Vuruşu Ortalaması"};
+const spcRoll=(t,k,rng)=>Math.max(.1,Math.round(SPC[t][k]*Math.pow(rng.R(1),3)*10)/10);
+const isSpcW=i=>i&&i.slot==="weapon"&&!!SPC[i.rl];
+const rerollCost=i=>45+(i&&Array.isArray(i.af)?i.af.filter(a=>!a.l&&SPN[a.t]).length*i.rl*8:0);
+/* Silaha özgü hız ve hasar aralığı (eşya verisinden formülle; eski silahlar da çalışır) */
+const WSPD={tank:.8,mage:.9,archer:1.25,assassin:1.5,healer:.9};
+function wInfo(i){
+  if(!i)return{spd:1,sp:.15,min:0,max:0,avg:0};
+  const ci=Object.keys(CL).indexOf(i.rc),ti=TIERS.indexOf(tierOf(i.rl));
+  const spd=Math.round((WSPD[i.rc]||1)*(.92+.04*((ti*3+Math.max(0,ci))%5))*100)/100;
+  const sp=Math.min(.4,Math.max(.12,.12+.3*(1.5-spd))),w=pw(i);
+  return{spd,sp,avg:w,min:Math.max(1,Math.floor(w*(1-sp))),max:Math.ceil(w*(1+sp))};
+}
+const spdTxt=s=>s>=1.4?"Çok hızlı":s>=1.15?"Hızlı":s>=.95?"Orta":s>=.85?"Yavaş":"Ağır";
+const wLine=i=>{const w=wInfo(i);return"Hasar "+w.min+"–"+w.max+" · Hız "+w.spd.toFixed(2)+" ("+spdTxt(w.spd)+")"};
+
 /* ---------- OYUNCU DURUMUNDAN HESAPLANANLAR (p = karakter) ---------- */
 function getActiveSetsOf(pl){
   const counts={};
@@ -94,11 +119,11 @@ function getTitleBonusOf(pl){
 
 function statsOf(pl){const c=CL[pl.cls].b,s=1+pl.lv*.06;
 const lvGain=Math.max(0,pl.lv-1),lvHpBonus=lvGain*(35+Math.floor(c.hp*.035)),lvMpBonus=lvGain*(18+Math.floor(c.mp*.03));
-let atk=20+pl.lv*3+(c.str*2.5+c.agi*1.5+c.int*2)*s,arm=10+c.vit*2*s,hp=c.hp+c.vit*15+lvHpBonus,mp=c.mp+c.int*10+lvMpBonus,cr=5+c.agi*.4+pl.lv*.1,pa=0,pd=0,php=0,pmp=0;
+let ba=0,sk=0,atk=20+pl.lv*3+(c.str*2.5+c.agi*1.5+c.int*2)*s,arm=10+c.vit*2*s,hp=c.hp+c.vit*15+lvHpBonus,mp=c.mp+c.int*10+lvMpBonus,cr=5+c.agi*.4+pl.lv*.1,pa=0,pd=0,php=0,pmp=0;
 const a=pl.at,w=CW[pl.cls];atk+=a.str*w.str+a.dex*w.dex+a.int*w.int;arm+=a.vit*1.5+a.str*.4;hp+=a.vit*18;mp+=a.int*12;cr+=a.dex*.25;
 SL.forEach(k=>{const i=pl.eq[k];if(!i||effLv(i)>pl.lv)return;const p=pw(i);
  if(k=="weapon")atk+=p;else if(k=="necklace")hp+=p*4;else if(k=="ring")mp+=p*3;else arm+=p;
- (i.af||[]).forEach(a=>{if(a.t=="atk")pa+=a.v;if(a.t=="def")pd+=a.v;if(a.t=="crit")cr+=a.v})});
+ (i.af||[]).forEach(a=>{if(a.t=="atk")pa+=a.v;if(a.t=="def")pd+=a.v;if(a.t=="crit")cr+=a.v;if(k=="weapon"&&a.t=="ba")ba+=a.v;if(k=="weapon"&&a.t=="sk")sk+=a.v})});
 
 // Set Bonusları
 getActiveSetsOf(pl).forEach(st=>{pa+=st.atkPct;pd+=st.armPct;php+=st.hpPct;pmp+=st.mpPct;cr+=st.critAdd});
@@ -107,8 +132,8 @@ getActiveSetsOf(pl).forEach(st=>{pa+=st.atkPct;pd+=st.armPct;php+=st.hpPct;pmp+=
 const tb=getTitleBonusOf(pl);
 if(tb.atk)pa+=tb.atk;if(tb.arm)pd+=tb.arm;if(tb.hp)php+=tb.hp;if(tb.cr)cr+=tb.cr;
 
-const fAtk=Math.floor(atk*(1+pa/100));
-return{atk:fAtk,minAtk:Math.max(1,Math.floor(fAtk*.85)),maxAtk:Math.max(1,Math.ceil(fAtk*1.15)),arm:Math.floor(arm*(1+pd/100)),hp:Math.floor(hp*(1+php/100)),mp:Math.floor(mp*(1+pmp/100)),cr:Math.min(75,Math.floor(cr))}}
+const fAtk=Math.floor(atk*(1+pa/100)),wp=pl.eq.weapon&&effLv(pl.eq.weapon)<=pl.lv?wInfo(pl.eq.weapon):null,wsp=wp?wp.sp:.15;
+return{atk:fAtk,ba,sk,wsp,wspd:wp?wp.spd:1,minAtk:Math.max(1,Math.floor(fAtk*(1-wsp))),maxAtk:Math.max(1,Math.ceil(fAtk*(1+wsp))),arm:Math.floor(arm*(1+pd/100)),hp:Math.floor(hp*(1+php/100)),mp:Math.floor(mp*(1+pmp/100)),cr:Math.min(75,Math.floor(cr))}}
 
 
 /* ============================================================
@@ -165,15 +190,21 @@ function bAct(B,p,i,rng){
   if(!isBasic&&s.heal){const h=healAmt(p);p.hp=Math.min(p.maxHp,p.hp+h);out.push({snd:"pot"});_lg(out,"💚 +"+h+" HP");out.push({fx:["+"+h,"#22c55e"]})}
   if(!isBasic&&s.sh){B.sh=Math.floor(p.maxHp*.35*rm);B.shT=3;_lg(out,"🛡️ Kalkan açtın ("+B.sh+")")}
   if(s.m>0){
-    const ld=m.lv-p.lv,rg=isBasic?(.85+rng.R(.30)):(.90+rng.R(.20));
-    let pen=ld>=3?Math.max(.25,1-(ld-2)*.12):1,x=Math.floor(d.atk*rg*s.m*rm*(1-m.def/(m.def+200))*pen),gl=ld>=5&&rng.R(1)<.4;
-    if(gl)x=Math.floor(x*.35);
-    const cr=s.crit||rng.R(100)<d.cr;
-    if(cr){x=Math.floor(x*1.8);out.push({snd:"crit"});out.push({ev:["crit",1]})}else out.push({snd:"hit"});
-    if(B.armor)x=Math.floor(x*.6);
-    x=Math.max(5,x);m.hp=Math.max(0,m.hp-x);p.st.d=Math.max(p.st.d,x);
-    out.push({ev:["dmg",x]});out.push({shake:1});out.push({fx:[cr?"💥"+x:x,cr?"#e6b450":"#fff"]});
-    _lg(out,(cr?"⚡ ":"")+(gl?"🛡️ ":"")+s.n+": <b style=color:#e5484d>"+x+"</b> hasar");
+    const ld=m.lv-p.lv,pen=ld>=3?Math.max(.25,1-(ld-2)*.12):1,spd=d.wspd,sp=isBasic?d.wsp:Math.max(.08,d.wsp*.7);
+    let nh=1,hm=1;
+    if(isBasic){if(spd>=1){hm=Math.pow(spd,-.85);if(rng.R(1)<spd-1)nh=2}else hm=Math.pow(1/spd,.35)}
+    const bon=1+((isBasic?d.ba:d.sk)||0)/100;
+    for(let h=0;h<nh&&m.hp>0;h++){
+      const rg=1-sp+rng.R(sp*2);
+      let x=Math.floor(d.atk*rg*s.m*rm*hm*bon*(1-m.def/(m.def+200))*pen),gl=ld>=5&&rng.R(1)<.4;
+      if(gl)x=Math.floor(x*.35);
+      const cr=s.crit||rng.R(100)<d.cr;
+      if(cr){x=Math.floor(x*1.8);out.push({snd:"crit"});out.push({ev:["crit",1]})}else out.push({snd:"hit"});
+      if(B.armor)x=Math.floor(x*.6);
+      x=Math.max(5,x);m.hp=Math.max(0,m.hp-x);p.st.d=Math.max(p.st.d,x);
+      out.push({ev:["dmg",x]});out.push({shake:1});out.push({fx:[cr?"💥"+x:x,cr?"#e6b450":"#fff"]});
+      _lg(out,(cr?"⚡ ":"")+(gl?"🛡️ ":"")+s.n+(nh>1?" ("+(h+1)+"/"+nh+")":"")+": <b style=color:#e5484d>"+x+"</b> hasar");
+    }
   }
   if(!isBasic&&s.dot){B.dot=Math.max(3,Math.floor(d.atk*.3*rm));B.dotT=3;B.dotN=p.cls=="tank"?"🩸 İç Kanama":p.cls=="mage"?"🔥 Yanma":p.cls=="archer"?"🧪 Zehir":p.cls=="assassin"?"🩸 Kanama":p.cls=="healer"?"✨ Kutsal Yanık":"☠️ Etki"}
   return out;
@@ -247,12 +278,16 @@ function bAutoStep(B,p,rng){
 function dropItem(p,m,fg,rng){
   const out=[];
   if(p.inv.length>=50){_lg(out,"⚠️ Çanta dolu, eşya kayboldu!");return out}
-  const ks=Object.keys(CL),rc=rng.R(1)<.6?p.cls:ks[rng.RI(0,4)],si=rng.RI(0,7),sl=SL[si],r=RG[m.ri];let g=1,x=rng.R(100);
+  const ks=Object.keys(CL),rc=rng.R(1)<.6?p.cls:ks[rng.RI(0,4)];let si=rng.RI(0,7),g=1,x=rng.R(100);
+  const t=tierOf(m.ri!=null&&RG[m.ri]&&RG[m.ri].m[m.mi]?RG[m.ri].m[m.mi][1]:m.lv);
+  if(m.el&&SPC[t]&&rng.R(1)<.5)si=0;
   if(m.el)g=x<=.5?5:x<=4?4:x<=22?3:x<=60?2:1;else g=x<=.4?5:x<=5?4:x<=18?3:x<=45?2:1;
   if(fg)g=Math.max(g,fg);
-  const ac=(()=>{const y=rng.R(100);return y<=1?4:y<=5?3:y<=13?2:y<=28?1:0})(),P0=[["atk","Saldırı Gücü"],["def","Zırh Direnci"],["crit","Kritik Vuruş"]],af=[];
+  const spc=si==0&&!!SPC[t];
+  const ac=(()=>{const y=rng.R(100),n=y<=1?4:y<=5?3:y<=13?2:y<=28?1:0;return spc?Math.min(n,2):n})(),P0=[["atk","Saldırı Gücü"],["def","Zırh Direnci"],["crit","Kritik Vuruş"]],af=[];
   for(let n=0;n<ac;n++){const q=P0[rng.RI(0,2)];af.push({t:q[0],n:q[1],v:rng.RI(1,10),l:false})}
-  const it={name:r.ore+" "+CL[rc].it[si],setOre:r.ore,slot:sl,rc,rl:r.req,g,p:0,bp:r.pw,af};
+  if(spc)["ba","sk"].forEach(k=>af.push({t:k,n:SPN[k],v:spcRoll(t,k,rng),l:false}));
+  const it=tierItem(rc,si,t,g,af);
   p.inv.push(it);p.st.l+=g==5?1:0;out.push({loot:{k:"item",t:it.name+" ["+G[g].t+"]",c:G[g].c,g}});
   if(g>=3)out.push({ev:["drop3",1]});
   if(g==5){out.push({snd:"elite"});out.push({toast:"👑 KADİM ELİT EŞYA: "+it.name+"!"});_lg(out,"👑 <b style=color:#e6b450>[JACKPOT]</b> "+it.name)}
@@ -330,12 +365,13 @@ function forgeUpg(p,loc,rng,prot){
   }
   syncP(p);return out;
 }
-/* Kilitli olmayan efsunları yeniden çevir (45 altın) */
+/* Kilitli olmayan efsunları yeniden çevir (45 altın; özel efsun başına seviyeye göre ek ücret) */
 function forgeReroll(p,loc,rng){
   const out=[];out.ok=false;const i=itemAt(p,loc);
   if(!i||!Array.isArray(i.af)||!i.af.length){out.push({toast:"Efsun yok"});return out}
-  if(p.gold<45){out.push({toast:"Yetersiz altın"});return out}
-  p.gold-=45;i.af.forEach(a=>{if(!a.l)a.v=rng.RI(1,10)});
+  const cost=rerollCost(i);
+  if(p.gold<cost){out.push({toast:"Yetersiz altın"});return out}
+  p.gold-=cost;i.af.forEach(a=>{if(a.l)return;a.v=SPN[a.t]&&SPC[i.rl]?spcRoll(i.rl,a.t,rng):rng.RI(1,10)});
   out.push({snd:"pot"});out.push({toast:"Efsunlar yenilendi"});out.ok=true;syncP(p);return out;
 }
 /* n sandık aç. out.res = özet (altın, parşömen, iksir, eşyalar) */
@@ -644,6 +680,6 @@ function mkDo(p,body,d,now){
   }
   return bad("Geçersiz istek");
 }
-const KZ={jrOf,autoJunk,mkDo,MK_MINLV,healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
+const KZ={TIERS,TBP,tierOf,tierItem,mkName,SPC,SPN,isSpcW,rerollCost,wInfo,wLine,spdTxt,jrOf,autoJunk,mkDo,MK_MINLV,healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
 (typeof globalThis!=="undefined"?globalThis:window).KZ=KZ;
 if(typeof module!=="undefined"&&module.exports)module.exports=KZ;
