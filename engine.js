@@ -6,19 +6,19 @@
 const SL=["weapon","offhand","helm","chest","pants","boots","necklace","ring"],SN={weapon:"Silah",offhand:"Sol El",helm:"Kask",chest:"Zırh",pants:"Pantolon",boots:"Çizme",necklace:"Kolye",ring:"Yüzük"};
 const CL={
 tank:{n:"Tank",e:"🛡️",h:210,d:"Ağır zırh ustası, darbe soğuran ve sersemleten öncü.",b:{hp:420,mp:90,str:16,agi:8,vit:20,int:5},
- sk:[{n:"Kalkan Darbesi",mp:20,m:1.4,i:1,d:"Ağır darbe hazırlığını bozar, düşmanı sersemletir"},{n:"Kalkan Duvarı",mp:30,m:.6,sh:1,d:"3 tur hasar emen kalkan"},{n:"Meydan Okuma",mp:25,m:1.8,dot:1,d:"Yıkıcı vuruş ve 3 tur iç kanama"},{n:"Yıkılmaz İrade",mp:45,m:2.8,d:"Nihai savunma darbesi"}],
+ sk:[{n:"Kalkan Darbesi",mp:13,m:1.4,i:1,d:"Ağır darbe hazırlığını bozar, düşmanı sersemletir"},{n:"Kalkan Duvarı",mp:20,m:.6,sh:1,d:"3 tur hasar emen kalkan"},{n:"Meydan Okuma",mp:16,m:1.8,dot:1,d:"Yıkıcı vuruş ve 3 tur iç kanama"},{n:"Yıkılmaz İrade",mp:30,m:2.8,d:"Nihai savunma darbesi"}],
  it:["Ağır Çelik Kılıç","Kule Kalkanı","Demir Miğfer","Ağır Plaka Zırh","Çelik Dizlik","Ağır Demir Çizme","Dayanıklılık Gerdanlığı","Kaya Yüzüğü"]},
 mage:{n:"Büyücü",e:"🔮",h:270,d:"Alev ve buzla yıkan arkana ustası.",b:{hp:250,mp:210,str:6,agi:9,vit:9,int:22},
  sk:[{n:"Alev Patlaması",mp:30,m:2.2,dot:1,d:"3 tur yakar"},{n:"Buzul Halka",mp:40,m:1.6,i:1,d:"Dondurur, ağır darbe hazırlığını bozar"},{n:"Arkana Kalkanı",mp:35,m:.5,sh:1,d:"Mana bariyeri"},{n:"Kıyamet Meteoru",mp:75,m:4.2,d:"Devasa büyü darbesi"}],
  it:["Kristal Asa","Odak Küresi","Arkana Tacı","Büyü Dokuma Cübbe","Efsunlu Pantolon","Astral Sandalet","Saf Mana Kolyesi","Yıldız Tozu Yüzüğü"]},
 archer:{n:"Okçu",e:"🏹",h:140,d:"Yüksek kritik ve zehirli oklar.",b:{hp:310,mp:120,str:10,agi:22,vit:12,int:7},
- sk:[{n:"Zehirli Ok",mp:22,m:1.5,dot:1,d:"3 tur zehirler"},{n:"Kiriş Darbesi",mp:25,m:1.3,i:1,d:"Hızlı atış, ağır darbe hazırlığını bozar"},{n:"Zayıf Nokta",mp:35,m:2.4,crit:1,d:"Garanti kritik"},{n:"Ok Yağmuru",mp:60,m:3.6,d:"Ölümcül ok yağmuru"}],
+ sk:[{n:"Zehirli Ok",mp:14,m:1.5,dot:1,d:"3 tur zehirler"},{n:"Kiriş Darbesi",mp:16,m:1.3,i:1,d:"Hızlı atış, ağır darbe hazırlığını bozar"},{n:"Zayıf Nokta",mp:23,m:2.4,crit:1,d:"Garanti kritik"},{n:"Ok Yağmuru",mp:40,m:3.6,d:"Ölümcül ok yağmuru"}],
  it:["Kompozit Avcı Yayı","Sadak & Bıçak","Deri Kapüşon","Sertleştirilmiş Yelek","Kamuflaj Pantolon","Sessiz İzci Çizmesi","Şahin Gözü Kolyesi","Rüzgâr Nişancı Yüzüğü"]},
 assassin:{n:"Suikastçı",e:"🗡️",h:340,d:"Kritik uzmanı, kanatan ve kaçan gölge.",b:{hp:280,mp:110,str:12,agi:24,vit:10,int:6},
- sk:[{n:"Gölge Kesiği",mp:24,m:1.9,dot:1,d:"3 tur kanatır"},{n:"Kör Edici Toz",mp:28,m:1.1,i:1,d:"Ağır darbe hazırlığını iptal eder"},{n:"Gölgelere Karış",mp:30,m:.8,sh:1,d:"Darbeleri sıyırır"},{n:"Gölge İnfazı",mp:65,m:4.4,d:"Ölüm vuruşu"}],
+ sk:[{n:"Gölge Kesiği",mp:15,m:1.9,dot:1,d:"3 tur kanatır"},{n:"Kör Edici Toz",mp:18,m:1.1,i:1,d:"Ağır darbe hazırlığını iptal eder"},{n:"Gölgelere Karış",mp:20,m:.8,sh:1,d:"Darbeleri sıyırır"},{n:"Gölge İnfazı",mp:42,m:4.4,d:"Ölüm vuruşu"}],
  it:["Gölge Hançeri","Bilek Bıçağı","Yüz Maskesi","Gece Hayaleti Zırhı","Esnek Pantolon","Gölge Adımı Çizmesi","Engerek Gerdanlığı","Ölümcül Vuruş Yüzüğü"]},
 healer:{n:"Şifacı",e:"✨",h:45,d:"Kutsal ışık, şifa ve koruyucu kubbe.",b:{hp:340,mp:180,str:9,agi:8,vit:15,int:14},
- sk:[{n:"Kutsal Işık",mp:25,m:1.6,dot:1,d:"Işık hasarı ve 3 tur kutsal yanık"},{n:"İlahi Baston",mp:22,m:1.2,i:1,d:"Ağır darbe hazırlığını bozar"},{n:"Kutsal Lütuf",mp:35,m:0,heal:1,d:"Canın %45’ini yeniler"},{n:"İlahi Kubbe",mp:70,m:1,sh:1,d:"Büyük ışık kubbesi"}],
+ sk:[{n:"Kutsal Işık",mp:25,m:1.6,dot:1,d:"Işık hasarı ve 3 tur kutsal yanık"},{n:"İlahi Baston",mp:22,m:1.2,i:1,d:"Ağır darbe hazırlığını bozar"},{n:"Kutsal Lütuf",mp:35,m:0,heal:1,d:"Seviyene göre sabit miktarda can yeniler (100 + 30×seviye)"},{n:"İlahi Kubbe",mp:70,m:1,sh:1,d:"Büyük ışık kubbesi"}],
  it:["Kutsal Topuz","Dua Kitabı","Işık Tacı","Ruhban Cübbesi","Arınma Pantolonu","Kutsal Sandalet","Hayat Madalyonu","Lütuf Yüzüğü"]}};
 
 const G={1:{t:"GR-I",n:"Sıradan",m:1,c:"#64748b"},2:{t:"GR-II",n:"İşlenmiş",m:1.15,c:"#22c55e"},3:{t:"GR-III",n:"Usta İşi",m:1.3,c:"#38bdf8"},4:{t:"GR-IV",n:"Kusursuz",m:1.5,c:"#a855f7"},5:{t:"👑 ELİT",n:"Kadim Elit",m:1.75,c:"#e6b450"}};
@@ -42,14 +42,14 @@ const TITLES=[
 
 const POT_DEF={
   hp:{
-    S:{id:"S",sz:"Küçük",e:"🧪",n:"Küçük Can İksiri",pct:.25,cost:10,sell:3,g:1,dropW:65},
-    M:{id:"M",sz:"Orta",e:"🧪",n:"Orta Can İksiri",pct:.50,cost:25,sell:8,g:2,dropW:27},
-    L:{id:"L",sz:"Büyük",e:"🧪",n:"Büyük Can İksiri",pct:.85,cost:60,sell:20,g:4,dropW:8}
+    S:{id:"S",sz:"Küçük",e:"🧪",n:"Küçük Can İksiri",amt:150,cost:10,sell:3,g:1,dropW:65},
+    M:{id:"M",sz:"Orta",e:"🧪",n:"Orta Can İksiri",amt:400,cost:25,sell:8,g:2,dropW:27},
+    L:{id:"L",sz:"Büyük",e:"🧪",n:"Büyük Can İksiri",amt:900,cost:60,sell:20,g:4,dropW:8}
   },
   mp:{
-    S:{id:"S",sz:"Küçük",e:"💧",n:"Küçük Mana İksiri",pct:.30,cost:8,sell:2,g:1,dropW:65},
-    M:{id:"M",sz:"Orta",e:"💧",n:"Orta Mana İksiri",pct:.60,cost:20,sell:6,g:3,dropW:27},
-    L:{id:"L",sz:"Büyük",e:"💧",n:"Büyük Mana İksiri",pct:.95,cost:50,sell:16,g:4,dropW:8}
+    S:{id:"S",sz:"Küçük",e:"💧",n:"Küçük Mana İksiri",amt:60,cost:8,sell:2,g:1,dropW:65},
+    M:{id:"M",sz:"Orta",e:"💧",n:"Orta Mana İksiri",amt:180,cost:20,sell:6,g:3,dropW:27},
+    L:{id:"L",sz:"Büyük",e:"💧",n:"Büyük Mana İksiri",amt:400,cost:50,sell:16,g:4,dropW:8}
   }
 };
 
@@ -57,7 +57,8 @@ const CW={tank:{str:2.8,dex:.8,int:.2},mage:{str:.2,dex:.5,int:3.2},archer:{str:
 
 const reqXp=l=>l>=50?1e12:Math.floor(140*Math.pow(l,2.38)*(l>25?Math.pow(1.085,l-25):1)*(l>40?Math.pow(1.18,l-40):1));
 function killXp(x,ml,pl){const d=pl-ml;if(d>=7)return 0;if(d>=4)return Math.floor(x*.25);if(d>=2)return Math.floor(x*.65);if(ml-pl>=6)return Math.floor(x*.35);return x}
-const effLv=i=>i.g==5?Math.min(50,i.rl+i.p*2):i.rl;
+const healAmt=p=>Math.floor((100+p.lv*30)*(1+p.at.int*.01));
+const effLv=i=>i.rl;
 const pw=i=>Math.floor(i.bp*G[i.g].m*(1+i.p*.12));
 
 /* ---------- OYUNCU DURUMUNDAN HESAPLANANLAR (p = karakter) ---------- */
@@ -161,7 +162,7 @@ function bAct(B,p,i,rng){
   p.mp-=s.mp;out.acted=true;
   const d=statsOf(p),m=B.mob;
   if(!isBasic&&s.i&&B.tele){B.tele=false;B.stun=true;B.armor=false;out.push({snd:"int"});_lg(out,"⚡ <b style=color:#e6b450>KESİNTİ!</b> Düşmanın hazırlığı bozuldu, tur kaybetti.");out.push({fx:["KESİNTİ!","#e6b450"]})}
-  if(!isBasic&&s.heal){const h=Math.floor(p.maxHp*.45*(1+p.at.int*.01));p.hp=Math.min(p.maxHp,p.hp+h);out.push({snd:"pot"});_lg(out,"💚 +"+h+" HP");out.push({fx:["+"+h,"#22c55e"]})}
+  if(!isBasic&&s.heal){const h=healAmt(p);p.hp=Math.min(p.maxHp,p.hp+h);out.push({snd:"pot"});_lg(out,"💚 +"+h+" HP");out.push({fx:["+"+h,"#22c55e"]})}
   if(!isBasic&&s.sh){B.sh=Math.floor(p.maxHp*.35*rm);B.shT=3;_lg(out,"🛡️ Kalkan açtın ("+B.sh+")")}
   if(s.m>0){
     const ld=m.lv-p.lv,rg=isBasic?(.85+rng.R(.30)):(.90+rng.R(.20));
@@ -203,8 +204,8 @@ function bPot(p,t,sz,quiet){
   if(t=="hp"&&p.hp>=p.maxHp){if(!quiet)out.push({toast:"Canın zaten tamamen dolu!"});return out}
   if(t=="mp"&&p.mp>=p.maxMp){if(!quiet)out.push({toast:"Manan zaten tamamen dolu!"});return out}
   p.pot[t][sz]--;out.push({snd:"pot"});out.push({ev:["pot",1]});
-  if(t=="hp"){const r=Math.floor(p.maxHp*d.pct);p.hp=Math.min(p.maxHp,p.hp+r);out.push({fx:["+"+r,"#22c55e"]});_lg(out,`🧪 ${d.n}: <b style=color:#4ade80>+${r} HP</b> (Kalan: ${p.pot.hp[sz]})`)}
-  else{const r=Math.floor(p.maxMp*d.pct);p.mp=Math.min(p.maxMp,p.mp+r);out.push({fx:["+"+r,"#38bdf8"]});_lg(out,`💧 ${d.n}: <b style=color:#38bdf8>+${r} MP</b> (Kalan: ${p.pot.mp[sz]})`)}
+  if(t=="hp"){const r=Math.min(d.amt,p.maxHp-p.hp);p.hp=Math.min(p.maxHp,p.hp+r);out.push({fx:["+"+r,"#22c55e"]});_lg(out,`🧪 ${d.n}: <b style=color:#4ade80>+${r} HP</b> (Kalan: ${p.pot.hp[sz]})`)}
+  else{const r=Math.min(d.amt,p.maxMp-p.mp);p.mp=Math.min(p.maxMp,p.mp+r);out.push({fx:["+"+r,"#38bdf8"]});_lg(out,`💧 ${d.n}: <b style=color:#38bdf8>+${r} MP</b> (Kalan: ${p.pot.mp[sz]})`)}
   out.ok=true;return out;
 }
 
@@ -235,7 +236,7 @@ function dropItem(p,m,fg,rng){
   const out=[];
   if(p.inv.length>=50){_lg(out,"⚠️ Çanta dolu, eşya kayboldu!");return out}
   const ks=Object.keys(CL),rc=rng.R(1)<.6?p.cls:ks[rng.RI(0,4)],si=rng.RI(0,7),sl=SL[si],r=RG[m.ri];let g=1,x=rng.R(100);
-  if(m.el)g=x<=2.5?5:x<=15?4:x<=40?3:x<=70?2:1;else g=x<=.4?5:x<=5?4:x<=18?3:x<=45?2:1;
+  if(m.el)g=x<=.7?5:x<=9?4:x<=32?3:x<=65?2:1;else g=x<=.4?5:x<=5?4:x<=18?3:x<=45?2:1;
   if(fg)g=Math.max(g,fg);
   const ac=(()=>{const y=rng.R(100);return y<=1?4:y<=5?3:y<=13?2:y<=28?1:0})(),P0=[["atk","Saldırı Gücü"],["def","Zırh Direnci"],["crit","Kritik Vuruş"]],af=[];
   for(let n=0;n<ac;n++){const q=P0[rng.RI(0,2)];af.push({t:q[0],n:q[1],v:rng.RI(1,10),l:false})}
@@ -273,7 +274,6 @@ function bWin(B,p,rng){
   if(rng.R(1)<.16){const t=rng.R(1)<.5?"hp":"mp",r=rng.R(100),sz=r<65?"S":r<92?"M":"L",d=POT_DEF[t][sz];p.pot[t][sz]=(p.pot[t][sz]||0)+1;_lg(out,`${d.e} 1× <b style=color:${G[d.g].c}>${d.n}</b> buldun`)}
   matDropOf(p,m,rng,out);
   if(B.tw){out.push({ev:["tower",B.tw]});p.tw=Math.max(p.tw,B.tw);if(B.tw%5==0){p.ch++;_lg(out,"🎁 Kat ödülü: sandık!")}}
-  if(m.el&&!B.tw&&rng.R(100)<50){p.ch++;_lg(out,"🎁 Elit sandığı düştü!")}
   if(m.el||rng.R(100)<12)out.push(...dropItem(p,m,0,rng));
   syncP(p);
   return out;
@@ -297,7 +297,7 @@ function itemAt(p,loc){
 }
 function itemRemove(p,loc){if(loc[0]==="eq")p.eq[loc[1]]=null;else p.inv.splice(loc[1],1)}
 /* Ocakta yükselt. out.ok=true ise malzeme/altın harcandı. */
-function forgeUpg(p,loc,rng){
+function forgeUpg(p,loc,rng,prot){
   const out=[];out.ok=false;const i=itemAt(p,loc);
   if(!i){out.push({toast:"Eşya bulunamadı"});return out}
   if(i.p>=15){out.push({toast:"Maksimum +15"});return out}
@@ -310,7 +310,7 @@ function forgeUpg(p,loc,rng){
   else{
     out.push({snd:"hit"});
     if(i.p>=6&&rng.R(1)<(i.p>=10?.25:.4)){
-      if(p.sc>0){p.sc--;out.push({toast:"📜 Parşömen eşyanı korudu"})}
+      if(prot&&p.sc>0){p.sc--;out.push({toast:"📜 Parşömen eşyanı korudu"})}
       else if(i.p>=10){itemRemove(p,loc);out.removed=true;out.push({toast:"💥 Eşya ocakta parçalandı!"})}
       else{i.p--;out.push({toast:"Başarısız: eşya +"+i.p+" seviyesine düştü"})}
     }else out.push({toast:"Başarısız, seviye atlamadı"});
@@ -510,6 +510,6 @@ function normPotOf(p){
   if(!p.mat||typeof p.mat!=="object")p.mat={};
 }
 
-const KZ={QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
+const KZ={healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
 (typeof globalThis!=="undefined"?globalThis:window).KZ=KZ;
 if(typeof module!=="undefined"&&module.exports)module.exports=KZ;

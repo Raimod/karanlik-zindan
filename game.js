@@ -1,4 +1,4 @@
-const GAME_VERSION="1.7.0";
+const GAME_VERSION="1.8.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -571,12 +571,12 @@ function setBagSort(s){bagSort=s;view()}
 
 /* Stacklenen eşyalar (İksirler, Parşömenler, Sandıklar, Artı Basma & Ot/Öz Malzemeleri) */
 const STACK_DEFS=[
-  {key:"pot_hp_S",cat:"İksir (Küçük)",g:1,e:"🧪",n:"Küçük Can İksiri",desc:"Savaşta maksimum canın %25'ini yeniler.",get:()=>P.pot.hp.S||0,set:v=>P.pot.hp.S=v,sell:3,act:"usePot('hp','S')",actLbl:"İç (+%25 HP)"},
-  {key:"pot_hp_M",cat:"İksir (Orta)",g:2,e:"🧪",n:"Orta Can İksiri",desc:"Savaşta maksimum canın %50'sini yeniler.",get:()=>P.pot.hp.M||0,set:v=>P.pot.hp.M=v,sell:8,act:"usePot('hp','M')",actLbl:"İç (+%50 HP)"},
-  {key:"pot_hp_L",cat:"İksir (Büyük)",g:4,e:"🧪",n:"Büyük Can İksiri",desc:"Savaşta maksimum canın %85'ini yeniler.",get:()=>P.pot.hp.L||0,set:v=>P.pot.hp.L=v,sell:20,act:"usePot('hp','L')",actLbl:"İç (+%85 HP)"},
-  {key:"pot_mp_S",cat:"İksir (Küçük)",g:1,e:"💧",n:"Küçük Mana İksiri",desc:"Savaşta maksimum mananın %30'unu yeniler.",get:()=>P.pot.mp.S||0,set:v=>P.pot.mp.S=v,sell:2,act:"usePot('mp','S')",actLbl:"İç (+%30 MP)"},
-  {key:"pot_mp_M",cat:"İksir (Orta)",g:3,e:"💧",n:"Orta Mana İksiri",desc:"Savaşta maksimum mananın %60'ını yeniler.",get:()=>P.pot.mp.M||0,set:v=>P.pot.mp.M=v,sell:6,act:"usePot('mp','M')",actLbl:"İç (+%60 MP)"},
-  {key:"pot_mp_L",cat:"İksir (Büyük)",g:4,e:"💧",n:"Büyük Mana İksiri",desc:"Savaşta maksimum mananın %95'ini yeniler.",get:()=>P.pot.mp.L||0,set:v=>P.pot.mp.L=v,sell:16,act:"usePot('mp','L')",actLbl:"İç (+%95 MP)"},
+  {key:"pot_hp_S",cat:"İksir (Küçük)",g:1,e:"🧪",n:"Küçük Can İksiri",desc:"Savaşta 150 can yeniler.",get:()=>P.pot.hp.S||0,set:v=>P.pot.hp.S=v,sell:3,act:"usePot('hp','S')",actLbl:"İç (+150 HP)"},
+  {key:"pot_hp_M",cat:"İksir (Orta)",g:2,e:"🧪",n:"Orta Can İksiri",desc:"Savaşta 400 can yeniler.",get:()=>P.pot.hp.M||0,set:v=>P.pot.hp.M=v,sell:8,act:"usePot('hp','M')",actLbl:"İç (+400 HP)"},
+  {key:"pot_hp_L",cat:"İksir (Büyük)",g:4,e:"🧪",n:"Büyük Can İksiri",desc:"Savaşta 900 can yeniler.",get:()=>P.pot.hp.L||0,set:v=>P.pot.hp.L=v,sell:20,act:"usePot('hp','L')",actLbl:"İç (+900 HP)"},
+  {key:"pot_mp_S",cat:"İksir (Küçük)",g:1,e:"💧",n:"Küçük Mana İksiri",desc:"Savaşta 60 mana yeniler.",get:()=>P.pot.mp.S||0,set:v=>P.pot.mp.S=v,sell:2,act:"usePot('mp','S')",actLbl:"İç (+60 MP)"},
+  {key:"pot_mp_M",cat:"İksir (Orta)",g:3,e:"💧",n:"Orta Mana İksiri",desc:"Savaşta 180 mana yeniler.",get:()=>P.pot.mp.M||0,set:v=>P.pot.mp.M=v,sell:6,act:"usePot('mp','M')",actLbl:"İç (+180 MP)"},
+  {key:"pot_mp_L",cat:"İksir (Büyük)",g:4,e:"💧",n:"Büyük Mana İksiri",desc:"Savaşta 400 mana yeniler.",get:()=>P.pot.mp.L||0,set:v=>P.pot.mp.L=v,sell:16,act:"usePot('mp','L')",actLbl:"İç (+400 MP)"},
   {key:"scroll",cat:"Artı Basma",g:4,e:"📜",n:"Koruma Parşömeni",desc:"Demircide +6 ve üzeri yükseltmelerde eşyanın düşmesini ve kırılmasını önler.",get:()=>P.sc||0,set:v=>P.sc=v,sell:50,act:"go('forge')",actLbl:"Demirciye Git"},
   {key:"chest",cat:"Sandık",g:5,e:"🎁",n:"Hazine Sandığı",desc:"İçerisinden altın, iksir, Koruma Parşömeni veya en az GR-III ekipman çıkar.",get:()=>P.ch||0,set:v=>P.ch=v,sell:0,act:"chestUI()",actLbl:"Sandıkları Aç"},
   {key:"mat_kirik",cat:"Artı Basma",g:1,e:"⚙️",n:"Demir Kırığı",desc:"Demirci ocağında tüm +1 ile +15 yükseltmelerde kullanılan temel maden.",get:()=>P.mat.kirik||0,set:v=>P.mat.kirik=v,sell:2,act:"go('forge')",actLbl:"Ocakta Kullan"},
@@ -748,24 +748,24 @@ function cMap(v){
 function cForge(v){let src="";const mk=(i,k)=>`<div class="bc g${i.g} ${SF===i?"sel":""}" onclick="${k}"><span class="pl">+${i.p}</span>${ico(i.slot)}<span style="color:${G[i.g].c};font-size:7px;font-weight:700">${i.name}</span></div>`;
 if(fsrc=="eq")SL.forEach(k=>{if(P.eq[k])src+=mk(P.eq[k],`selF('${k}')`)});else P.inv.forEach((i,n)=>src+=mk(i,`selF(${n})`));
 let act=`<p class="mu" style="font-size:11px;text-align:center;padding:14px">Yükseltmek için bir eşya seç.</p>`;
-if(SF){const i=SF,cost=8+i.rl*6+i.p*14,ch=i.p>=10?30-(i.p-10)*4:100-i.p*6,ne=i.g==5?Math.min(50,i.rl+(i.p+1)*2):i.rl;
+if(SF){const i=SF,cost=8+i.rl*6+i.p*14,ch=i.p>=10?30-(i.p-10)*4:100-i.p*6;
 const aff=(i.af||[]).map((a,n)=>`<div class="q"><span>✨ ${a.n} (+%${a.v})</span><button class="btn ${a.l?"":"s"}" onclick="lockA(${n})">${a.l?"🔒 Kilitli":"Açık"}</button></div>`).join("");
 act=`<div style="border-top:1px solid var(--ln);margin-top:12px;padding-top:12px"><div class="r"><div><b style="color:${G[i.g].c}">${i.name} +${i.p}</b><div class="mu" style="font-size:10px">${G[i.g].n} · Gerekli Lv.${effLv(i)} · Başarı %${ch}</div></div><b class="g" style="font-size:11px">${cost} 🪙</b></div>
-${i.g==5?`<div class="q" style="color:var(--gold)">👑 +${i.p+1} olunca seviye şartı Lv.${effLv(i)} → Lv.${ne}${ne>P.lv?" (kuşanılamaz olur, bonusu pasifleşir!)":""}</div>`:""}
 <p class="mu" style="font-size:10px;margin:6px 0">+6 üstü başarısızlıkta eşya düşebilir (+10 üstü kırılabilir). Koruma parşömenin: <b class="g">${P.sc}</b></p>
+<label class="q" style="cursor:pointer;gap:8px"><input type="checkbox" ${SFprot?"checked":""} ${P.sc>0?"":"disabled"} onchange="SFprot=this.checked;view()" style="width:18px;height:18px"><span style="flex:1;font-size:11px">📜 Koruma parşömeni kullan <span class="mu">(yalnızca eşya zarar görecekse harcanır)</span></span></label>
 ${needHTML(i.p)}<button class="btn" onclick="upg()">Ocakta yükselt (+${i.p+1})</button>
 ${aff?`<div class="ct" style="margin-top:12px;font-size:12px;color:#c084fc">Efsun dönüştürücü</div>${aff}<button class="btn v" onclick="reroll()">Efsunları çevir (45 🪙)</button>`:""}</div>`}
 v.innerHTML=`<div class="cd"><div class="ct">Demirci ocağı <span class="g" style="font-size:11px">+15 sınırı</span></div><div class="mu" style="font-size:10px;margin-bottom:8px">${matLine()}</div>
 <div class="pr" style="margin:0 0 10px"><button style="${fsrc=="eq"?"border-color:var(--gold);color:var(--gold)":""}" onclick="fsrc='eq';SF=null;view()">Kuşanılanlar</button><button style="${fsrc=="bag"?"border-color:var(--gold);color:var(--gold)":""}" onclick="fsrc='bag';SF=null;view()">Çantadakiler</button></div>
 <div class="bg5" style="max-height:170px;overflow:auto">${src||'<p class="mu" style="font-size:10px">Eşya yok.</p>'}</div>${act}</div>`}
 function selF(k){SF=fsrc=="eq"?P.eq[k]:P.inv[k];SFloc=[fsrc=="eq"?"eq":"inv",k];view()}
-let SFloc=null;
+let SFloc=null,SFprot=false;
 function sfReselect(){if(!SFloc){SF=null;return}SF=SFloc[0]==="eq"?P.eq[SFloc[1]]:P.inv[SFloc[1]];if(!SF)SFloc=null}
 function rm(i){SL.forEach(k=>{if(P.eq[k]===i)P.eq[k]=null});const n=P.inv.indexOf(i);if(n>-1)P.inv.splice(n,1)}
 async function upg(){
   const i=SF;if(!i||!SFloc)return;
   if(i.p>=15)return toast("Maksimum +15");
-  const loc=SFloc,r=await ecoCall({op:"forge",a:"upg",loc});
+  const loc=SFloc,r=await ecoCall({op:"forge",a:"upg",loc,prot:SFprot&&P.sc>0});
   if(!r)return;
   if(r.removed){SF=null;SFloc=null}else sfReselect();
   view();
@@ -789,18 +789,18 @@ const subNav=`<div class="sub-tabs">
 </div>`;
 const alchHtml=`
   <div class="cd" style="background:linear-gradient(135deg,#12305a66,var(--pn))">
-    <div class="ct">⛲ Yaşam Pınarı <span style="color:#38bdf8;font-size:11px">Ücretsiz</span></div>
-    <p class="mu" style="font-size:11px;margin-bottom:8px">Can ve manayı tamamen yeniler.</p>
-    <button class="btn b" onclick="fount()">Pınardan İç</button>
+    <div class="ct">⛲ Yaşam Pınarı <span style="color:#38bdf8;font-size:11px">${fountCost()} 🪙</span></div>
+    <p class="mu" style="font-size:11px;margin-bottom:8px">Can ve manayı tamamen yeniler. Ücret seviyene göre artar.</p>
+    <button class="btn b" ${P.gold>=fountCost()?"":"disabled"} onclick="fount()">Pınardan İç (${fountCost()} 🪙)</button>
   </div>
   <div class="cd">
     <div class="ct">🧪 Simyacı — Can İksirleri <span class="mu" style="font-size:10px">Çanta: ${P.pot.hp.S}K · ${P.pot.hp.M}O · ${P.pot.hp.L}B</span></div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;margin-bottom:9px">
-      ${["S","M","L"].map(sz=>{const d=POT_DEF.hp[sz];return`<div class="q" style="display:block;margin:0;padding:7px 4px;border:1px solid ${G[d.g].c}44"><b style="color:${G[d.g].c};font-size:10.5px">${d.sz} Can</b><div class="mu" style="font-size:9.5px">+%${Math.round(d.pct*100)} HP · <span style="color:#fff">×${P.pot.hp[sz]||0}</span></div><button class="btn" style="margin-top:5px;padding:6px;font-size:11px" ${P.gold>=d.cost?"":"disabled"} onclick="buy('hp',${d.cost},'${sz}')">${d.cost} 🪙</button></div>`}).join("")}
+      ${["S","M","L"].map(sz=>{const d=POT_DEF.hp[sz];return`<div class="q" style="display:block;margin:0;padding:7px 4px;border:1px solid ${G[d.g].c}44"><b style="color:${G[d.g].c};font-size:10.5px">${d.sz} Can</b><div class="mu" style="font-size:9.5px">+${d.amt} HP · <span style="color:#fff">×${P.pot.hp[sz]||0}</span></div><button class="btn" style="margin-top:5px;padding:6px;font-size:11px" ${P.gold>=d.cost?"":"disabled"} onclick="buy('hp',${d.cost},'${sz}')">${d.cost} 🪙</button></div>`}).join("")}
     </div>
     <div class="ct">💧 Simyacı — Mana İksirleri <span class="mu" style="font-size:10px">Çanta: ${P.pot.mp.S}K · ${P.pot.mp.M}O · ${P.pot.mp.L}B</span></div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;margin-bottom:9px">
-      ${["S","M","L"].map(sz=>{const d=POT_DEF.mp[sz];return`<div class="q" style="display:block;margin:0;padding:7px 4px;border:1px solid ${G[d.g].c}44"><b style="color:${G[d.g].c};font-size:10.5px">${d.sz} Mana</b><div class="mu" style="font-size:9.5px">+%${Math.round(d.pct*100)} MP · <span style="color:#fff">×${P.pot.mp[sz]||0}</span></div><button class="btn b" style="margin-top:5px;padding:6px;font-size:11px" ${P.gold>=d.cost?"":"disabled"} onclick="buy('mp',${d.cost},'${sz}')">${d.cost} 🪙</button></div>`}).join("")}
+      ${["S","M","L"].map(sz=>{const d=POT_DEF.mp[sz];return`<div class="q" style="display:block;margin:0;padding:7px 4px;border:1px solid ${G[d.g].c}44"><b style="color:${G[d.g].c};font-size:10.5px">${d.sz} Mana</b><div class="mu" style="font-size:9.5px">+${d.amt} MP · <span style="color:#fff">×${P.pot.mp[sz]||0}</span></div><button class="btn b" style="margin-top:5px;padding:6px;font-size:11px" ${P.gold>=d.cost?"":"disabled"} onclick="buy('mp',${d.cost},'${sz}')">${d.cost} 🪙</button></div>`}).join("")}
     </div>
     <div class="q" style="margin:0;padding:8px 10px">
       <div><b style="color:#c084fc">📜 Koruma Parşömeni</b> <span class="mu">(Çanta: ×${P.sc})</span><div class="mu" style="font-size:9.5px">+6 ve üzeri yükseltmelerde kırılmayı/düşmeyi önler</div></div>
@@ -810,9 +810,11 @@ const alchHtml=`
 v.innerHTML=subNav+(citySub=="shop"?shopHTML():alchHtml);
 }
 async function claim(id){const r=await ecoCall({op:"eco",a:"claim",kind:"q",id});if(r){hud();view()}}
-function fount(){P.hp=P.maxHp;P.mp=P.maxMp;A.pot();hud();save();toast("Can ve mana doldu")}
+const fountCost=()=>20+P.lv*8;
+function fount(){if(P.hp>=P.maxHp&&P.mp>=P.maxMp)return toast("Canın ve manan zaten dolu");const c=fountCost();if(P.gold<c)return toast("Yetersiz altın ("+c+" 🪙 gerekir)");P.gold-=c;P.hp=P.maxHp;P.mp=P.maxMp;A.pot();hud();save();view();toast("Can ve mana doldu (-"+c+" 🪙)")}
 async function buy(t,c,sz="S"){if(P.gold<c)return toast("Yetersiz altın");const r=await ecoCall({op:"eco",a:"buy",t,sz});if(r){hud();view()}}
 function cSkills(v){v.innerHTML=skillsHTML()}
+function resetSk(){const c=P.lv*30;if(armed!="rsk"){armed="rsk";view();return}armed="";if(P.gold<c)return toast("Yetersiz altın");const t=Object.values(P.sr).reduce((a,b)=>a+(b|0),0);if(!t)return;P.gold-=c;P.sp+=t;P.sr={};sync();save();view();toast("Yetenekler sıfırlandı: +"+t+" SP")}
 function upSk(i){if(P.sp<=0)return;P.sp--;P.sr[i]=(P.sr[i]||0)+1;A.lvl();save();view()}
 
 /* ---------- EŞYA İNCELEME ---------- */
@@ -852,8 +854,8 @@ function usePot(t,sz="S"){
   if(t=="hp"&&P.hp>=P.maxHp)return toast("Canın zaten tamamen dolu!");
   if(t=="mp"&&P.mp>=P.maxMp)return toast("Manan zaten tamamen dolu!");
   P.pot[t][sz]--;A.pot();ev("pot");
-  if(t=="hp"){const r=Math.floor(P.maxHp*def.pct);P.hp=Math.min(P.maxHp,P.hp+r);toast(`🧪 ${def.n} içildi: +${r} HP`)}
-  else{const r=Math.floor(P.maxMp*def.pct);P.mp=Math.min(P.maxMp,P.mp+r);toast(`💧 ${def.n} içildi: +${r} MP`)}
+  if(t=="hp"){const r=Math.min(def.amt,P.maxHp-P.hp);P.hp=Math.min(P.maxHp,P.hp+r);toast(`🧪 ${def.n} içildi: +${r} HP`)}
+  else{const r=Math.min(def.amt,P.maxMp-P.mp);P.mp=Math.min(P.maxMp,P.mp+r);toast(`💧 ${def.n} içildi: +${r} MP`)}
   hud();save();
   if((P.pot[t][sz]||0)>0)inspStack("pot_"+t+"_"+sz);else{closeM();view()}
 }
@@ -1078,7 +1080,7 @@ function cycleSelPot(t){
   const cur=P.selPot[t]||"S";
   P.selPot[t]=order[(order.indexOf(cur)+1)%3];
   const d=POT_DEF[t][P.selPot[t]];
-  toast(`${d.e} Seçili iksir: ${d.n} (+%${Math.round(d.pct*100)})`);
+  toast(`${d.e} Seçili iksir: ${d.n} (+${d.amt})`);
   save();upd();
 }
 function pot(t,szOverride){
@@ -1150,7 +1152,7 @@ function openAutoSetup(alreadyRunning){
       <div class="r" style="margin-bottom:5px"><b style="color:#f87171;font-size:11.5px">🧪 Can İksiri Boyutu</b><span class="mu" style="font-size:9.5px">Can %${cfg.hpThr} altına inince içer</span></div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px">
         ${optBtn("hp","off","Kullanma","Pasif")}
-        ${["S","M","L"].map(sz=>{const d=POT_DEF.hp[sz];return optBtn("hp",sz,`${d.sz} (×${P.pot.hp[sz]||0})`,`+%${Math.round(d.pct*100)} HP`)}).join("")}
+        ${["S","M","L"].map(sz=>{const d=POT_DEF.hp[sz];return optBtn("hp",sz,`${d.sz} (×${P.pot.hp[sz]||0})`,`+${d.amt} HP`)}).join("")}
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
         ${[25,40,55,70].map(v=>thrBtn("hpThr",v)).join("")}
@@ -1161,7 +1163,7 @@ function openAutoSetup(alreadyRunning){
       <div class="r" style="margin-bottom:5px"><b style="color:#60a5fa;font-size:11.5px">💧 Mana İksiri Boyutu</b><span class="mu" style="font-size:9.5px">Mana %${cfg.mpThr} altına inince içer</span></div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px">
         ${optBtn("mp","off","Kullanma","Pasif")}
-        ${["S","M","L"].map(sz=>{const d=POT_DEF.mp[sz];return optBtn("mp",sz,`${d.sz} (×${P.pot.mp[sz]||0})`,`+%${Math.round(d.pct*100)} MP`)}).join("")}
+        ${["S","M","L"].map(sz=>{const d=POT_DEF.mp[sz];return optBtn("mp",sz,`${d.sz} (×${P.pot.mp[sz]||0})`,`+${d.amt} MP`)}).join("")}
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
         ${[15,25,40,55].map(v=>thrBtn("mpThr",v)).join("")}
@@ -1313,7 +1315,7 @@ ${Object.keys(SD).map(k=>`<div class="q"><div style="flex:1"><b>${SD[k][0]}${CP[
 function addStat(k,n){n=Math.min(n,P.ap);if(n<=0)return;const h0=P.maxHp,m0=P.maxMp;P.at[k]+=n;P.ap-=n;A.pot();sync();/* artan üst sınır kadar mevcut can/mana da artar (kalıcı puan, istismar yok) */const d=D();if(d.hp>h0)P.hp=Math.min(d.hp,P.hp+(d.hp-h0));if(d.mp>m0)P.mp=Math.min(d.mp,P.mp+(d.mp-m0));hud();save();view()}
 function respec(){const c=P.lv*30;if(armed!="rp"){armed="rp";view();return}armed="";if(P.gold<c)return toast("Yetersiz altın");P.gold-=c;P.ap+=Object.values(P.at).reduce((a,b)=>a+b,0);P.at={str:0,dex:0,int:0,vit:0};sync();save();view();toast("Nitelikler sıfırlandı")}
 function skillsHTML(){const c=CL[P.cls],d=D();
-return`<div class="cd"><div class="ct">Yetenekler <span class="g" style="font-size:11px">SP: ${P.sp}</span></div>`+c.sk.map((s,i)=>{const r=P.sr[i]||0,t=r>=50?"S":r>=40?"A":r>=30?"B":r>=20?"C":r>=10?"D":"E",rm=(1+r*.05)*(r>=50?1.25:1),dm=s.m>0?" · ~"+Math.floor(d.atk*s.m*rm)+" hasar":s.heal?" · ~"+Math.floor(P.maxHp*.45*(1+P.at.int*.01))+" can":"";
+return`<div class="cd"><div class="ct">Yetenekler <span class="g" style="font-size:11px">SP: ${P.sp}</span></div><button class="btn s" style="margin-bottom:8px" ${Object.values(P.sr).some(x=>x>0)?"":"disabled"} onclick="resetSk()">${armed=="rsk"?"Onayla: "+P.lv*30+" 🪙":"Yetenekleri sıfırla ("+P.lv*30+" 🪙)"}</button>`+c.sk.map((s,i)=>{const r=P.sr[i]||0,t=r>=50?"S":r>=40?"A":r>=30?"B":r>=20?"C":r>=10?"D":"E",rm=(1+r*.05)*(r>=50?1.25:1),dm=s.m>0?" · ~"+Math.floor(d.atk*s.m*rm)+" hasar":s.heal?" · ~"+healAmt(P)+" can":"";
 return`<div class="q"><div style="flex:1"><b>${s.n}</b> <span class="g">[${t} · ${r}/50]</span><div class="mu">${s.d} · ${s.mp} MP${dm}</div></div><button class="btn" style="width:auto;padding:6px 10px" ${P.sp>0&&r<50?"":"disabled"} onclick="upSk(${i})">+1</button></div>`}).join("")+`</div>`}
 
 /* ---------- MALZEME, GÖREV ÇEŞİTLİLİĞİ ---------- */
@@ -1423,11 +1425,11 @@ function cWiki(v){
         <div class="ct">Sınıf Yetenekleri (Maks. Lv.50)</div>
         <p class="mu" style="font-size:10px;margin-bottom:6px">Her yetenek seviyesi etkiyi <b>+%5</b> artırır. <b>Lv.50 (S Kademe)</b> ek <b>+%25</b> güç verir (E: 0–9, D: 10–19, C: 20–29, B: 30–39, A: 40–49, S: 50).</p>
         <ul class="wk-list">
-          <li><b>🛡️ Tank:</b> Kalkan Darbesi (20 MP, 1.4x, ⚡Kesinti) · Kalkan Duvarı (30 MP, %35 HP Kalkan) · Meydan Okuma (25 MP, 1.8x + 3t İç Kanama) · Yıkılmaz İrade (45 MP, 2.8x)</li>
+          <li><b>🛡️ Tank:</b> Kalkan Darbesi (13 MP, 1.4x, ⚡Kesinti) · Kalkan Duvarı (20 MP, %35 HP Kalkan) · Meydan Okuma (16 MP, 1.8x + 3t İç Kanama) · Yıkılmaz İrade (30 MP, 2.8x)</li>
           <li><b>🔮 Büyücü:</b> Alev Patlaması (30 MP, 2.2x + 3t Yanma) · Buzul Halka (40 MP, 1.6x, ⚡Kesinti) · Arkana Kalkanı (35 MP, %35 HP Kalkan) · Kıyamet Meteoru (75 MP, 4.2x)</li>
-          <li><b>🏹 Okçu:</b> Zehirli Ok (22 MP, 1.5x + 3t Zehir) · Kiriş Darbesi (25 MP, 1.3x, ⚡Kesinti) · Zayıf Nokta (35 MP, 2.4x, Garanti Kritik) · Ok Yağmuru (60 MP, 3.6x)</li>
-          <li><b>🗡️ Suikastçı:</b> Gölge Kesiği (24 MP, 1.9x + 3t Kanama) · Kör Edici Toz (28 MP, 1.1x, ⚡Kesinti) · Gölgelere Karış (30 MP, 0.8x + Kalkan) · Gölge İnfazı (65 MP, 4.4x)</li>
-          <li><b>✨ Şifacı:</b> Kutsal Işık (25 MP, 1.6x + 3t Kutsal Yanık) · İlahi Baston (22 MP, 1.2x, ⚡Kesinti) · Kutsal Lütuf (35 MP, %45 HP İyileştirme) · İlahi Kubbe (70 MP, 1.0x + Kalkan)</li>
+          <li><b>🏹 Okçu:</b> Zehirli Ok (14 MP, 1.5x + 3t Zehir) · Kiriş Darbesi (16 MP, 1.3x, ⚡Kesinti) · Zayıf Nokta (23 MP, 2.4x, Garanti Kritik) · Ok Yağmuru (40 MP, 3.6x)</li>
+          <li><b>🗡️ Suikastçı:</b> Gölge Kesiği (15 MP, 1.9x + 3t Kanama) · Kör Edici Toz (18 MP, 1.1x, ⚡Kesinti) · Gölgelere Karış (20 MP, 0.8x + Kalkan) · Gölge İnfazı (42 MP, 4.4x)</li>
+          <li><b>✨ Şifacı:</b> Kutsal Işık (25 MP, 1.6x + 3t Kutsal Yanık) · İlahi Baston (22 MP, 1.2x, ⚡Kesinti) · Kutsal Lütuf (35 MP, 100+30×seviye HP iyileştirme) · İlahi Kubbe (70 MP, 1.0x + Kalkan)</li>
         </ul>
       </div>`;
   }else if(wikiSec===3){
@@ -1489,7 +1491,6 @@ function cWiki(v){
         <ul class="wk-list">
           <li><b>8 Ekipman Yuvası:</b> <b>Silah</b> → Saldırı · <b>Sol El, Kask, Zırh, Pantolon, Çizme</b> → Zırh · <b>Kolye</b> → Güç×4 Can · <b>Yüzük</b> → Güç×3 Mana.</li>
           <li><b>Nadirlik Çarpanları:</b> <span style="color:#64748b">GR-I (1.0x)</span> · <span style="color:#22c55e">GR-II (1.15x)</span> · <span style="color:#38bdf8">GR-III (1.3x)</span> · <span style="color:#a855f7">GR-IV (1.5x)</span> · <span class="g">👑 ELİT (1.75x)</span>.</li>
-          <li><b>Kadim Elit Kuralı:</b> Elit eşyalar her +1 yükseltmede seviye şartını <b>+2 artırır</b>.</li>
         </ul>
       </div>
       <div class="cd">
@@ -1516,9 +1517,9 @@ function cWiki(v){
         <div class="ct">6. Şehir, Sonsuz Kule ve Sandıklar</div>
         <ul class="wk-list">
           <li><b>🏪 Tüccar Maren:</b> Seviyene uygun bölgenin tüm 8 parça GR-I set eşyalarını satar. Her gün yenilenir veya 80 🪙 karşılığı tazelenebilir.</li>
-          <li><b>⛲ Yaşam Pınarı & 🧪 Simyacı (İksir Boyutları):</b> Pınar Can ve Manayı <b>ücretsiz</b> doldurur. İksirler 3 boyuttadır; boyut büyüdükçe etkisi ve fiyatı artar, yaratıklardan düşme şansı azalır (Düşme dağılımı: <b>%65 Küçük, %27 Orta, %8 Büyük</b>):<br>
-• <b>Can İksirleri:</b> Küçük (+%25 HP · 10 🪙) · Orta (+%50 HP · 25 🪙) · Büyük (+%85 HP · 60 🪙)<br>
-• <b>Mana İksirleri:</b> Küçük (+%30 MP · 8 🪙) · Orta (+%60 MP · 20 🪙) · Büyük (+%95 MP · 50 🪙)<br>
+          <li><b>⛲ Yaşam Pınarı & 🧪 Simyacı (İksir Boyutları):</b> Pınar Can ve Manayı doldurur (seviyene göre altın ister: 20 + 8×seviye). İksirler 3 boyuttadır; boyut büyüdükçe etkisi ve fiyatı artar, yaratıklardan düşme şansı azalır (Düşme dağılımı: <b>%65 Küçük, %27 Orta, %8 Büyük</b>):<br>
+• <b>Can İksirleri:</b> Küçük (+150 HP · 10 🪙) · Orta (+400 HP · 25 🪙) · Büyük (+900 HP · 60 🪙)<br>
+• <b>Mana İksirleri:</b> Küçük (+60 MP · 8 🪙) · Orta (+180 MP · 20 🪙) · Büyük (+400 MP · 50 🪙)<br>
 • <b>Koruma Parşömeni:</b> 150 🪙 (+6 ve üzeri yükseltmeleri korur).</li>
           <li><b>🗼 Sonsuz Kule:</b> Her katta düşmanlar <b>+%7</b> güçlenir. Her <b>5 katta bir</b> Kule Muhafızı (Boss) çıkar ve zaferde <b>🎁 Hazine Sandığı</b> verir.</li>
           <li><b>🎁 Hazine Sandıkları (Tekli & Toplu Açım):</b> Bölge elit bosslarından <b>%50 ihtimalle</b>, Sonsuz Kule'nin her 5. kat bossundan, günlük görevlerden ve 4+ saat çevrimdışı ödülden kazanılır (normal canavarlardan düşmez). Çantada tek yuvada birikir ve toplu açılabilir; içinden <b>%53 Altın</b>, <b>%30 İksir Paketi</b> (2 Can + 2 Mana), <b>%10 Nadir Ekipman (GR-III+)</b> veya <b>%7 Koruma Parşömeni</b> çıkar.</li>

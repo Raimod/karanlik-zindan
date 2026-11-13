@@ -102,3 +102,12 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 - + puan basınca artan üst sınır kadar can/mana da artar; iksir alınca/satınca can-mana çubuğu oynamaz (ecoCall yerel can/manayı korur).
 - Oto savaş durdurulunca kalan oynatma beklemeden biter.
 - iPhone: yatay kaydırma kapatıldı, viewport kilitli, ⛶ tam ekran düğmesi + manifest.json (iPhone'da Paylaş → Ana Ekrana Ekle).
+
+## 1.8.0 — Paket B (denge)
+- İksirler sabit: Can 150/400/900, Mana 60/180/400 (POT_DEF.amt). Şifacı Kutsal Lütuf: (100+30×seviye)×(1+Zeka×%1) can.
+- Mana düştü: Tank 13/20/16/30, Okçu 14/16/23/40, Suikastçı 15/18/20/42.
+- Pınar ücretli: 20 + 8×seviye altın; doluyken ücret alınmaz.
+- Elit: sandık düşmez, 1 eşya; Kadim oranı %2.5 → %0.7 (el için: g4 %9, g3 %32, g2 %65). Kadim eşyada +level şartı artışı kaldırıldı.
+- Koruma parşömeni seçimli (demirci panelinde kutucuk, varsayılan kapalı; sunucuya prot:true gider).
+- Yetenek sıfırlama (seviye×30 altın), SP geri verilir.
+- Edge Function yeniden yüklenmeli (engine.js değişti).
