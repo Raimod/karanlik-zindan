@@ -157,3 +157,6 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 - 🏰 Lonca sistemi (Topluluk > Lonca). Yeni dosyalar: lonca.js, sql/lonca.sql. Supabase'te sql/lonca.sql çalıştırılmalı.
 - Harita sekmesi doğrudan tam ekran harita açar; bölgeye dokununca canavarlar küçük pencerede çıkar (alttaki canavar listesi kaldırıldı).
 - Oto savaş: durdurulunca kalan savaşlar anında yutulmaz, görünür biçimde (hızlı) oynanır.
+
+## 2.8.1
+- Tam ekran harita bilgisayarda (geniş pencerede) telefon boyutunda ortalanır, pencere genişledikçe büyümez.

@@ -247,3 +247,6 @@ nav button span{display:flex}
 .wmf-body{flex:1;overflow:auto;-webkit-overflow-scrolling:touch}
 .wmf-pop{position:absolute;left:0;right:0;bottom:0;max-height:46vh;overflow-y:auto;background:#150f0df8;border-top:2px solid var(--gold);border-radius:14px 14px 0 0;padding:12px;box-shadow:0 -8px 24px #000a;-webkit-overflow-scrolling:touch}
 #wmfull{position:fixed}
+.wmf-body>svg{max-width:480px;margin:0 auto}
+.wmf-pop{max-width:480px;margin:0 auto}
+.wmf-bar{max-width:480px;width:100%;margin:0 auto;box-sizing:border-box}

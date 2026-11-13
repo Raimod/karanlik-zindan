@@ -1,4 +1,4 @@
-const GAME_VERSION="2.8.0";
+const GAME_VERSION="2.8.1";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -788,7 +788,7 @@ function wmOpen(){
   o.innerHTML=`<div class="wmf-bar"><span>🗺️ Valdrenn Haritası</span><button class="btn s" style="width:auto;padding:5px 12px" onclick="wmClose()">✕ Kapat</button></div><div class="wmf-body" id="wmbody" onclick="wmBg(event)"></div><div id="wmpop"></div>`;
   o.style.display="flex";
   wmRender();
-  const b=document.getElementById("wmbody"),sc=b.clientWidth/360,r=RG[wmBest()];
+  const b=document.getElementById("wmbody"),sv=b.querySelector("svg"),sc=(sv?sv.clientWidth:b.clientWidth)/360,r=RG[wmBest()];
   if(b&&r)b.scrollTop=Math.max(0,(r.y-200)*sc);
 }
 function wmRender(){
@@ -811,7 +811,7 @@ function wmPanel(){
     <div class="mg" style="gap:7px">${r.mobs.map(m=>`<button class="mb" style="padding:7px" ${o?"":"disabled"} onclick="wmFight(${mapReg},${m.mi})">${mobSVG(m)}<div><div style="font-size:11.5px;font-weight:700;color:${m.el?"var(--gold)":"#fff"}">${m.el?"👑 ":""}${m.name}</div><div style="font-size:9.5px;color:#cbd5e1">Lv.${m.lv} · ${m.hp.toLocaleString()} HP</div></div></button>`).join("")}</div></div>`;
 }
 function wmClose(){wmPop=false;const o=document.getElementById("wmfull");if(o)o.style.display="none"}
-function wmPick(i){mapReg=i;wmPop=true;wmRender();const b=document.getElementById("wmbody");if(b){const sc=b.clientWidth/360,y=RG[i].y*sc,vis=b.clientHeight*.5;if(y>b.scrollTop+vis-30||y<b.scrollTop+20)b.scrollTop=Math.max(0,y-vis/2+20)}}
+function wmPick(i){mapReg=i;wmPop=true;wmRender();const b=document.getElementById("wmbody");if(b){const sv=b.querySelector("svg"),sc=(sv?sv.clientWidth:b.clientWidth)/360,y=RG[i].y*sc,vis=b.clientHeight*.5;if(y>b.scrollTop+vis-30||y<b.scrollTop+20)b.scrollTop=Math.max(0,y-vis/2+20)}}
 function wmFight(ri,mi){wmClose();startCombat(ri,mi)}
 function cMap(v){
   if(mapReg<0)mapReg=wmBest();
