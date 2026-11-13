@@ -160,3 +160,11 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 
 ## 2.8.1
 - Tam ekran harita bilgisayarda (geniş pencerede) telefon boyutunda ortalanır, pencere genişledikçe büyümez.
+
+## 2.9.0
+- 👥 Arkadaş listesi, çevrimiçi durumu, özel mesaj, engelleme. Yeni dosyalar: arkadas.js, sql/arkadas.sql (Supabase'te çalıştırılmalı).
+- Profil penceresine Mesaj gönder / Arkadaş ekle / Engelle düğmeleri; sohbetlerde isimler tıklanabilir.
+
+## 2.10.0
+- 📖 Hikâye Günlüğü (story.js): Prolog + 12 bölge + Epilog, Elit Boss yenilince açılır. Bildirim durumu yalnızca cihazda (localStorage) tutulur, kayıt formatı değişmedi.
+- Modal pencereleri tam ekran haritanın üstünde görünür.

@@ -122,7 +122,7 @@ async function gLoadChat(scroll){
     l.innerHTML=rows.map(x=>{
       const mine=CLOUD.user&&x.user_id===CLOUD.user.id;
       const t=new Date(x.created).toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"});
-      return`<div style="margin-bottom:6px"><b style="color:${mine?"var(--gold)":"#93c5fd"}">${escH(x.name||"Oyuncu")}</b> <span class="mu" style="font-size:9px">${t}</span><div style="word-break:break-word">${escH(x.body)}</div></div>`}).join("")||'<p class="mu">Henüz mesaj yok. İlk mesajı sen yaz!</p>';
+      return`<div style="margin-bottom:6px"><b ${mine?"":`onclick="comProfile('${escH(x.user_id)}')" `}style="cursor:pointer;color:${mine?"var(--gold)":"#93c5fd"}">${escH(x.name||"Oyuncu")}</b> <span class="mu" style="font-size:9px">${t}</span><div style="word-break:break-word">${escH(x.body)}</div></div>`}).join("")||'<p class="mu">Henüz mesaj yok. İlk mesajı sen yaz!</p>';
     if(scroll||near)l.scrollTop=l.scrollHeight;
   }catch(e){const l=$("g-chat");if(l)l.innerHTML=`<p style="font-size:11px;color:#fbbf24">Sohbet yüklenemedi: ${escH(gErr(e))}</p>`}
 }

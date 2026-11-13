@@ -1,4 +1,4 @@
-const GAME_VERSION="2.8.1";
+const GAME_VERSION="2.10.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -506,7 +506,7 @@ $("hg").innerText=P.gold.toLocaleString();$("hb").innerText=P.inv.length;
 $("hh").style.width=Math.max(0,P.hp/P.maxHp*100)+"%";$("hm").style.width=Math.max(0,P.mp/P.maxMp*100)+"%";$("hx").style.width=Math.min(100,P.xp/x*100)+"%";
 $("ht").innerText=P.hp+" / "+P.maxHp+" HP";$("hmt").innerText=P.mp+" / "+P.maxMp+" MP"}
 const TABS=[["character","🧙","Karakter"],["inventory","🎒","Çanta"],["map","🗺️","Harita"],["forge","🔨","Demirci"],["city","🏰","Şehir"],["quests","📜","Görev"],["community","🌐","Topluluk"],["wiki","📖","Wiki"]];
-function nav(){$("nv").innerHTML=TABS.map(t=>`<button class="${tab==t[0]?"a":""}" onclick="go('${t[0]}')"><span>${t[1]}</span>${t[2]}</button>`).join("")}
+function nav(){const bd=typeof frBadge==="function"?frBadge():0;$("nv").innerHTML=TABS.map(t=>`<button class="${tab==t[0]?"a":""}" onclick="go('${t[0]}')"><span>${t[1]}</span>${t[2]}${t[0]==="community"&&bd>0?`<i class="nbd">${bd>9?"9+":bd}</i>`:""}</button>`).join("")}
 let wmAuto=false;
 function go(t){if(t==="map")wmAuto=true;tab=t;armed="";CB.nav=!!(CB.on&&t!=="map"&&(CB.auto||CB.nav));nav();view()}
 function view(){const v=$("mv");if(CB.on&&!(CB.nav&&tab!=="map")){combatUI(v);return}({character:cChar,inventory:cBag,map:cMap,forge:cForge,city:cCity,skills:cSkills,quests:cQuests,community:(typeof cCommunity==="function"?cCommunity:cCity),wiki:cWiki})[tab](v);if(CB.on)updMini(true)}
@@ -828,8 +828,10 @@ function cMap(v){
     </div>
     <div class="cd"><div class="ct">🗺️ Valdrenn Haritası</div>
       <p class="mu" style="font-size:11px;margin-bottom:8px">Şu anki bölgen: <b class="g">${r.n}</b>. Haritada bir bölgeye dokununca canavarlar küçük bir pencerede açılır.</p>
-      <button class="btn" onclick="wmOpen()">🗺️ Haritayı aç</button></div>`;
+      <button class="btn" onclick="wmOpen()">🗺️ Haritayı aç</button></div>
+    ${typeof stCount==="function"?`<div class="cd"><div class="ct">📖 Hikâye Günlüğü <span class="g" style="font-size:11px;margin-left:6px">${stCount()}/${STORY.length}</span></div><p class="mu" style="font-size:11px;margin-bottom:8px">Her bölgenin Elit Boss'unu yendikçe Valdrenn'in gizli hikâyesinin yeni bir sayfası açılır.</p><button class="btn s" onclick="storyList()">📖 Günlüğü aç</button></div>`:""}`;
   if(wmAuto){wmAuto=false;setTimeout(wmOpen,0)}
+  if(typeof storyCheck==='function')storyCheck();
 }
 
 /* ---------- DEMİRCİ ---------- */
@@ -1694,6 +1696,8 @@ function cWiki(v){
           <li><b>🗺️ 12 Bölge ve Seviye 100:</b> Dünya artık 12 bölgeden oluşuyor ve seviye sınırı <b>100</b>. Her bölgede 7 canavar ve 1 👑 Elit Boss var (toplam 96 canavar, hepsinin kendi çizimi var). Haritada bölge noktalarına dokunarak bölgeleri gezebilirsin; bir sonraki bölge için seviye gerekir ve önceki bölgenin Elit Boss'unu yenmelisin. 51-100 arası eşyalar yeni kademelerde (55, 60 … 100) düşer; Lv 75 ve Lv 100 silahları da kilometre taşı efsunlu gelir.</li>
           <li><b>🏰 Lonca (v2.8.0):</b> Topluluk > Lonca sekmesinden 10. seviyeden itibaren lonca kurabilir ya da açık bir loncaya katılabilirsin (en çok 30 üye). Roller: <b>Lider</b> (ayarlar, rütbe, atma, devir, dağıtma), <b>Subay</b> (sıradan üyeleri atar), <b>Üye</b>. Lider ayrılırsa liderlik en eski subaya geçer. Loncanın gücü üyelerinin seviyeleri toplamıdır; lonca listesi güce göre sıralanır. Lonca sohbetini yalnızca üyeler görür.</li>
           <li><b>🗺️ Harita (v2.8.0):</b> Harita sekmesi doğrudan tam ekran haritayı açar. Bir bölgeye dokununca küçük bir pencerede bölgenin canavarları çıkar; haritanın boş yerine dokunarak pencereyi kapatırsın.</li>
+          <li><b>👥 Arkadaşlar ve Mesajlar (v2.9.0):</b> Sıralamada, sohbette ya da loncada bir oyuncunun adına dokununca profilinin altında <i>Mesaj gönder</i>, <i>Arkadaş ekle</i> ve <i>Engelle</i> düğmeleri çıkar. Arkadaşlık iki taraflıdır (istek gönderilir, karşı taraf kabul eder; en çok 50 arkadaş). Arkadaşlarının çevrimiçi olup olmadığını Topluluk > Arkadaş sekmesinde görürsün (son 3 dakikada oyundaysa çevrimiçidir; bu bilgiyi yalnızca arkadaşların görür). Özel mesaj herkese gönderilebilir; rahatsız eden oyuncuyu engelleyebilirsin. Okunmamış mesaj ve istekler Topluluk sekmesinde kırmızı rozetle görünür. Mesajlar 14 gün saklanır.</li>
+          <li><b>📖 Hikâye Günlüğü (v2.10.0):</b> Harita sekmesindeki günlükte Valdrenn'in hikâyesi (Kral Valdrenn, gölgenin on iki mührü ve senin gölgen) yer alır. Prolog ilk girişte kendiliğinden açılır; her bölgenin Elit Boss'unu yenince o bölgenin sayfası açılır ve bildirim gelir. Son sayfalar Valdrenn Tahtı'ndaki Elit Boss'u yenince açılır.</li>
           <li><b>🎨 Kor Teması ve Çizimler:</b> Oyunun görünümü kızıl-altın <i>Kor</i> temasına geçti. Emojilerin yerine özgün çizim ikonlar, 20 canavarın her biri için ise kendi çizimi geldi. Kule canavarları bağlı oldukları bölge canavarının çizimini kullanır.</li>
           <li><b>🏪 Tüccar Maren:</b> Tezgâhı <b>sabittir</b>, yenilenmez. Tüm sınıfların GR-I eşyalarını <b>kategori sekmeleriyle</b> (Silah, Sol El, Kask, Zırh, Pantolon, Çizme, Kolye, Yüzük) satar. Varsayılan olarak kendi sınıfının eşyaları görünür; <i>Tüm sınıflar</i> ile hepsini görebilirsin. Yalnızca <b>Lv 1</b> eşyalar satılır; üst seviye eşyalar savaşta düşer. Silahların hasar aralığı ve hızı satırında görünür.</li>
           <li><b>⛲ Yaşam Pınarı & 🧪 Simyacı (İksir Boyutları):</b> Pınar Can ve Manayı doldurur (seviyene göre altın ister: 20 + 8×seviye). İksirler 3 boyuttadır; boyut büyüdükçe etkisi ve fiyatı artar, yaratıklardan düşme şansı azalır (Düşme dağılımı: <b>%65 Küçük, %27 Orta, %8 Büyük</b>):<br>

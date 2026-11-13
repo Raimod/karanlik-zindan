@@ -44,6 +44,7 @@ function cCommunity(v){
     <button class="sub-tab ${COM.sub=="rank"?"act":""}" onclick="comSub('rank')">🏆 Sıralama</button>
     <button class="sub-tab ${COM.sub=="chat"?"act":""}" onclick="comSub('chat')">💬 Sohbet</button>
     ${typeof cGuild==="function"?`<button class="sub-tab ${COM.sub=="guild"?"act":""}" onclick="comSub('guild')">🏰 Lonca</button>`:""}
+    ${typeof cFriends==="function"?`<button class="sub-tab ${COM.sub=="friends"?"act":""}" onclick="comSub('friends')">👥 Arkadaş${frBadge()>0?` <span class="nbd2">${frBadge()}</span>`:""}</button>`:""}
   </div>`;
   if(typeof CLOUD==="undefined"||CLOUD.state!=="in"){
     const off=(typeof CLOUD!=="undefined"&&CLOUD.state==="offline");
@@ -53,6 +54,7 @@ function cCommunity(v){
     return;
   }
   if(COM.sub==="guild"&&typeof cGuild==="function"){cGuild(v,sub);return}
+  if(COM.sub==="friends"&&typeof cFriends==="function"){cFriends(v,sub);return}
   if(COM.sub==="rank"){
     v.innerHTML=sub+`<div class="cd"><div class="ct">🏆 Sıralama</div>
       <div class="sub-tabs" style="margin-bottom:8px">${Object.keys(RANKS).map(k=>`<button class="sub-tab ${COM.by==k?"act":""}" onclick="comBy('${k}')">${RANKS[k][0]}</button>`).join("")}</div>
@@ -140,7 +142,7 @@ function comRenderChat(force){
     const mine=CLOUD.user&&m.user_id===CLOUD.user.id;
     const t=new Date(m.created_at).toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"});
     const act=mine?`<span style="cursor:pointer;margin-left:6px" onclick="comDel(${Number(m.id)})">🗑️</span>`:`<span style="cursor:pointer;margin-left:6px" onclick="comMute('${escH(m.user_id)}')">🔇</span>`;
-    return`<div style="margin-bottom:6px"><b style="color:${mine?"var(--gold)":"#93c5fd"}">${escH(COM.names[m.user_id]||"Oyuncu")}</b> <span class="mu" style="font-size:9px">${t}</span>${act}<div style="word-break:break-word">${escH(m.body)}</div></div>`;
+    return`<div style="margin-bottom:6px"><b ${mine?"":`onclick="comProfile('${escH(m.user_id)}')" `}style="cursor:pointer;color:${mine?"var(--gold)":"#93c5fd"}">${escH(COM.names[m.user_id]||"Oyuncu")}</b> <span class="mu" style="font-size:9px">${t}</span>${act}<div style="word-break:break-word">${escH(m.body)}</div></div>`;
   }).join("")||'<p class="mu">Henüz mesaj yok. İlk mesajı sen yaz!</p>';
   list.innerHTML=rows;
   if(force||nearBottom)list.scrollTop=list.scrollHeight;
@@ -215,14 +217,15 @@ async function comProfile(uid){
       const g=G[i.g]||G[1];
       const af=(i.af||[]).map(a=>`<div class="mu" style="font-size:9px">✨ ${escH(a.n||"")} +%${Number(a.v)||0}</div>`).join("");
       return`<div class="q" style="padding:5px 8px;margin-bottom:3px;align-items:flex-start"><span class="mu" style="width:62px;font-size:10px;padding-top:2px">${SN[k]}</span><div style="flex:1;min-width:0"><b style="color:${g.c};font-size:11px">${escH(i.name||"?")} +${Number(i.p)||0}</b> <span class="mu" style="font-size:9px">${g.t||""}</span>${af}</div></div>`}).join("");
-    $("ic").innerHTML=`<div style="text-align:center;margin-bottom:10px"><div style="font-size:30px">${c.e}</div><b style="font-size:16px">${escH(p.name||"?")}</b>
+    $("ic").innerHTML=`<div style="text-align:center;margin-bottom:10px"><div style="font-size:30px">${c.e}</div><b id="pf-name" style="font-size:16px">${escH(p.name||"?")}</b>
       <div class="mu" style="font-size:11px">${escH(c.n||p.cls)} · Lv.${Number(p.lv)||1}${t?" · "+escH(t):""}</div></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;text-align:center">
         <div class="q" style="display:block;margin:0"><div class="mu" style="font-size:9.5px">Kule</div><b>Kat ${Number(p.tower)||0}</b></div>
         <div class="q" style="display:block;margin:0"><div class="mu" style="font-size:9.5px">En yüksek vuruş</div><b>💥 ${Number(p.maxhit||0).toLocaleString("tr-TR")}</b></div>
         <div class="q" style="display:block;margin:0"><div class="mu" style="font-size:9.5px">Elit öldürme</div><b>${Number(p.elites)||0}</b></div>
         <div class="q" style="display:block;margin:0"><div class="mu" style="font-size:9.5px">Toplam öldürme</div><b>${Number(p.kills||0).toLocaleString("tr-TR")}</b></div></div>
-      <div class="ct" style="font-size:12px;margin-bottom:5px">Kuşandığı eşyalar</div>${items}
+      <div id="pf-act" style="margin-bottom:10px"></div><div class="ct" style="font-size:12px;margin-bottom:5px">Kuşandığı eşyalar</div>${items}
       <button class="btn s" style="margin-top:8px" onclick="closeM()">Kapat</button>`;
+    if(typeof frProfileActs==="function")frProfileActs(uid);
   }catch(e){$("ic").innerHTML=`<p style="font-size:11px;color:#fbbf24;padding:10px">Profil açılamadı: ${escH(cloudErr(e))}<br><span class="mu">Supabase'te sql/liderlik.sql kodunun çalıştırıldığından emin ol.</span></p><button class="btn s" onclick="closeM()">Kapat</button>`}
 }
