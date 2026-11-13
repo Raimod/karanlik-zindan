@@ -121,6 +121,7 @@ begin
   if lv < 1 or lv > 100 or public.kz_n(ns,'lv') <> lv then return 'seviye'; end if;
   if (ns->>'cls') is null or (ns->>'cls') not in ('tank','mage','archer','assassin','healer') then return 'sinif'; end if;
   if char_length(coalesce(ns->>'name','')) not between 1 and 20 then return 'karakter adi'; end if;
+  if (ns->>'race') is not null and (ns->>'race') not in ('kul','gol','tas','kem','yir','fis') then return 'irk'; end if;
   if xp < 0 or gold < 0 or gold > 2000000000 then return 'altin veya xp'; end if;
   tw := public.kz_n(ns,'tw');
   if tw < 0 or tw > 500 then return 'kule'; end if;
@@ -129,6 +130,9 @@ begin
   -- Karşılaştırma tabanı: aynı karakterse önceki değerleri, değilse yeni karakter başlangıcını kullan
   same := os is not null and jsonb_typeof(os) = 'object'
           and (os->>'name') = (ns->>'name') and (os->>'cls') = (ns->>'cls');
+  -- Irk bir kez secilir; secildikten sonra degistirilemez (yeni karakter ya da irksiz eski karakter serbest)
+  if same and (os->>'race') is not null and (ns->>'race') is distinct from (os->>'race')
+     and not (public.kz_n(ns,'lv') = 1 and public.kz_n(ns,'xp') = 0 and public.kz_n(ns,'tw') = 0) then return 'irk degistirilemez'; end if;
   if same then
     blv := greatest(public.kz_n(os,'lv')::int, 1); bxp := public.kz_n(os,'xp'); bgold := public.kz_n(os,'gold');
     btw := public.kz_n(os,'tw'); bch := public.kz_n(os,'ch'); bsc := public.kz_n(os,'sc');

@@ -1,4 +1,4 @@
-const GAME_VERSION="2.6.0";
+const GAME_VERSION="2.7.1";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -27,6 +27,7 @@ function pickBestAvailPot(t,pref){
   return null;
 }
 let SLOTS=[null,null,null,null,null],activeSlot=0,CLASS_ARTS={};
+let genSel="e",raceSel="kul";
 let P=NEW(),tab="character",SF=null,fsrc="eq",sel="tank",armed="",targetCreateSlot=0;
 
 const SLOTS_KEY="kz_rpg_slots_v3",ARTS_KEY="kz_rpg_arts_v3";
@@ -105,8 +106,11 @@ function defaultClassFullArt(clsId){
   return scenes[clsId]||scenes.tank;
 }
 
-function getFullClassArtHTML(clsId){
-  const srcUrl=CLASS_BG_IMAGES[clsId];
+/* Kadın görselleri: dosya img/<sınıf>_f.webp olarak eklenince buraya sınıf adını yaz (ör. FEM_ART.tank=1). Yoksa erkek görseli gösterilir. */
+const FEM_ART={tank:1,mage:1,archer:1,assassin:1,healer:1};
+const artSrc=(cls,g)=>g==="k"&&FEM_ART[cls]?"img/"+cls+"_f.webp":CLASS_BG_IMAGES[cls];
+function getFullClassArtHTML(clsId,g){
+  const srcUrl=artSrc(clsId,g);
   const fallback=defaultClassFullArt(clsId);
   if(!srcUrl)return fallback;
   return`<img class="cs-bg-blur" src="${srcUrl}" alt="" aria-hidden="true"><img class="cs-bg-main" src="${srcUrl}" alt="${clsId}" onerror="this.style.display='none';this.previousElementSibling.style.display='none';this.nextElementSibling.style.display='block'"><div style="display:none;width:100%;height:100%">${fallback}</div>`;
@@ -114,15 +118,15 @@ function getFullClassArtHTML(clsId){
 
 function getCharPortraitHTML(charObj, clsOverride){
   const clsId=clsOverride||(charObj?charObj.cls:"tank");
-  return getFullClassArtHTML(clsId);
+  return getFullClassArtHTML(clsId,charObj&&charObj.g);
 }
 
-let csShowcaseCls="tank";
+let csShowcaseCls="tank",csShowcaseG="e";
 
-function getShowcaseBgOnlyHTML(clsId){
+function getShowcaseBgOnlyHTML(clsId,g){
   const activeCls=clsId||csShowcaseCls||"tank";
   const cl=CL[activeCls]||CL.tank;
-  const srcUrl=CLASS_BG_IMAGES[activeCls];
+  const srcUrl=artSrc(activeCls,g);
   const fallback=defaultClassFullArt(activeCls);
   const media=srcUrl
     ?`<img class="cs-bg-blur" src="${srcUrl}" alt="" aria-hidden="true"><img class="cs-showcase-art" src="${srcUrl}" alt="${cl.n}" onerror="this.style.display='none';this.previousElementSibling.style.display='none';this.nextElementSibling.style.display='block'"><div style="display:none;width:100%;height:100%">${fallback}</div>`
@@ -327,7 +331,7 @@ function openCharSelect(){
   const firstIdx=SLOTS.findIndex(Boolean);
   csPreviewSlot=SLOTS[activeSlot]?activeSlot:(firstIdx>-1?firstIdx:0);
   const initChar=SLOTS[csPreviewSlot]||SLOTS.find(Boolean);
-  csShowcaseCls=initChar?initChar.cls:"tank";
+  csShowcaseCls=initChar?initChar.cls:"tank";csShowcaseG=initChar?initChar.g:"e";
   $("cs-screen").style.display="flex";
   renderCharSelect();
 }
@@ -337,7 +341,7 @@ function toggleCsMode(){
   const firstIdx=SLOTS.findIndex(Boolean);
   csPreviewSlot=SLOTS[activeSlot]?activeSlot:(firstIdx>-1?firstIdx:0);
   const initChar=SLOTS[csPreviewSlot]||SLOTS.find(Boolean);
-  csShowcaseCls=initChar?initChar.cls:csShowcaseCls;
+  csShowcaseCls=initChar?initChar.cls:csShowcaseCls;csShowcaseG=initChar?initChar.g:csShowcaseG;
   renderCharSelect();
 }
 
@@ -351,7 +355,7 @@ function renderCharSelect(){
   if(csMode==="select"){
     const hasAny=SLOTS.some(Boolean);
     const previewChar=hasAny?(SLOTS[csPreviewSlot]||SLOTS.find(Boolean)):null;
-    bgLayer.innerHTML=getShowcaseBgOnlyHTML(csShowcaseCls);
+    bgLayer.innerHTML=getShowcaseBgOnlyHTML(csShowcaseCls,csShowcaseG);
 
     hTitle.innerText="KARAKTER SEÇİMİ";
     hSub.innerText="Sınıflara dokunarak incele · Boş yuvadan yeni kahraman oluştur";
@@ -395,7 +399,7 @@ function renderCharSelect(){
     `;
   }else{
     // Yeni Karakter Oluşturma Modu (Boş yuvaya tıklanınca açılır)
-    bgLayer.innerHTML=getFullClassArtHTML(sel);
+    bgLayer.innerHTML=getFullClassArtHTML(sel,genSel);
     const c=CL[sel];
     const lore=CLASS_LORE[sel]||CLASS_LORE.tank;
 
@@ -423,6 +427,9 @@ function renderCharSelect(){
         <p style="font-size:10.5px;color:#f8fafc;line-height:1.35">${lore.story}</p>
       </div>
       <div class="cls-tabs">${tabsHtml}</div>
+      <div class="rc-row"><button class="rc-chip ${genSel==="e"?"act":""}" onclick="pickGen('e')">♂ Erkek</button><button class="rc-chip ${genSel==="k"?"act":""}" onclick="pickGen('k')">♀ Kadın</button></div>
+      <div class="rc-row">${Object.entries(RACES).map(([k,r])=>`<button class="rc-chip ${k===raceSel?"act":""}" onclick="pickRace('${k}')">${icoHTML(r.ic)} ${r.n}</button>`).join("")}</div>
+      <div class="rc-info"><b>${RACES[raceSel].n}</b> · ${RACES[raceSel].bt}<br><span>${RACES[raceSel].pn}: ${RACES[raceSel].pt}</span></div>
       <div class="r" style="gap:8px">
         <input id="cn" value="${$('cn')?$('cn').value:''}" maxlength="14" oninput="syncCreateBtn()" placeholder="Kahraman adını yaz (Zorunlu)..." style="flex:1;padding:11px;background:rgba(15,13,24,.58);backdrop-filter:blur(5px);border:1px solid var(--gold);border-radius:8px;color:#fff;font-weight:700;font-size:13px">
         <button id="cn-btn" class="btn" style="width:auto;padding:11px 18px;font-size:13px" onclick="newGame()">⚔️ Başla</button>
@@ -435,11 +442,23 @@ function renderCharSelect(){
 function previewSlot(idx){
   if(!SLOTS[idx])return;
   csPreviewSlot=idx;
-  csShowcaseCls=SLOTS[idx].cls;
+  csShowcaseCls=SLOTS[idx].cls;csShowcaseG=SLOTS[idx].g;
   armed="";
   renderCharSelect();
 }
 
+/* ---------- IRK (v2.7.0) ---------- */
+function raceCard(){const r=RACES[P.race];if(!r)return`<div class="cd" style="padding:8px 10px"><div class="r"><span class="mu" style="font-size:11px">Karakterin henüz bir ırk seçmedi.</span><button class="btn" style="width:auto;padding:6px 12px;font-size:11px" onclick="raceAsk()">Irk seç</button></div></div>`;
+  return`<div class="cd" style="padding:8px 10px"><div style="display:flex;gap:8px;align-items:flex-start"><div style="font-size:22px;color:var(--gold)">${icoHTML(r.ic)}</div><div style="min-width:0"><b style="color:var(--gold)">${r.n}</b> <span class="mu" style="font-size:10px">· ${r.s} · ${r.bt}</span><div style="font-size:10.5px;color:#cbd5e1;margin-top:2px"><b>${r.pn}:</b> ${r.pt}</div></div></div></div>`}
+let raceTmp="kul";
+function raceAsk(){raceTmp=raceTmp||"kul";raceAskUI()}
+function raceAskUI(){const r=RACES[raceTmp];
+  $("ic").innerHTML=`<div style="text-align:center;margin-bottom:8px"><b style="font-family:var(--hd);color:var(--gold);font-size:16px">Irkını Seç</b><div class="mu" style="font-size:11px;margin-top:3px">Karakterin için bir ırk seç. Bu seçim bir kez yapılır ve sonradan değiştirilemez.</div></div>
+  <div class="rc-row" style="justify-content:center">${Object.entries(RACES).map(([k,x])=>`<button class="rc-chip ${k===raceTmp?"act":""}" onclick="raceTmp='${k}';raceAskUI()">${icoHTML(x.ic)} ${x.n}</button>`).join("")}</div>
+  <div class="rc-info" style="margin:10px 0"><b>${r.n}</b> · ${r.bt}<br><span>${r.pn}: ${r.pt}</span><div class="mu" style="font-size:10px;margin-top:5px;font-style:italic">${r.st}</div></div>
+  <button class="btn" onclick="raceSet()">Bu ırkı seç: ${r.n}</button>`;
+  $("im").style.display="flex"}
+function raceSet(){if(P.race||!RACES[raceTmp])return;P.race=raceTmp;sync();save();closeM();view();toast("Irkın: "+RACES[P.race].n)}
 function selectAndPlaySlot(idx){
   if(!SLOTS[idx])return;
   activeSlot=idx;
@@ -452,6 +471,7 @@ function selectAndPlaySlot(idx){
   view();
   ecoSync();
   toast("Hoş geldin, "+P.name+"!");
+  if(!P.race)setTimeout(raceAsk,600);
 }
 
 function deleteSlot(idx){
@@ -523,13 +543,13 @@ const headerCard=`<div class="cd" style="padding:8px 10px">
       <div class="char-art" style="width:46px;height:60px" onclick="openCharSelect()">${getCharPortraitHTML(P)}</div>
       <div style="min-width:0">
         <div class="nm" style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${P.name}</div>
-        <div class="mu" style="font-size:10px">${c.e} ${c.n} · Seviye ${P.lv}</div>
+        <div class="mu" style="font-size:10px">${c.e} ${P.race&&RACES[P.race]?RACES[P.race].n+" ":""}${c.n} · Seviye ${P.lv}</div>
         <div style="font-size:10px;margin-top:2px">⚔️ <b style="color:#e5484d">${d.minAtk}–${d.maxAtk}</b> <span class="mu">(${d.atk})</span> · 🛡️ <b style="color:#38bdf8">${d.arm}</b> · 💥 <b class="g">%${d.cr}</b></div>
       </div>
     </div>
     <button class="btn s" style="width:auto;padding:5px 8px;font-size:10px;flex-shrink:0" onclick="openCharSelect()">👥 Yuvalar</button>
   </div>
-</div>`;
+</div>`+raceCard();
 
 let content="";
 if(charSub=="eq"){
@@ -737,39 +757,41 @@ const WG=[
 let wmY=null;
 const wmBest=()=>{let b=0;for(let i=0;i<RG.length;i++)if(open(i))b=i;return b};
 function setMapReg(ri){const e=document.getElementById("wmap");wmY=e?e.scrollTop:null;mapReg=ri;view()}
-function worldMapSVG(){
-  const W=360,H=590,n=RG.length,here=wmBest();
-  const segs=[],nodes=[],blobs=[],defs=[];
-  RG.forEach((r,i)=>{
-    defs.push(`<radialGradient id="wh${i}"><stop offset="0" stop-color="hsl(${r.h},55%,38%)" stop-opacity=".55"/><stop offset="1" stop-color="hsl(${r.h},55%,38%)" stop-opacity="0"/></radialGradient>`);
-    blobs.push(`<circle cx="${r.x}" cy="${r.y}" r="${i==n-1?80:64}" fill="url(#wh${i})"/>`);
-  });
-  for(let i=1;i<n;i++){
-    const a=RG[i-1],b=RG[i],mx=(a.x+b.x)/2+(i%2?16:-16),my=(a.y+b.y)/2-4,done=!!P.boss[i-1];
-    segs.push(`<path d="M${a.x} ${a.y} Q${mx} ${my} ${b.x} ${b.y}" fill="none" stroke="${done?"#e6b450":"#6b5a44"}" stroke-width="${done?3.2:2.4}" stroke-linecap="round" ${done?"":'stroke-dasharray="3 7"'} opacity="${done?.9:.7}"/>`);
-  }
+function worldMapSVG(full){
+  const W=360,H=649,n=RG.length,here=wmBest();
+  const nodes=[];
   RG.forEach((r,i)=>{
     const o=open(i),cl=!!P.boss[i],sel=i===mapReg,x=r.x,y=r.y;
-    const col=o?`hsl(${r.h},70%,74%)`:"#6b5f55";
-    nodes.push(`<g onclick="setMapReg(${i})" style="cursor:pointer">
+    const col=o?`hsl(${r.h},70%,74%)`:"#8a7d70";
+    nodes.push(`<g onclick="${full?"wmPick":"setMapReg"}(${i})" style="cursor:pointer">
       <circle cx="${x}" cy="${y}" r="28" fill="transparent"/>
-      ${i===here?`<circle class="wm-pulse" cx="${x}" cy="${y}" r="21" fill="none" stroke="#e6b450" stroke-width="2"/>`:""}
-      ${sel?`<circle cx="${x}" cy="${y}" r="23" fill="none" stroke="#e6b450" stroke-width="2.4" stroke-dasharray="5 4"/>`:""}
-      <circle cx="${x}" cy="${y}" r="17" fill="${o?`hsl(${r.h},42%,18%)`:"#1b1614"}" stroke="${o?`hsl(${r.h},60%,52%)`:"#4a3f38"}" stroke-width="${sel?3:2}"/>
+      ${i===here?`<circle class="wm-pulse" cx="${x}" cy="${y}" r="21" fill="none" stroke="#e6b450" stroke-width="2.4"/>`:""}
+      ${sel?`<circle cx="${x}" cy="${y}" r="23" fill="none" stroke="#e6b450" stroke-width="2.6" stroke-dasharray="5 4"/>`:""}
+      <circle cx="${x}" cy="${y}" r="17" fill="${o?`hsl(${r.h},42%,14%)`:"#161110"}" fill-opacity=".92" stroke="${o?`hsl(${r.h},65%,58%)`:"#5a4d44"}" stroke-width="${sel?3:2}"/>
       <g transform="translate(${x-10} ${y-10}) scale(.84)" fill="none" stroke="${col}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WG[i]||""}</g>
+      <circle cx="${x-14}" cy="${y-14}" r="7" fill="#0d0908" stroke="${o?"#e6b450":"#5a4d44"}"/><text x="${x-14}" y="${y-11}" text-anchor="middle" font-size="8" font-weight="800" fill="${o?"#e6b450":"#8a7d70"}">${i+1}</text>
       ${cl?`<circle cx="${x+14}" cy="${y-14}" r="7" fill="#1f6f3a" stroke="#0d0908"/><path d="M${x+10.500} ${y-14}l2.500 2.500 4-5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>`:""}
-      ${!o?`<circle cx="${x+14}" cy="${y-14}" r="7" fill="#2a2320" stroke="#0d0908"/><path d="M${x+11.500} ${y-13}h5v4h-5zM${x+12.500} ${y-13}v-2a1.500 1.500 0 013 0v2" fill="none" stroke="#a09080" stroke-width="1.300"/>`:""}
-      <text x="${x}" y="${y+31}" text-anchor="middle" font-size="9.500" font-weight="700" fill="${o?"#f0e4cc":"#7a6e62"}" stroke="#0d0908" stroke-width="2.500" paint-order="stroke">${r.n}</text>
-      <text x="${x}" y="${y+41}" text-anchor="middle" font-size="8" fill="${o?"#e6b450":"#6b5f55"}" stroke="#0d0908" stroke-width="2" paint-order="stroke">Lv.${r.req}–${RG[i+1]?RG[i+1].req-1:100}</text>
-      ${i===here?`<text x="${x}" y="${y-25}" text-anchor="middle" font-size="8" font-weight="800" fill="#e6b450" stroke="#0d0908" stroke-width="2" paint-order="stroke">▼ SEN BURADASIN</text>`:""}
+      ${!o?`<circle cx="${x+14}" cy="${y-14}" r="7" fill="#2a2320" stroke="#0d0908"/><path d="M${x+11.500} ${y-13}h5v4h-5zM${x+12.500} ${y-13}v-2a1.500 1.500 0 013 0v2" fill="none" stroke="#c0b0a0" stroke-width="1.300"/>`:""}
+      <text x="${x}" y="${y+31}" text-anchor="middle" font-size="9.500" font-weight="800" fill="${o?"#fff6e0":"#d8cdbd"}" stroke="#0d0908" stroke-width="3" paint-order="stroke">${r.n}</text>
+      <text x="${x}" y="${y+41}" text-anchor="middle" font-size="8" font-weight="700" fill="${o?"#f2c868":"#b0a290"}" stroke="#0d0908" stroke-width="2.600" paint-order="stroke">Lv.${r.req}–${RG[i+1]?RG[i+1].req-1:100}</text>
+      ${i===here?`<text x="${x}" y="${y-25}" text-anchor="middle" font-size="8" font-weight="800" fill="#e6b450" stroke="#0d0908" stroke-width="2.600" paint-order="stroke">▼ SEN BURADASIN</text>`:""}
     </g>`);
   });
-  return`<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block"><defs><linearGradient id="wbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#17100d"/><stop offset="1" stop-color="#0d0908"/></linearGradient><pattern id="wgr" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M30 0H0V30" fill="none" stroke="#e6b450" stroke-opacity=".05"/></pattern>${defs.join("")}</defs>
-    <rect width="${W}" height="${H}" fill="url(#wbg)"/><rect width="${W}" height="${H}" fill="url(#wgr)"/>${blobs.join("")}
-    <rect x="4" y="4" width="${W-8}" height="${H-8}" rx="10" fill="none" stroke="#e6b450" stroke-opacity=".35" stroke-width="1.500"/>
-    <g transform="translate(318 548)" stroke="#e6b450" stroke-opacity=".55" fill="none"><circle r="16"/><path d="M0 -22V22M-22 0H22" /><path d="M0 -22l4 8h-8z" fill="#e6b450" fill-opacity=".5"/></g>
-    ${segs.join("")}${nodes.join("")}</svg>`;
+  return`<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block"><defs><linearGradient id="wsh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d0908" stop-opacity=".35"/><stop offset=".15" stop-color="#0d0908" stop-opacity="0"/><stop offset=".85" stop-color="#0d0908" stop-opacity="0"/><stop offset="1" stop-color="#0d0908" stop-opacity=".35"/></linearGradient></defs>
+    <rect width="${W}" height="${H}" fill="#17100d"/><image href="img/harita.webp" width="${W}" height="${H}" preserveAspectRatio="none"/>
+    <rect width="${W}" height="${H}" fill="#0d0908" opacity=".22"/><rect width="${W}" height="${H}" fill="url(#wsh)"/>${nodes.join("")}</svg>`;
 }
+function wmTap(e){const t=e.target;if(t&&t.closest&&t.closest("g[onclick]"))return;wmOpen()}
+function wmOpen(){
+  let o=document.getElementById("wmfull");
+  if(!o){o=document.createElement("div");o.id="wmfull";document.body.appendChild(o)}
+  o.innerHTML=`<div class="wmf-bar"><span>🗺️ Valdrenn Haritası</span><button class="btn s" style="width:auto;padding:5px 12px" onclick="wmClose()">✕ Kapat</button></div><div class="wmf-body">${worldMapSVG(true)}</div>`;
+  o.style.display="flex";
+  const b=o.querySelector(".wmf-body"),sc=b.clientWidth/360,r=RG[wmBest()];
+  if(b&&r)b.scrollTop=Math.max(0,(r.y-200)*sc);
+}
+function wmClose(){const o=document.getElementById("wmfull");if(o)o.style.display="none"}
+function wmPick(i){mapReg=i;wmClose();view()}
 function cMap(v){
   if(mapReg<0)mapReg=wmBest();
   const r=RG[mapReg],o=open(mapReg),cl=!!P.boss[mapReg],last=r.mobs[r.mobs.length-1];
@@ -784,8 +806,8 @@ function cMap(v){
         <button class="btn v" style="width:auto;padding:8px 12px;font-size:11.5px;flex-shrink:0" onclick="startCombat(0,0,0,${P.tw+1})">Kat ${P.tw+1}’e Çık</button>
       </div>
     </div>
-    <div class="cd" style="padding:6px"><div class="ct" style="margin:2px 4px 6px">🗺️ Valdrenn Haritası <span class="mu" style="font-size:10px;font-weight:400">Bir noktaya dokun</span></div>
-      <div id="wmap" style="height:250px;overflow-y:auto;border-radius:8px;-webkit-overflow-scrolling:touch">${worldMapSVG()}</div></div>
+    <div class="cd" style="padding:6px"><div class="ct" style="margin:2px 4px 6px">🗺️ Valdrenn Haritası <span class="mu" style="font-size:10px;font-weight:400">Bir noktaya dokun · boş yere dokun: tam ekran</span> <button class="btn s" style="width:auto;padding:3px 8px;font-size:11px;float:right" onclick="wmOpen()">⛶ Tam ekran</button></div>
+      <div id="wmap" onclick="wmTap(event)" style="height:250px;overflow-y:auto;border-radius:8px;-webkit-overflow-scrolling:touch">${worldMapSVG()}</div></div>
     <div class="rg ${o?"":"lk"}" style="margin-bottom:0">
       <div class="bn">${banner(r.h)}</div>
       <div class="ri" style="padding:11px">
@@ -1665,6 +1687,7 @@ function cWiki(v){
         <div class="ct">6. Şehir, Sonsuz Kule ve Sandıklar</div>
         <ul class="wk-list">
           <li><b>💥 Savaş Efektleri:</b> Her yetenek ve temel saldırı sınıfına göre kendi görsel efektini oynatır. Kritik vuruşlar büyük ve altın renkli sayıyla çıkar, canavar yenilince dağılır, ağır darbe hazırlığı yanıp söner, seviye atlayınca ekranda parlama olur. Telefonun destekliyorsa kritik, hasar alma ve zafer anlarında hafif <b>titreşim</b> gelir; Karakter → Kayıt sekmesinden kapatılabilir.</li>
+          <li><b>🧬 Irklar (v2.7.0):</b> Karakter oluştururken bir ırk seçilir ve sonradan değiştirilemez. Her ırkın küçük bir bonusu ve bir pasifi vardır: ${Object.values(RACES).map(r=>`<b>${r.n}</b> (${r.bt}; ${r.pn}: ${r.pt})`).join(" · ")} Eski karakterler ilk girişte bir kez ırk seçer. Karakter oluştururken ayrıca <b>Erkek / Kadın</b> görseli seçebilirsin; bu yalnızca görünümdür.</li>
           <li><b>🗺️ 12 Bölge ve Seviye 100:</b> Dünya artık 12 bölgeden oluşuyor ve seviye sınırı <b>100</b>. Her bölgede 7 canavar ve 1 👑 Elit Boss var (toplam 96 canavar, hepsinin kendi çizimi var). Haritada bölge noktalarına dokunarak bölgeleri gezebilirsin; bir sonraki bölge için seviye gerekir ve önceki bölgenin Elit Boss'unu yenmelisin. 51-100 arası eşyalar yeni kademelerde (55, 60 … 100) düşer; Lv 75 ve Lv 100 silahları da kilometre taşı efsunlu gelir.</li>
           <li><b>🎨 Kor Teması ve Çizimler:</b> Oyunun görünümü kızıl-altın <i>Kor</i> temasına geçti. Emojilerin yerine özgün çizim ikonlar, 20 canavarın her biri için ise kendi çizimi geldi. Kule canavarları bağlı oldukları bölge canavarının çizimini kullanır.</li>
           <li><b>🏪 Tüccar Maren:</b> Tezgâhı <b>sabittir</b>, yenilenmez. Tüm sınıfların GR-I eşyalarını <b>kategori sekmeleriyle</b> (Silah, Sol El, Kask, Zırh, Pantolon, Çizme, Kolye, Yüzük) satar. Varsayılan olarak kendi sınıfının eşyaları görünür; <i>Tüm sınıflar</i> ile hepsini görebilirsin. Yalnızca <b>Lv 1</b> eşyalar satılır; üst seviye eşyalar savaşta düşer. Silahların hasar aralığı ve hızı satırında görünür.</li>
@@ -1720,6 +1743,8 @@ function showIntro(){
   $("cs-screen").style.display="flex";
   renderCharSelect();
 }
+function pickGen(g){genSel=g;const v=$("cn")?$("cn").value:"";renderCharSelect();if(v&&$("cn"))$("cn").value=v;syncCreateBtn()}
+function pickRace(k){raceSel=k;const v=$("cn")?$("cn").value:"";renderCharSelect();if(v&&$("cn"))$("cn").value=v;syncCreateBtn()}
 function pick(k){
   sel=k;
   A.pot();
@@ -1752,7 +1777,7 @@ async function newGame(){
   }
   const created=NEW();
   created.name=charName;
-  created.cls=sel;
+  created.cls=sel;created.race=raceSel;created.g=genSel;
   created.tut=0;
   SLOTS[targetCreateSlot]=created;
   activeSlot=targetCreateSlot;

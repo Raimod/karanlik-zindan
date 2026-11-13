@@ -60,4 +60,6 @@ const T={
 "11_0":["H","#9a8a50","#3a3216","#e6b450","#ffd166",{w:"s",helm:1,sh:1}],"11_1":["H","#7a7a8a","#22222c","#e6b450","#ffd166",{w:"s",helm:1,sh:1}],"11_2":["H","#2a1a2a","#0a060a","#c0392b","#ff4d4d",{w:"a",hood:1}],"11_3":["H","#4a2a5a","#160c1e","#e6b450","#ff7aff",{hood:1,w:"t"}],"11_4":["D","#e6e0cc","#6a644e","#9bff9b","#9bff9b",{}],"11_5":["P","#3a3050","#0c0814","#e6b450","#ff4d8a",{crown:1}],"11_6":["G","#6a6a7a","#1e1e28","#e6b450","#ffd166",{w:1}],"11_7":["H","#1a1220","#06040a","#e6b450","#ff4d4d",{w:"s",crown:1,horn:1,helm:1}]};
 Object.keys(T).forEach(k=>{if(MONS[k])return;const s=T[k],id="m"+k.replace("_","x");MONS[k]=A[s[0]](id,[s[1],s[2],s[3],s[4]],s[5])});
 window.MONGEN={A,T};
+/* Irk simgeleri */
+Object.assign(ICN,{r_kul:'<path d="M12 3c2 4 6 6 6 11a6 6 0 01-12 0c0-3 2-4 3-7 1 2 2 2 3-4z"/>',r_gol:'<path d="M15 3a9 9 0 100 18 7 7 0 010-18z"/><circle cx="15.500" cy="10" r="1.200"/>',r_tas:'<path d="M4 18l3-9 5-4 6 3 2 10z"/><path d="M9 9l2 5 5-2"/>',r_kem:'<path d="M12 3a7 7 0 00-4 12.800V19h8v-3.200A7 7 0 0012 3z"/><circle cx="9.500" cy="11" r="1.500"/><circle cx="14.500" cy="11" r="1.500"/>',r_yir:'<path d="M4 6c6 0 10 4 11 12M9 5c5 1 8 4 9 10M14 5c3 1 5 3 6 6"/>',r_fis:'<path d="M12 3v18M7 7l5 4 5-4M7 14l5 4 5-4"/>'});
 })();

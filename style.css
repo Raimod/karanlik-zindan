@@ -234,3 +234,14 @@ nav button span{display:flex}
 @keyframes lvf{0%{opacity:0}15%{opacity:1}80%{opacity:1}100%{opacity:0}}
 @keyframes wmp{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.5)}}
 .wm-pulse{transform-box:fill-box;transform-origin:center;animation:wmp 1.6s ease-out infinite}
+
+.rc-row{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 0}
+.rc-chip{background:#1a1310cc;border:1px solid var(--ln);color:#d9cdb8;border-radius:16px;padding:5px 9px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.rc-chip.act{border-color:var(--gold);color:var(--gold);background:#2a1d10}
+.rc-chip .ik{width:14px;height:14px}
+.rc-info{background:#120a08cc;border:1px solid var(--ln);border-radius:10px;padding:7px 10px;margin:6px 0;font-size:11px;color:#f2e8d2}
+.rc-info span{color:#cbd5e1;font-size:10.5px}
+
+#wmfull{position:fixed;inset:0;z-index:120;background:#0d0908;display:none;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+.wmf-bar{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--ln);color:var(--gold);font-family:var(--hd)}
+.wmf-body{flex:1;overflow:auto;-webkit-overflow-scrolling:touch}
