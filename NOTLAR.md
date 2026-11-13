@@ -96,3 +96,9 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 - Kapsam dışı (hâlâ telefonda): Tüccar dükkânı eşya alımı, karakter yetenek/nitelik puanı, iksirin savaş dışı içilmesi
   (artık "iksir kullan" görevine sayılmaz), kaydı kod ile içe aktarma (kilit yine reddeder).
 - Çalıştırma sırası: kurulum, topluluk, koruma, sunucu, savas, filtre, savas_siki, savas_siki2, savas_siki3.
+
+## 1.7.0 — Paket A (hatalar)
+- Silinen karakter sıralamadan düşer (sql/liderlik.sql; sunucu.sql tekrar çalışırsa liderlik.sql de tekrar çalıştırılır).
+- + puan basınca artan üst sınır kadar can/mana da artar; iksir alınca/satınca can-mana çubuğu oynamaz (ecoCall yerel can/manayı korur).
+- Oto savaş durdurulunca kalan oynatma beklemeden biter.
+- iPhone: yatay kaydırma kapatıldı, viewport kilitli, ⛶ tam ekran düğmesi + manifest.json (iPhone'da Paylaş → Ana Ekrana Ekle).

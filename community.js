@@ -24,8 +24,8 @@ function comBest(){
 }
 async function comPushLb(force){
   if(!CLOUD.user||!CLOUD.sb)return;
-  const b=comBest();if(!b)return;
-  const key=JSON.stringify(b);
+  const b=comBest();
+  const key=JSON.stringify(b||"yok"); /* karakter kalmadıysa da sunucuya bildir: sıralamadan düşsün */
   if(!force&&key===COM.lastLb)return;
   try{
     const r=await CLOUD.sb.rpc("kz_lb_refresh");

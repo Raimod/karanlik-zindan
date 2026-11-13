@@ -1,4 +1,4 @@
-const GAME_VERSION="1.6.0";
+const GAME_VERSION="1.7.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -918,7 +918,9 @@ async function ecoCall(body){
     const r=await bcall(body);
     if(r.err){bFail(r);return null}
     if(ctx.P!==P)return null;
+    const hp0=P.hp,mp0=P.mp;
     for(const k in r.ps)P[k]=r.ps[k];
+    P.hp=hp0;P.mp=mp0; /* can/mana yerelde tutulur; sunucudaki kopya eski kalabiliyordu (çubuk oynuyordu) */
     sync();CLOUD.sig=bSig();
     if(r.done)saveAll();
     applyEv(r.steps[0].out);
@@ -942,7 +944,7 @@ async function bReplay(r,ctx){
   try{
     for(const st of r.steps){
       if(!CB.on||P!==ctx.P)break;
-      if(!first)await bSleep(d());first=false;
+      if(!first&&!(ctx.auto&&!CB.auto))await bSleep(d());first=false;
       if(!CB.on||P!==ctx.P)break;
       if(st.start){CB={...CB,on:true,over:false,...st.start,log:CB.log||[],acts:[],fin:false};view()}
       applySnap(st.s);applyEv(st.out);
@@ -1188,7 +1190,7 @@ async function autoLoop(){
       const nx=CB.over?{ri:CB.ri,mi:CB.mi,tw:CB.tw?CB.tw+1:0}:{ri:CB.ri,mi:CB.mi,tw:CB.tw||0};
       if(CB.over&&CB.pre&&!adoptPre(nx.ri,nx.mi,nx.tw)){CB.pre=null}
       const pend=(!CB.over&&CB.acts&&CB.acts.length)?CB.acts.slice():undefined;
-      const ctx={P};battleBusy=true;CB.busy=true;
+      const ctx={P,auto:true};battleBusy=true;CB.busy=true;
       const r=await bcall({op:"auto",fights:CB.fast?8:5,...nx,acts:pend,cfg:P.autoCfg});
       if(ctx.P!==P||!CB.on){CB.busy=false;battleBusy=false;break}
       if(r.err){CB.busy=false;battleBusy=false;stopAuto();bFail(r);upd();break}
@@ -1308,7 +1310,7 @@ return`<div class="cd"><div class="ct">Nitelikler <span class="g" style="font-si
 ${Object.keys(SD).map(k=>`<div class="q"><div style="flex:1"><b>${SD[k][0]}${CP[P.cls].includes(k)?' <span class="g">★</span>':""}</b> <span class="mu">${SD[k][1]}</span> <b>${bs[k]+P.at[k]}</b><div class="mu">Taban ${bs[k]} + dağıtılan ${P.at[k]} · puan başı ${ef[k]}</div></div><button class="btn" style="width:auto;padding:6px 10px" ${P.ap>0?"":"disabled"} onclick="addStat('${k}',1)">+1</button><button class="btn s" style="width:auto;padding:6px 10px" ${P.ap>0?"":"disabled"} onclick="addStat('${k}',5)">+5</button></div>`).join("")}
 <p class="mu" style="font-size:10px">★ sınıfının ana niteliği. Her seviye +3 puan verir.</p>
 <button class="btn s" style="margin-top:8px" ${tot?"":"disabled"} onclick="respec()">${armed=="rp"?"Onayla: "+P.lv*30+" 🪙":"Puanları sıfırla ("+P.lv*30+" 🪙)"}</button></div>`}
-function addStat(k,n){n=Math.min(n,P.ap);if(n<=0)return;P.at[k]+=n;P.ap-=n;A.pot();sync();save();view()}
+function addStat(k,n){n=Math.min(n,P.ap);if(n<=0)return;const h0=P.maxHp,m0=P.maxMp;P.at[k]+=n;P.ap-=n;A.pot();sync();/* artan üst sınır kadar mevcut can/mana da artar (kalıcı puan, istismar yok) */const d=D();if(d.hp>h0)P.hp=Math.min(d.hp,P.hp+(d.hp-h0));if(d.mp>m0)P.mp=Math.min(d.mp,P.mp+(d.mp-m0));hud();save();view()}
 function respec(){const c=P.lv*30;if(armed!="rp"){armed="rp";view();return}armed="";if(P.gold<c)return toast("Yetersiz altın");P.gold-=c;P.ap+=Object.values(P.at).reduce((a,b)=>a+b,0);P.at={str:0,dex:0,int:0,vit:0};sync();save();view();toast("Nitelikler sıfırlandı")}
 function skillsHTML(){const c=CL[P.cls],d=D();
 return`<div class="cd"><div class="ct">Yetenekler <span class="g" style="font-size:11px">SP: ${P.sp}</span></div>`+c.sk.map((s,i)=>{const r=P.sr[i]||0,t=r>=50?"S":r>=40?"A":r>=30?"B":r>=20?"C":r>=10?"D":"E",rm=(1+r*.05)*(r>=50?1.25:1),dm=s.m>0?" · ~"+Math.floor(d.atk*s.m*rm)+" hasar":s.heal?" · ~"+Math.floor(P.maxHp*.45*(1+P.at.int*.01))+" can":"";
@@ -1652,3 +1654,12 @@ addEventListener("DOMContentLoaded",()=>{
 });
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveAll(true)});
 window.addEventListener("pagehide",()=>saveAll(true));
+
+/* ---------- TAM EKRAN ---------- */
+function toggleFS(){
+  const de=document.documentElement,on=document.fullscreenElement||document.webkitFullscreenElement;
+  const rq=de.requestFullscreen||de.webkitRequestFullscreen,ex=document.exitFullscreen||document.webkitExitFullscreen;
+  if(on){ex&&ex.call(document);return}
+  if(rq){try{const p=rq.call(de);if(p&&p.catch)p.catch(()=>toast("Tam ekran bu tarayıcıda açılamadı"))}catch(e){toast("Tam ekran bu tarayıcıda açılamadı")}return}
+  toast("iPhone: Paylaş ⬆️ → «Ana Ekrana Ekle» ile tam ekran açılır");
+}

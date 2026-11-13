@@ -2,10 +2,16 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Karanlık Zindan">
+<meta name="theme-color" content="#0b0a10">
+<link rel="manifest" href="manifest.json">
 <title>Karanlık Zindan RPG</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1.6.0">
+<link rel="stylesheet" href="style.css?v=1.7.0">
 
 </head>
 <body>
@@ -42,7 +48,7 @@
         <div id="htitle" style="font-size:9px;color:var(--gold);font-weight:700"></div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700"><span class="g">🪙 <span id="hg"></span></span><span style="color:#a5b4fc">🎒 <span id="hb"></span>/50</span><button class="btn s" style="width:auto;padding:4px 7px;font-size:10px;border:1px solid rgba(230,180,80,.4)" onclick="openCharSelect()" title="Karakter Seçim Ekranına Dön">👥 Yuvalar</button></div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700"><span class="g">🪙 <span id="hg"></span></span><span style="color:#a5b4fc">🎒 <span id="hb"></span>/50</span><button class="btn s" style="width:auto;padding:4px 7px;font-size:10px;border:1px solid rgba(230,180,80,.4)" onclick="openCharSelect()" title="Karakter Seçim Ekranına Dön">👥 Yuvalar</button><button class="btn s" id="fsb" style="width:auto;padding:4px 7px;font-size:11px;border:1px solid rgba(230,180,80,.4)" onclick="toggleFS()" title="Tam ekran">⛶</button></div>
   </div>
   <div class="bar"><i class="hpf" id="hh"></i><b id="ht"></b></div>
   <div class="bar"><i class="mpf" id="hm"></i><b id="hmt"></b></div>
@@ -56,9 +62,9 @@
 <div id="class-lore-modal" onclick="if(event.target===this)closeClassLore()"></div>
 
 
-<script src="engine.js?v=1.6.0"></script>
-<script src="game.js?v=1.6.0"></script>
-<script src="cloud.js?v=1.6.0"></script>
-<script src="community.js?v=1.6.0"></script>
+<script src="engine.js?v=1.7.0"></script>
+<script src="game.js?v=1.7.0"></script>
+<script src="cloud.js?v=1.7.0"></script>
+<script src="community.js?v=1.7.0"></script>
 </body>
 </html>
