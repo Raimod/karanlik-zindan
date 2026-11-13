@@ -152,3 +152,8 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 
 ## 2.7.1
 - Dünya haritası artık el çizimi parşömen harita görseli (img/harita.webp) üzerinde; 12 bölge numaralı noktalar olarak üstünde. Yol çizgisi kaldırıldı. Tam ekran harita korunur.
+
+## 2.8.0
+- 🏰 Lonca sistemi (Topluluk > Lonca). Yeni dosyalar: lonca.js, sql/lonca.sql. Supabase'te sql/lonca.sql çalıştırılmalı.
+- Harita sekmesi doğrudan tam ekran harita açar; bölgeye dokununca canavarlar küçük pencerede çıkar (alttaki canavar listesi kaldırıldı).
+- Oto savaş: durdurulunca kalan savaşlar anında yutulmaz, görünür biçimde (hızlı) oynanır.

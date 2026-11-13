@@ -43,6 +43,7 @@ function cCommunity(v){
   const sub=`<div class="sub-tabs">
     <button class="sub-tab ${COM.sub=="rank"?"act":""}" onclick="comSub('rank')">🏆 Sıralama</button>
     <button class="sub-tab ${COM.sub=="chat"?"act":""}" onclick="comSub('chat')">💬 Sohbet</button>
+    ${typeof cGuild==="function"?`<button class="sub-tab ${COM.sub=="guild"?"act":""}" onclick="comSub('guild')">🏰 Lonca</button>`:""}
   </div>`;
   if(typeof CLOUD==="undefined"||CLOUD.state!=="in"){
     const off=(typeof CLOUD!=="undefined"&&CLOUD.state==="offline");
@@ -51,6 +52,7 @@ function cCommunity(v){
       <button class="btn" onclick="${off?"cloudRetry()":"cloudOpenModal()"}">${off?"Tekrar dene":"☁️ Giriş yap / Hesap oluştur"}</button></div>`;
     return;
   }
+  if(COM.sub==="guild"&&typeof cGuild==="function"){cGuild(v,sub);return}
   if(COM.sub==="rank"){
     v.innerHTML=sub+`<div class="cd"><div class="ct">🏆 Sıralama</div>
       <div class="sub-tabs" style="margin-bottom:8px">${Object.keys(RANKS).map(k=>`<button class="sub-tab ${COM.by==k?"act":""}" onclick="comBy('${k}')">${RANKS[k][0]}</button>`).join("")}</div>

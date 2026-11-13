@@ -1,4 +1,4 @@
-const GAME_VERSION="2.7.1";
+const GAME_VERSION="2.8.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -507,7 +507,8 @@ $("hh").style.width=Math.max(0,P.hp/P.maxHp*100)+"%";$("hm").style.width=Math.ma
 $("ht").innerText=P.hp+" / "+P.maxHp+" HP";$("hmt").innerText=P.mp+" / "+P.maxMp+" MP"}
 const TABS=[["character","🧙","Karakter"],["inventory","🎒","Çanta"],["map","🗺️","Harita"],["forge","🔨","Demirci"],["city","🏰","Şehir"],["quests","📜","Görev"],["community","🌐","Topluluk"],["wiki","📖","Wiki"]];
 function nav(){$("nv").innerHTML=TABS.map(t=>`<button class="${tab==t[0]?"a":""}" onclick="go('${t[0]}')"><span>${t[1]}</span>${t[2]}</button>`).join("")}
-function go(t){tab=t;armed="";CB.nav=!!(CB.on&&t!=="map"&&(CB.auto||CB.nav));nav();view()}
+let wmAuto=false;
+function go(t){if(t==="map")wmAuto=true;tab=t;armed="";CB.nav=!!(CB.on&&t!=="map"&&(CB.auto||CB.nav));nav();view()}
 function view(){const v=$("mv");if(CB.on&&!(CB.nav&&tab!=="map")){combatUI(v);return}({character:cChar,inventory:cBag,map:cMap,forge:cForge,city:cCity,skills:cSkills,quests:cQuests,community:(typeof cCommunity==="function"?cCommunity:cCity),wiki:cWiki})[tab](v);if(CB.on)updMini(true)}
 function toast(m){const e=document.createElement("div");e.className="t";e.innerText=m;$("tt").appendChild(e);setTimeout(()=>e.remove(),2400)}
 
@@ -781,21 +782,40 @@ function worldMapSVG(full){
     <rect width="${W}" height="${H}" fill="#17100d"/><image href="img/harita.webp" width="${W}" height="${H}" preserveAspectRatio="none"/>
     <rect width="${W}" height="${H}" fill="#0d0908" opacity=".22"/><rect width="${W}" height="${H}" fill="url(#wsh)"/>${nodes.join("")}</svg>`;
 }
-function wmTap(e){const t=e.target;if(t&&t.closest&&t.closest("g[onclick]"))return;wmOpen()}
 function wmOpen(){
   let o=document.getElementById("wmfull");
   if(!o){o=document.createElement("div");o.id="wmfull";document.body.appendChild(o)}
-  o.innerHTML=`<div class="wmf-bar"><span>🗺️ Valdrenn Haritası</span><button class="btn s" style="width:auto;padding:5px 12px" onclick="wmClose()">✕ Kapat</button></div><div class="wmf-body">${worldMapSVG(true)}</div>`;
+  o.innerHTML=`<div class="wmf-bar"><span>🗺️ Valdrenn Haritası</span><button class="btn s" style="width:auto;padding:5px 12px" onclick="wmClose()">✕ Kapat</button></div><div class="wmf-body" id="wmbody" onclick="wmBg(event)"></div><div id="wmpop"></div>`;
   o.style.display="flex";
-  const b=o.querySelector(".wmf-body"),sc=b.clientWidth/360,r=RG[wmBest()];
+  wmRender();
+  const b=document.getElementById("wmbody"),sc=b.clientWidth/360,r=RG[wmBest()];
   if(b&&r)b.scrollTop=Math.max(0,(r.y-200)*sc);
 }
-function wmClose(){const o=document.getElementById("wmfull");if(o)o.style.display="none"}
-function wmPick(i){mapReg=i;wmClose();view()}
+function wmRender(){
+  const b=document.getElementById("wmbody"),p=document.getElementById("wmpop");if(!b)return;
+  const st=b.scrollTop;b.innerHTML=worldMapSVG(true);b.scrollTop=st;
+  if(p)p.innerHTML=wmPanel();
+  if(b)b.style.paddingBottom=wmPop?"46vh":"0";
+}
+let wmPop=false;
+function wmBg(e){const t=e.target;if(t&&t.closest&&t.closest("g[onclick]"))return;if(wmPop){wmPop=false;wmRender()}}
+function wmPanel(){
+  if(!wmPop||mapReg<0)return"";
+  const r=RG[mapReg],o=open(mapReg),cl=!!P.boss[mapReg];
+  const why=P.lv<r.req?"🔒 Gerekli Seviye: Lv."+r.req:(!o?"🔒 Önce "+RG[mapReg-1].mobs[RG[mapReg-1].mobs.length-1].name+" yen":"✅ Bölge Açık");
+  return`<div class="wmf-pop"><div class="r" style="gap:8px;align-items:flex-start"><div style="min-width:0"><div class="nm" style="font-size:16px">${r.n} <span class="mu" style="font-size:10px;font-weight:400">${mapReg+1}/${RG.length}</span></div>
+    <div style="font-size:10px;color:#cbd5e1">Maden & Set: <b class="g">${r.ore}</b> (Taban Güç ${r.pw})</div></div>
+    <button class="btn s" style="width:auto;padding:4px 10px;margin:0;flex-shrink:0" onclick="wmPop=false;wmRender()">✕</button></div>
+    <div style="font-size:10px;font-weight:800;color:${o?"#4ade80":"#f87171"};margin-top:4px">${why}${cl?" · 👑 Elit yenildi":""}</div>
+    <div class="mu" style="font-size:10.5px;margin:6px 0;font-style:italic">${r.d||""}</div>
+    <div class="mg" style="gap:7px">${r.mobs.map(m=>`<button class="mb" style="padding:7px" ${o?"":"disabled"} onclick="wmFight(${mapReg},${m.mi})">${mobSVG(m)}<div><div style="font-size:11.5px;font-weight:700;color:${m.el?"var(--gold)":"#fff"}">${m.el?"👑 ":""}${m.name}</div><div style="font-size:9.5px;color:#cbd5e1">Lv.${m.lv} · ${m.hp.toLocaleString()} HP</div></div></button>`).join("")}</div></div>`;
+}
+function wmClose(){wmPop=false;const o=document.getElementById("wmfull");if(o)o.style.display="none"}
+function wmPick(i){mapReg=i;wmPop=true;wmRender();const b=document.getElementById("wmbody");if(b){const sc=b.clientWidth/360,y=RG[i].y*sc,vis=b.clientHeight*.5;if(y>b.scrollTop+vis-30||y<b.scrollTop+20)b.scrollTop=Math.max(0,y-vis/2+20)}}
+function wmFight(ri,mi){wmClose();startCombat(ri,mi)}
 function cMap(v){
   if(mapReg<0)mapReg=wmBest();
-  const r=RG[mapReg],o=open(mapReg),cl=!!P.boss[mapReg],last=r.mobs[r.mobs.length-1];
-  const why=P.lv<r.req?"🔒 Gerekli Seviye: Lv."+r.req:(!o?"🔒 Önce "+RG[mapReg-1].mobs[RG[mapReg-1].mobs.length-1].name+" yen":"✅ Bölge Açık");
+  const r=RG[wmBest()];
   v.innerHTML=`
     <div class="cd" style="background:linear-gradient(135deg,#3b1d6e66,var(--pn));padding:9px 11px">
       <div class="r" style="gap:8px">
@@ -806,27 +826,10 @@ function cMap(v){
         <button class="btn v" style="width:auto;padding:8px 12px;font-size:11.5px;flex-shrink:0" onclick="startCombat(0,0,0,${P.tw+1})">Kat ${P.tw+1}’e Çık</button>
       </div>
     </div>
-    <div class="cd" style="padding:6px"><div class="ct" style="margin:2px 4px 6px">🗺️ Valdrenn Haritası <span class="mu" style="font-size:10px;font-weight:400">Bir noktaya dokun · boş yere dokun: tam ekran</span> <button class="btn s" style="width:auto;padding:3px 8px;font-size:11px;float:right" onclick="wmOpen()">⛶ Tam ekran</button></div>
-      <div id="wmap" onclick="wmTap(event)" style="height:250px;overflow-y:auto;border-radius:8px;-webkit-overflow-scrolling:touch">${worldMapSVG()}</div></div>
-    <div class="rg ${o?"":"lk"}" style="margin-bottom:0">
-      <div class="bn">${banner(r.h)}</div>
-      <div class="ri" style="padding:11px">
-        <div class="r">
-          <div>
-            <div class="nm" style="font-size:16px">${r.n} <span class="mu" style="font-size:10px;font-weight:400">${mapReg+1}/${RG.length}</span></div>
-            <div style="font-size:10px;color:#cbd5e1">Maden & Set: <b class="g">${r.ore}</b> (Taban Güç ${r.pw})</div>
-          </div>
-          <span style="font-size:10px;font-weight:800;color:${o?"#4ade80":"#f87171"};text-align:right">${why}${cl?"<br>👑 Elit yenildi":""}</span>
-        </div>
-        <div class="mu" style="font-size:10.5px;margin-top:6px;font-style:italic">${r.d||""}</div>
-        <div class="mg" style="margin-top:10px;gap:7px">
-          ${r.mobs.map(m=>`<button class="mb" style="padding:7px" ${o?"":"disabled"} onclick="startCombat(${mapReg},${m.mi})">${mobSVG(m)}<div><div style="font-size:11.5px;font-weight:700;color:${m.el?"var(--gold)":"#fff"}">${m.el?"👑 ":""}${m.name}</div><div style="font-size:9.5px;color:#cbd5e1">Lv.${m.lv} · ${m.hp.toLocaleString()} HP</div></div></button>`).join("")}
-        </div>
-      </div>
-    </div>`;
-  const e=document.getElementById("wmap");
-  if(e){const sc=e.clientWidth/360;e.scrollTop=wmY!=null?wmY:Math.max(0,(r.y-110)*sc)}
-  wmY=null;
+    <div class="cd"><div class="ct">🗺️ Valdrenn Haritası</div>
+      <p class="mu" style="font-size:11px;margin-bottom:8px">Şu anki bölgen: <b class="g">${r.n}</b>. Haritada bir bölgeye dokununca canavarlar küçük bir pencerede açılır.</p>
+      <button class="btn" onclick="wmOpen()">🗺️ Haritayı aç</button></div>`;
+  if(wmAuto){wmAuto=false;setTimeout(wmOpen,0)}
 }
 
 /* ---------- DEMİRCİ ---------- */
@@ -1041,7 +1044,7 @@ async function bReplay(r,ctx){
   try{
     for(const st of r.steps){
       if(!CB.on||P!==ctx.P)break;
-      if(!first&&!(ctx.auto&&!CB.auto))await bSleep(d());first=false;
+      if(!first)await bSleep((ctx.auto&&!CB.auto)?70:d());first=false;   /* oto savaş durdurulsa da kalan savaşlar anında yutulmaz: her adım görünür (hızlı) oynar */
       if(!CB.on||P!==ctx.P)break;
       if(st.start){CB={...CB,on:true,over:false,...st.start,log:CB.log||[],acts:[],fin:false};if(!(CB.nav&&tab!=="map"))view()}
       applySnap(st.s);applyEv(st.out);
@@ -1354,7 +1357,7 @@ function startAutoWithCfg(){
   upd();
   toast("🤖 Otomatik savaş aktif!");
 }
-function stopAuto(){CB.auto=false}
+function stopAuto(){CB.auto=false;if(battleBusy&&CB.on&&!CB.over&&typeof toast==="function"&&autoRun)toast("⏹ Oto savaş duruyor: sunucuda başlamış savaşlar bitiriliyor")}
 /* Oto savaş: her istekte sunucu birkaç savaşı birden oynar, burada sırayla izlenir */
 async function autoLoop(){
   if(autoRun)return;autoRun=true;
@@ -1689,6 +1692,8 @@ function cWiki(v){
           <li><b>💥 Savaş Efektleri:</b> Her yetenek ve temel saldırı sınıfına göre kendi görsel efektini oynatır. Kritik vuruşlar büyük ve altın renkli sayıyla çıkar, canavar yenilince dağılır, ağır darbe hazırlığı yanıp söner, seviye atlayınca ekranda parlama olur. Telefonun destekliyorsa kritik, hasar alma ve zafer anlarında hafif <b>titreşim</b> gelir; Karakter → Kayıt sekmesinden kapatılabilir.</li>
           <li><b>🧬 Irklar (v2.7.0):</b> Karakter oluştururken bir ırk seçilir ve sonradan değiştirilemez. Her ırkın küçük bir bonusu ve bir pasifi vardır: ${Object.values(RACES).map(r=>`<b>${r.n}</b> (${r.bt}; ${r.pn}: ${r.pt})`).join(" · ")} Eski karakterler ilk girişte bir kez ırk seçer. Karakter oluştururken ayrıca <b>Erkek / Kadın</b> görseli seçebilirsin; bu yalnızca görünümdür.</li>
           <li><b>🗺️ 12 Bölge ve Seviye 100:</b> Dünya artık 12 bölgeden oluşuyor ve seviye sınırı <b>100</b>. Her bölgede 7 canavar ve 1 👑 Elit Boss var (toplam 96 canavar, hepsinin kendi çizimi var). Haritada bölge noktalarına dokunarak bölgeleri gezebilirsin; bir sonraki bölge için seviye gerekir ve önceki bölgenin Elit Boss'unu yenmelisin. 51-100 arası eşyalar yeni kademelerde (55, 60 … 100) düşer; Lv 75 ve Lv 100 silahları da kilometre taşı efsunlu gelir.</li>
+          <li><b>🏰 Lonca (v2.8.0):</b> Topluluk > Lonca sekmesinden 10. seviyeden itibaren lonca kurabilir ya da açık bir loncaya katılabilirsin (en çok 30 üye). Roller: <b>Lider</b> (ayarlar, rütbe, atma, devir, dağıtma), <b>Subay</b> (sıradan üyeleri atar), <b>Üye</b>. Lider ayrılırsa liderlik en eski subaya geçer. Loncanın gücü üyelerinin seviyeleri toplamıdır; lonca listesi güce göre sıralanır. Lonca sohbetini yalnızca üyeler görür.</li>
+          <li><b>🗺️ Harita (v2.8.0):</b> Harita sekmesi doğrudan tam ekran haritayı açar. Bir bölgeye dokununca küçük bir pencerede bölgenin canavarları çıkar; haritanın boş yerine dokunarak pencereyi kapatırsın.</li>
           <li><b>🎨 Kor Teması ve Çizimler:</b> Oyunun görünümü kızıl-altın <i>Kor</i> temasına geçti. Emojilerin yerine özgün çizim ikonlar, 20 canavarın her biri için ise kendi çizimi geldi. Kule canavarları bağlı oldukları bölge canavarının çizimini kullanır.</li>
           <li><b>🏪 Tüccar Maren:</b> Tezgâhı <b>sabittir</b>, yenilenmez. Tüm sınıfların GR-I eşyalarını <b>kategori sekmeleriyle</b> (Silah, Sol El, Kask, Zırh, Pantolon, Çizme, Kolye, Yüzük) satar. Varsayılan olarak kendi sınıfının eşyaları görünür; <i>Tüm sınıflar</i> ile hepsini görebilirsin. Yalnızca <b>Lv 1</b> eşyalar satılır; üst seviye eşyalar savaşta düşer. Silahların hasar aralığı ve hızı satırında görünür.</li>
           <li><b>⛲ Yaşam Pınarı & 🧪 Simyacı (İksir Boyutları):</b> Pınar Can ve Manayı doldurur (seviyene göre altın ister: 20 + 8×seviye). İksirler 3 boyuttadır; boyut büyüdükçe etkisi ve fiyatı artar, yaratıklardan düşme şansı azalır (Düşme dağılımı: <b>%65 Küçük, %27 Orta, %8 Büyük</b>):<br>

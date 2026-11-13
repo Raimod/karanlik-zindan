@@ -245,3 +245,5 @@ nav button span{display:flex}
 #wmfull{position:fixed;inset:0;z-index:120;background:#0d0908;display:none;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
 .wmf-bar{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--ln);color:var(--gold);font-family:var(--hd)}
 .wmf-body{flex:1;overflow:auto;-webkit-overflow-scrolling:touch}
+.wmf-pop{position:absolute;left:0;right:0;bottom:0;max-height:46vh;overflow-y:auto;background:#150f0df8;border-top:2px solid var(--gold);border-radius:14px 14px 0 0;padding:12px;box-shadow:0 -8px 24px #000a;-webkit-overflow-scrolling:touch}
+#wmfull{position:fixed}
