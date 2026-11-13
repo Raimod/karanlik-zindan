@@ -144,3 +144,5 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 - 2.3.0 (düzeltme): Tüccar yalnızca Lv 1 eşya satar (8 kategori sekmesi aynı); üst kademeler savaşta düşer.
 - 2.4.0: Kor teması (style.css sonuna eklenen kurallar, kızıl-altın renkler). Yeni dosya gorsel.js: 20 canavar çizimi (MONS, anahtar bölge_canavar; game.js mobSVG artık buradan okur) ve emoji->SVG ikon çevirici (EMO tablosu + MutationObserver, sayfadaki emojileri otomatik ikona çevirir; tabloda olmayan emoji olduğu gibi kalır). Testlerde emoji metni aranıyorsa ikon yüzünden bulunamaz; onclick vb. ile ara.
 - 2.4.1: yenilince altın kaybı kaldırıldı (engine.js bLose; Edge Function yeniden yüklenmeli).
+- 2.5.0: Oyun adı değişti (bkz 2.5.1) (başlık, giriş ekranı, wiki, öğretici, manifest). APK uygulama adı için Capacitor projesinde (capacitor.config / strings.xml) ayrıca değiştirilip yeniden derlenmeli. Savaş efektleri: engine.js bAct artık {sk:i} olayı üretir (yetenek efekti), game.js skillFx/hurtFx/dieFx/lvlFx/hap.
+- 2.5.1: Oyun adı "Valdrenn: Gölgelerin Mirası" oldu (giriş ekranında VALDRENN + alt yazı). Kor teması adından bağımsız.

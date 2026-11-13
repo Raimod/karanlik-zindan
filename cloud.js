@@ -296,7 +296,7 @@ function cloudGate(){
   else if(st==="offline")body=`<p class="mu" style="font-size:12px;margin-bottom:10px">Sunucuya ulaşılamıyor. Oynamak için hesapla giriş yapman gerekiyor, internetini kontrol et.</p><button class="btn" onclick="cloudRetry()">Tekrar dene</button>`;
   else body=cloudPanel("g");
   const keep={};["u","p"].forEach(k=>{const e=$("cl-"+k+"-g");if(e)keep[e.id]=e.value});
-  g.innerHTML=`<div class="mm2" style="max-width:360px;width:100%"><div class="ct" style="text-align:center;font-size:18px">⚔️ Karanlık Zindan</div><p class="mu" style="text-align:center;font-size:11px;margin:4px 0 12px">Oynamak için giriş yap veya hesap oluştur</p>${body}</div>`;
+  g.innerHTML=`<div class="mm2" style="max-width:360px;width:100%"><div class="ct" style="text-align:center;font-size:18px">⚔️ Valdrenn</div><p class="mu" style="text-align:center;font-size:11px;margin:4px 0 12px">Oynamak için giriş yap veya hesap oluştur</p>${body}</div>`;
   Object.keys(keep).forEach(id=>{const e=$(id);if(e)e.value=keep[id]});
 }
 function cloudInjectBtn(){

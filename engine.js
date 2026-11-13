@@ -185,6 +185,7 @@ function bAct(B,p,i,rng){
   const isBasic=i<0,c=CL[p.cls],s=isBasic?{n:"Temel saldırı",mp:0,m:1,dot:0}:c.sk[i],rk=isBasic?0:p.sr[i]||0,rm=(1+rk*.05)*(rk>=50?1.25:1);
   if(p.mp<s.mp){out.push({toast:"Yetersiz mana!"});return out}
   p.mp-=s.mp;out.acted=true;
+  if(!isBasic)out.push({sk:i});
   const d=statsOf(p),m=B.mob;
   if(!isBasic&&s.i&&B.tele){B.tele=false;B.stun=true;B.armor=false;out.push({snd:"int"});_lg(out,"⚡ <b style=color:#e6b450>KESİNTİ!</b> Düşmanın hazırlığı bozuldu, tur kaybetti.");out.push({fx:["KESİNTİ!","#e6b450"]})}
   if(!isBasic&&s.heal){const h=healAmt(p);p.hp=Math.min(p.maxHp,p.hp+h);out.push({snd:"pot"});_lg(out,"💚 +"+h+" HP");out.push({fx:["+"+h,"#22c55e"]})}
@@ -195,6 +196,7 @@ function bAct(B,p,i,rng){
     if(isBasic){if(spd>=1){hm=Math.pow(spd,-.85);if(rng.R(1)<spd-1)nh=2}else hm=Math.pow(1/spd,.35)}
     const bon=1+((isBasic?d.ba:d.sk)||0)/100;
     for(let h=0;h<nh&&m.hp>0;h++){
+      if(isBasic)out.push({sk:-1});
       const rg=1-sp+rng.R(sp*2);
       let x=Math.floor(d.atk*rg*s.m*rm*hm*bon*(1-m.def/(m.def+200))*pen),gl=ld>=5&&rng.R(1)<.4;
       if(gl)x=Math.floor(x*.35);

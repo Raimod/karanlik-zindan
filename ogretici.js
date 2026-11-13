@@ -1,10 +1,10 @@
 /* ============================================================
-   Karanlık Zindan: YENİ KARAKTER ÖĞRETİCİSİ
+   Valdrenn: YENİ KARAKTER ÖĞRETİCİSİ
    Yeni karakter açılınca kısa (6 adım) bir tur başlar. Atlanabilir; Wiki'den tekrar açılır.
    Karakterde P.tut: 0 = henüz gösterilmedi, 1 = bitti/atlandı (eski karakterlerde yok = gösterme).
    ============================================================ */
 const TUT_STEPS=[
-  {e:"⚔️",t:"Hoş geldin, {ad}!",x:"Karanlık Zindan'da canavar keser, güçlenir, eşya toplar ve Sonsuz Kule'yi tırmanırsın. <b>6 kısa adımda</b> nereye bakacağını göstereyim. İstediğin an atlayabilirsin.",modal:true},
+  {e:"⚔️",t:"Hoş geldin, {ad}!",x:"Valdrenn'de canavar keser, güçlenir, eşya toplar ve Sonsuz Kule'yi tırmanırsın. <b>6 kısa adımda</b> nereye bakacağını göstereyim. İstediğin an atlayabilirsin.",modal:true},
   {tab:"map",hl:[2],e:"🗺️",t:"Harita: savaş burada",x:"Bir bölge ve canavar seç, savaşa gir. <b>▶ Oto</b> ile otomatik savaşabilirsin; oto sürerken diğer sekmelere bakabilirsin. Yeni bölgeler seviyene göre açılır."},
   {tab:"character",hl:[0],e:"🧙",t:"Karakter: gelişimini buradan izle",x:"Eşyalarını kuşan, <b>+</b> ile nitelik puanı dağıt, yeteneklere puan ver. Seviyen, unvanın ve ilerlemen hep burada."},
   {tab:"inventory",hl:[1,3],e:"🎒",t:"Çanta ve Demirci",x:"Düşen eşyalar <b>Çanta</b>'ya gelir: <b>⚡ en iyileri kuşan</b>, fazlayı sat ya da parçala. <b>⚙️ Çöp kuralları</b> ile bunu otomatik yaptırabilirsin. <b>Demirci</b>'de eşyalarını + basıp efsunlarını yenilersin."},

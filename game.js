@@ -1,4 +1,4 @@
-const GAME_VERSION="2.4.1";
+const GAME_VERSION="2.5.1";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -556,6 +556,7 @@ if(charSub=="eq"){
   content=`<div class="cd"><div class="ct">🏅 Unvanlar <span class="mu" style="font-size:10px">Pasif bonus verir</span></div>${titleHtml}</div>`;
 }else{
   content=`<div class="cd"><div class="ct">📊 Savaş & İlerleme Kayıtları</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${box("Öldürme",s.k)}${box("Elit öldürme",s.e)}${box("Kadim eşya",s.l)}${box("En yüksek vuruş",s.d)}${box("Yenilgi",s.dm)}${box("Açılan bölge",Object.keys(P.boss).length+1+"/5")}</div>
+  <button class="btn s" style="margin-top:8px;padding:8px;font-size:11px" onclick="togHap()">Titreşim: ${hapOn()?"Açık":"Kapalı"}</button>
   <button class="btn s" style="margin-top:8px;padding:8px;font-size:11px" onclick="resetGame()">${armed=="rs"?"Emin misin? Tekrar dokun":"Bu karakteri sıfırla"}</button></div>${typeof cloudHTML==="function"?cloudHTML():""}${backupHTML()}`;
 }
 
@@ -905,7 +906,7 @@ async function sell(n){closeM();const r=await ecoCall({op:"eco",a:"sell",i:n});i
 let CB={on:false,auto:false,fast:false},aT=null;
 const RNG=mkRng(()=>Math.random());
 /* Motorun döndürdüğü olayları ekranda uygula (sıra korunur) */
-function applyEv(out){for(const e of out){if(e.lg!==undefined)lg(e.lg);else if(e.fx)fx(e.fx[0],e.fx[1]);else if(e.snd)A[e.snd]();else if(e.toast)toast(e.toast);else if(e.shake)shake();else if(e.vig)vig();else if(e.ev){ssEv(e.ev[0],e.ev[1]);ev(e.ev[0],e.ev[1])}else if(e.win)ssWin(e.win);else if(e.junk)ssJunk(e.junk);else if(e.loot)ssLoot(e.loot);else if(e.kill)onKill(e.kill)}}
+function applyEv(out){for(const e of out){if(e.lg!==undefined)lg(e.lg);else if(e.fx)fx(e.fx[0],e.fx[1]);else if(e.snd){A[e.snd]();if(e.snd==='crit')hap(25);else if(e.snd==='lvl')hap([40,60,40,60,90])}else if(e.toast)toast(e.toast);else if(e.shake)shake();else if(e.vig){vig();hap(18);hurtFx()}else if(e.ev){ssEv(e.ev[0],e.ev[1]);ev(e.ev[0],e.ev[1]);if(e.ev[0]==='lvl')lvlFx(e.ev[1])}else if(e.win)ssWin(e.win);else if(e.junk)ssJunk(e.junk);else if(e.loot)ssLoot(e.loot);else if(e.kill){dieFx();hap([30,40,30]);onKill(e.kill)}else if(e.sk!==undefined)skillFx(e.sk)}}
 /* Öldürme: günlük ve normal görev ilerlemesi */
 function onKill(){}
 /* ---- Savaş sunucuda oynanır (Supabase 'battle' fonksiyonu). Burası sonucu ekranda oynatır. ---- */
@@ -1030,7 +1031,7 @@ function lg(t){CB.log.unshift(t);if(CB.log.length>40)CB.log.pop();if(CB.lt!=="ga
 function combatUI(v){const m=CB.mob,c=CL[P.cls];
 v.innerHTML=`<div class="cd mc" id="mc"><div class="bn" style="opacity:.55">${banner(RG[CB.ri].h)}</div><div class="rel"><div class="au"></div><div class="mav" id="mav">${mobSVG(m)}<div class="fl" id="fl"></div></div>
 <div class="nm" style="font-size:16px;color:${m.el?"var(--gold)":"#fff"}">${m.el?"👑 ":""}${m.name} <span class="mu" style="font-size:11px;font-family:var(--bs)">Lv.${m.lv}</span></div>
-<div class="bar" style="max-width:280px;margin:7px auto;height:11px"><i class="hpf" id="mh"></i><b id="mt"></b></div><div class="tb" id="tb"></div><div id="st" style="font-size:10px;min-height:14px"></div></div></div>
+<div class="bar" style="max-width:280px;margin:7px auto;height:11px"><i class="gh" id="mgh"></i><i class="hpf" id="mh"></i><b id="mt"></b></div><div class="tb" id="tb"></div><div id="st" style="font-size:10px;min-height:14px"></div></div></div>
 <div class="pr" style="margin:0;align-items:stretch">
   <div style="flex:1.25;display:flex;gap:2px">
     <button style="flex:1;padding:6px 2px" onclick="pot('hp')" id="ph"></button>
@@ -1090,7 +1091,7 @@ function renderLG(){
   b.innerHTML=gm?gainHtml():CB.log.map(x=>"<div>"+x+"</div>").join("");
 }
 function upd(){if(!CB.on)return;if(!$("mh")){updMini();return}const m=CB.mob;
-$("mh").style.width=m.hp/m.mx*100+"%";$("mt").innerText=m.hp.toLocaleString()+" / "+m.mx.toLocaleString();
+$("mh").style.width=m.hp/m.mx*100+"%";if($("mgh"))$("mgh").style.width=m.hp/m.mx*100+"%";$("mt").innerText=m.hp.toLocaleString()+" / "+m.mx.toLocaleString();
 $("mc").classList.toggle("tl",!!CB.tele);const tb=$("tb");tb.style.display=CB.tele?"block":"none";tb.innerText="⚠️ AĞIR DARBE HAZIRLANIYOR! Kesinti yap!";
 $("st").innerHTML=[TN[m.tr]||"",CB.pzT>0?"🤢 Zehir "+CB.pz+" ("+CB.pzT+")":"",CB.rage?"🔥 <b style=color:#f43f5e>ÖFKE</b>":"",CB.sh>0?"🛡️ Kalkan "+CB.sh+" ("+CB.shT+")":"",CB.dotT>0?(CB.dotN||"☠️ Etki")+" "+CB.dot+" ("+CB.dotT+")":"",CB.stun?"💫 Sersem":""].filter(Boolean).join(" · ");
 CL[P.cls].sk.forEach((s,i)=>$("s"+i).disabled=P.mp<s.mp||CB.over);
@@ -1110,8 +1111,40 @@ if(ab){
   }else ab.style.display="none";
 }
 hud()}
-function fx(t,c){const f=$("fl");if(!f)return;const s=document.createElement("span");s.className="fn";s.style.cssText=`color:${c};left:${30+R(40)}%;top:${20+R(20)}%`;s.innerText=t;f.appendChild(s);setTimeout(()=>s.remove(),850)}
+function fx(t,c){const f=$("fl");if(!f)return;const s=document.createElement("span");s.className="fn"+(String(t).charAt(0)==="💥"?" cr":String(t).charAt(0)==="+"?" hl":"");s.style.cssText=`color:${c};left:${30+R(40)}%;top:${20+R(20)}%`;s.innerText=t;f.appendChild(s);setTimeout(()=>s.remove(),850)}
 function shake(){const a=$("mav");if(!a)return;a.classList.add("sk");setTimeout(()=>a.classList.remove("sk"),250)}
+/* ---- Savaş efektleri (yalnızca görsel) ---- */
+function hap(p){try{if(localStorage.getItem("kz_nohap")==="1")return;if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+function togHap(){try{localStorage.setItem("kz_nohap",localStorage.getItem("kz_nohap")==="1"?"0":"1")}catch(e){}view()}
+function hapOn(){try{return localStorage.getItem("kz_nohap")!=="1"}catch(e){return true}}
+const SFX={tank:["bash","ward","roar","nova"],mage:["fire","ice","ward","meteor"],archer:["poison","arrows","mark","rain"],assassin:["bleed","dust","dark","exec"],healer:["holy","bash","heal","dome"]};
+const SFXB={tank:"slash",mage:"bolt",archer:"arrow",assassin:"slash",healer:"spark"};
+function sxAdd(f,cls,col,dl,st){const d=document.createElement("div");d.className="sx "+cls;d.style.setProperty("--c",col);if(dl)d.style.animationDelay=dl+"ms";if(st)d.style.cssText+=st;f.appendChild(d);setTimeout(()=>d.remove(),900+(dl||0))}
+function skillFx(i){const f=$("fl");if(!f||!CB.on)return;const k=i<0?SFXB[P.cls]:SFX[P.cls][i];
+ const W="#fff",G="#e8b04a";
+ if(k==="slash")sxAdd(f,"sl",W);
+ else if(k==="bolt"){sxAdd(f,"bl","#9ecbff");sxAdd(f,"bb","#7aa8ff")}
+ else if(k==="arrow")sxAdd(f,"ar","#f1e6df");
+ else if(k==="spark"){sxAdd(f,"bb",G)}
+ else if(k==="bash"){sxAdd(f,"sl",W);sxAdd(f,"rg","#9ecbff",120)}
+ else if(k==="ward"){sxAdd(f,"rg","#4f9bf0");sxAdd(f,"rg","#4f9bf0",150)}
+ else if(k==="roar"){sxAdd(f,"rg","#e5484d");sxAdd(f,"rg","#e5484d",140);shake()}
+ else if(k==="nova"||k==="dome"){sxAdd(f,"bb",G,0,"width:150px;height:150px;margin:-75px");sxAdd(f,"rg",G,60);if(k==="nova")shake()}
+ else if(k==="fire"){sxAdd(f,"bb","#f08a3c");sxAdd(f,"rg","#f08a3c",80)}
+ else if(k==="ice"){sxAdd(f,"bb","#8fd6ff");sxAdd(f,"rg","#bfe8ff",60)}
+ else if(k==="meteor"){sxAdd(f,"bb","#ff6a2a",0,"width:170px;height:170px;margin:-85px");sxAdd(f,"rg","#ffb060",90);shake();hap(40)}
+ else if(k==="poison"||k==="bleed"){sxAdd(f,"bb",k==="poison"?"#8fd32a":"#e5484d");sxAdd(f,"ar","#caff5a")}
+ else if(k==="arrows"||k==="rain"){for(let n=0;n<(k==="rain"?5:3);n++)sxAdd(f,"ar","#f1e6df",n*70,"top:"+(18+n*13)+"%")}
+ else if(k==="mark"){sxAdd(f,"rg","#e5484d");sxAdd(f,"sl","#e5484d",100)}
+ else if(k==="dust"){sxAdd(f,"bb","#a58f84")}
+ else if(k==="dark"){sxAdd(f,"bb","#7c3aed")}
+ else if(k==="exec"){for(let n=0;n<3;n++)sxAdd(f,"sl","#e5484d",n*90,"transform:rotate("+(-50+n*35)+"deg);top:"+(24+n*8)+"%");shake()}
+ else if(k==="holy"){sxAdd(f,"bb",G);sxAdd(f,"rg","#fff3b0",90)}
+ else if(k==="heal"){sxAdd(f,"bb","#4ade80")}
+}
+function hurtFx(){const c=$("mc");if(!c)return;c.classList.add("hurt");const a=$("mav");if(a)a.classList.add("lunge");setTimeout(()=>{c.classList.remove("hurt");if(a)a.classList.remove("lunge")},320)}
+function dieFx(){const a=$("mav");if(a)a.classList.add("die")}
+function lvlFx(l){const o=document.createElement("div");o.className="lvfx";o.innerHTML=`<div class="lvr"></div><b>SEVİYE ${l}</b>`;document.body.appendChild(o);setTimeout(()=>o.remove(),1900)}
 function vig(){const e=$("vg");e.classList.add("h");setTimeout(()=>e.classList.remove("h"),200)}
 /* Manuel savaş telefonda oynanır (sunucunun verdiği tohumla); bitince hamle listesi sunucuya gider, sunucu aynısını oynatıp ödülü verir */
 function act(i){
@@ -1607,6 +1640,7 @@ function cWiki(v){
       <div class="cd">
         <div class="ct">6. Şehir, Sonsuz Kule ve Sandıklar</div>
         <ul class="wk-list">
+          <li><b>💥 Savaş Efektleri:</b> Her yetenek ve temel saldırı sınıfına göre kendi görsel efektini oynatır. Kritik vuruşlar büyük ve altın renkli sayıyla çıkar, canavar yenilince dağılır, ağır darbe hazırlığı yanıp söner, seviye atlayınca ekranda parlama olur. Telefonun destekliyorsa kritik, hasar alma ve zafer anlarında hafif <b>titreşim</b> gelir; Karakter → Kayıt sekmesinden kapatılabilir.</li>
           <li><b>🎨 Kor Teması ve Çizimler:</b> Oyunun görünümü kızıl-altın <i>Kor</i> temasına geçti. Emojilerin yerine özgün çizim ikonlar, 20 canavarın her biri için ise kendi çizimi geldi. Kule canavarları bağlı oldukları bölge canavarının çizimini kullanır.</li>
           <li><b>🏪 Tüccar Maren:</b> Tezgâhı <b>sabittir</b>, yenilenmez. Tüm sınıfların GR-I eşyalarını <b>kategori sekmeleriyle</b> (Silah, Sol El, Kask, Zırh, Pantolon, Çizme, Kolye, Yüzük) satar. Varsayılan olarak kendi sınıfının eşyaları görünür; <i>Tüm sınıflar</i> ile hepsini görebilirsin. Yalnızca <b>Lv 1</b> eşyalar satılır; üst seviye eşyalar savaşta düşer. Silahların hasar aralığı ve hızı satırında görünür.</li>
           <li><b>⛲ Yaşam Pınarı & 🧪 Simyacı (İksir Boyutları):</b> Pınar Can ve Manayı doldurur (seviyene göre altın ister: 20 + 8×seviye). İksirler 3 boyuttadır; boyut büyüdükçe etkisi ve fiyatı artar, yaratıklardan düşme şansı azalır (Düşme dağılımı: <b>%65 Küçük, %27 Orta, %8 Büyük</b>):<br>
@@ -1640,7 +1674,7 @@ function cWiki(v){
 
   v.innerHTML=`
     <div class="cd" style="background:linear-gradient(135deg,#2a1c3d88,var(--pn))">
-      <div class="ct">📖 Karanlık Zindan RPG — Oyun Rehberi <span class="g" style="font-size:10px">WİKİ</span></div>
+      <div class="ct">📖 Valdrenn — Oyun Rehberi <span class="g" style="font-size:10px">WİKİ</span></div>
       <div class="wk-tabs">${tabsHtml}</div>
     </div>
     ${body}

@@ -96,7 +96,7 @@ textarea{user-select:text;-webkit-user-select:text;width:100%;height:70px;backgr
 @keyframes spf{50%{transform:translateY(-8px) scale(1.05);filter:drop-shadow(0 0 30px #e8b04add)}}
 #sp h1{font-family:var(--hd);font-size:26px;letter-spacing:6px;color:var(--gold);margin-top:18px;text-align:center;animation:spt 1.5s ease-out both}
 @keyframes spt{from{opacity:0;letter-spacing:20px}to{opacity:1;letter-spacing:6px}}
-#sp .sb2{font-size:11px;letter-spacing:8px;color:var(--mu);margin-top:6px;animation:spt 2s ease-out both}
+#sp .sb2{font-size:11px;letter-spacing:4px;text-align:center;color:var(--mu);margin-top:6px;animation:spt 2s ease-out both}
 .spb{width:220px;height:6px;background:#ffffff1a;border-radius:4px;overflow:hidden;margin-top:36px}
 .spb i{display:block;height:100%;width:0;background:linear-gradient(90deg,#a8741a,#f3cf7a);animation:spl 2.2s ease-in-out forwards}
 @keyframes spl{to{width:100%}}
@@ -205,3 +205,30 @@ nav button span{display:flex}
 .mc{background:radial-gradient(ellipse at 50% 30%,#4a160d 0%,#1a0d09 55%,#0d0908 100%);border-color:#7a3a1c}
 .em{background:radial-gradient(#4a2418,#140c0a);border-color:#e8b04a}
 .btn .ik{color:inherit!important}
+
+/* ===== SAVAŞ EFEKTLERİ (2.5.0) ===== */
+.fn.cr{font-size:30px;animation:fcr 1s forwards;text-shadow:0 0 12px #e8b04a,0 2px 4px #000}
+@keyframes fcr{0%{transform:scale(.4);opacity:0}20%{transform:scale(1.5);opacity:1}100%{transform:translateY(-52px) scale(1);opacity:0}}
+.fn.hl{font-size:22px;text-shadow:0 0 10px #4ade80,0 2px 4px #000}
+.sx{position:absolute;pointer-events:none;--c:#fff}
+.sx.sl{left:15%;top:32%;width:70%;height:5px;border-radius:3px;background:linear-gradient(90deg,transparent,var(--c),transparent);box-shadow:0 0 14px var(--c);transform:rotate(-35deg) scaleX(0);animation:sxs .3s ease-out forwards}
+@keyframes sxs{0%{opacity:1;transform:rotate(-35deg) scaleX(0)}60%{transform:rotate(-35deg) scaleX(1)}100%{opacity:0;transform:rotate(-35deg) scaleX(1.1)}}
+.sx.ar{left:0;top:42%;width:70%;height:3px;background:linear-gradient(90deg,transparent,var(--c));box-shadow:0 0 8px var(--c);transform:translateX(-30%);opacity:0;animation:sxa .32s ease-in forwards}
+@keyframes sxa{0%{opacity:1;transform:translateX(-30%)}100%{opacity:0;transform:translateX(60%)}}
+.sx.bl{left:50%;top:0;width:6px;height:60%;margin-left:-3px;background:linear-gradient(180deg,transparent,var(--c));box-shadow:0 0 16px var(--c);transform-origin:top;animation:sxl .3s ease-in forwards}
+@keyframes sxl{0%{opacity:1;transform:scaleY(0)}60%{transform:scaleY(1)}100%{opacity:0}}
+.sx.bb{left:50%;top:48%;width:100px;height:100px;margin:-50px;border-radius:50%;background:radial-gradient(circle,var(--c),transparent 70%);animation:sxb .5s ease-out forwards}
+@keyframes sxb{0%{transform:scale(.3);opacity:.95}100%{transform:scale(1.7);opacity:0}}
+.sx.rg{left:50%;top:48%;width:24px;height:24px;margin:-12px;border:3px solid var(--c);border-radius:50%;box-shadow:0 0 12px var(--c);animation:sxr .55s ease-out forwards}
+@keyframes sxr{0%{opacity:1;transform:scale(.4)}100%{opacity:0;transform:scale(6)}}
+.mc.hurt{animation:hurt .32s}@keyframes hurt{20%{transform:translate(-4px,2px)}50%{transform:translate(4px,-2px)}80%{transform:translate(-2px,1px)}}
+.mav.lunge{transform:scale(1.14) translateY(8px)!important;transition:transform .12s}
+.mav.die{animation:die .6s forwards!important}
+@keyframes die{0%{filter:brightness(2.5)}40%{opacity:.8;transform:scale(1.08)}100%{opacity:0;transform:scale(.6) translateY(16px);filter:grayscale(1) blur(2px)}}
+.bar .gh{position:absolute;left:0;top:0;background:#f6d79a;opacity:.6;transition:width .9s ease .3s}
+.bar #mh{position:relative;z-index:1}
+.tb{animation:tbp .6s infinite alternate}@keyframes tbp{to{transform:scale(1.07);box-shadow:0 0 20px #f43f5e}}
+.lvfx{position:fixed;inset:0;z-index:120;pointer-events:none;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(232,176,74,.35),transparent 60%);animation:lvf 1.9s forwards}
+.lvfx b{font-family:var(--hd);font-size:34px;color:#f6d79a;text-shadow:0 0 20px #e8b04a,0 3px 6px #000;letter-spacing:3px}
+.lvr{position:absolute;width:260px;height:260px;border-radius:50%;border:3px solid #e8b04a;animation:sxr 1.2s ease-out forwards;box-shadow:0 0 30px #e8b04a}
+@keyframes lvf{0%{opacity:0}15%{opacity:1}80%{opacity:1}100%{opacity:0}}

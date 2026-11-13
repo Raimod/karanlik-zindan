@@ -1,5 +1,5 @@
 /* ============================================================
-   Karanlık Zindan: BANKA, PAZAR ve TAKAS ekranları (Paket D)
+   Valdrenn: BANKA, PAZAR ve TAKAS ekranları (Paket D)
    Şehir sekmesinin alt sekmeleridir. Her yazma işlemi sunucuda (battle fonksiyonu, op:"mk") yapılır;
    burada yalnızca listeleri okur ve istekleri gönderir.
    ============================================================ */

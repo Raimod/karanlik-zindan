@@ -1,5 +1,5 @@
 /* ============================================================
-   Karanlık Zindan: GÖRSELLER (Kor teması)
+   Valdrenn: GÖRSELLER (Kor teması)
    1) MONS: 20 canavar çizimi (SVG, anahtar "bölge_canavar")
    2) İKONLAR: emojilerin yerine geçen özgün SVG ikonlar. Sayfadaki emojiler otomatik değiştirilir.
    ============================================================ */
