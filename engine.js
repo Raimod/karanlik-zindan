@@ -287,7 +287,7 @@ function bWin(B,p,rng){
   if(rng.R(1)<.16){const t=rng.R(1)<.5?"hp":"mp",r=rng.R(100),sz=r<65?"S":r<92?"M":"L",d=POT_DEF[t][sz];p.pot[t][sz]=(p.pot[t][sz]||0)+1;out.push({loot:{k:"pot",t:d.n,c:G[d.g].c}});_lg(out,`${d.e} 1× <b style=color:${G[d.g].c}>${d.n}</b> buldun`)}
   matDropOf(p,m,rng,out);
   if(B.tw){out.push({ev:["tower",B.tw]});p.tw=Math.max(p.tw,B.tw);if(B.tw%5==0){p.ch++;_lg(out,"🎁 Kat ödülü: sandık!")}}
-  if(m.el?rng.R(100)<15:rng.R(100)<12)out.push(...dropItem(p,m,0,rng));
+  if(m.el?rng.R(100)<15:rng.R(100)<12){const n0=p.inv.length;out.push(...dropItem(p,m,0,rng));if(p.inv.length>n0)autoJunk(p,p.inv[p.inv.length-1],out)}
   syncP(p);
   return out;
 }
@@ -401,7 +401,18 @@ function rollDaily(p,rng,t){
   return true;
 }
 const sellV=i=>3+i.rl*2+i.p*3+i.g*i.rl;
-const junkOf=(p,i)=>i.g<=2||(i.rc!=p.cls&&i.g<=3);
+/* Çöp kuralı (oyuncunun ayarı p.jr): kendi sınıfı için kalite ≤ g, başka sınıf için kalite ≤ og, efsun sayısı ≤ af, artı ≤ p.
+   auto: 0 kapalı, 1 düşünce otomatik sat, 2 düşünce otomatik parçala. Kadim Elit (5) hiçbir zaman çöp sayılmaz. */
+const jrOf=p=>{const r=(p&&p.jr)||{};const n=(v,lo,hi,d)=>Number.isInteger(v)&&v>=lo&&v<=hi?v:d;return{g:n(r.g,0,4,2),og:n(r.og,0,4,3),af:n(r.af,0,4,4),p:n(r.p,0,50,0),auto:n(r.auto,0,2,0)}};
+const junkOf=(p,i)=>{const r=jrOf(p);return i.g<=4&&i.g<=(i.rc==p.cls?r.g:r.og)&&(Array.isArray(i.af)?i.af.length:0)<=r.af&&(i.p|0)<=r.p};
+/* Savaştan düşen eşya kurala uyuyorsa ve otomatik mod açıksa hemen satılır/parçalanır */
+function autoJunk(p,it,out){
+  const r=jrOf(p);if(!r.auto||!it||!junkOf(p,it))return;
+  const k=p.inv.lastIndexOf(it);if(k<0)return;
+  p.inv.splice(k,1);
+  if(r.auto===1){const v=sellV(it);p.gold+=v;out.push({junk:{a:1,g:v,n:1}});_lg(out,"🧹 Otomatik satıldı: "+it.name+" +"+v+"🪙")}
+  else{const y=salvageYield(it);Object.entries(y).forEach(([m,v])=>{p.mat[m]=(p.mat[m]||0)+v;out.push({ev:["mat",v]})});out.push({junk:{a:2,g:0,n:1}});_lg(out,"🧹 Otomatik parçalandı: "+it.name+" "+Object.entries(y).map(([m,v])=>MT[m][0]+"+"+v).join(" "))}
+}
 function salvageYield(i){
   const out={kirik:Math.max(1,Math.floor(i.rl/4)+i.g+i.p)};
   const regIdx=Math.min(3,Math.floor((i.rl-1)/10));
@@ -633,6 +644,6 @@ function mkDo(p,body,d,now){
   }
   return bad("Geçersiz istek");
 }
-const KZ={mkDo,MK_MINLV,healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
+const KZ={jrOf,autoJunk,mkDo,MK_MINLV,healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
 (typeof globalThis!=="undefined"?globalThis:window).KZ=KZ;
 if(typeof module!=="undefined"&&module.exports)module.exports=KZ;

@@ -133,3 +133,9 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 - Savaş ekranının altı: Günlük + Kazanımlar (öldürülen, altın, XP, hasar, kritik, düşenler).
 - Sandık ödülleri azaltıldı: altın ~yarıya, iksir paketi 1+1, nadir eşya %6, parşömen %6.
 - Yeni SQL yok. Edge Function yeniden dağıtılmalı (battle-index.ts), dosyalar GitHub'a yüklenmeli.
+
+## 2.2.0 (Paket F)
+- Yeni karakter öğreticisi (ogretici.js): 6 adım, atlanabilir, Wiki'den tekrar açılır. P.tut alanı (0 = göster, 1 = bitti, yok = eski karakter, gösterme).
+- Çöp kuralları (P.jr): kalite (kendi/başka sınıf), efsun sayısı, artı sınırı; Toplu Sat/Parçala bu kurala göre. Otomatik sat/parçala (savaşta düşünce).
+- Savaş ekranı küçük telefonlarda sıkıştırıldı; Günlük/Kazanımlar alanı ekran boyuna göre büyür (kaydırma gerekmez).
+- Yeni SQL yok. Yeni dosya: ogretici.js. Edge Function yeniden dağıtılmalı.

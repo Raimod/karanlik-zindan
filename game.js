@@ -1,4 +1,4 @@
-const GAME_VERSION="2.1.0";
+const GAME_VERSION="2.2.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -674,9 +674,26 @@ v.innerHTML=`<div class="cd" style="padding:9px">
   <button class="btn d" style="flex:1;padding:8px;font-size:11.5px" ${cnt?"":"disabled"} onclick="bulk()">${armed=="bk"?"Onayla: Sat ("+cnt+")":"🪙 Toplu Sat ("+cnt+")"}</button>
   <button class="btn em2" style="flex:1;padding:8px;font-size:11.5px" ${cnt?"":"disabled"} onclick="bulkSalvage()">${armed=="sv"?"Onayla: Parçala ("+cnt+")":"🔨 Toplu Parçala ("+cnt+")"}</button>
 </div>
+<button class="btn s" style="margin-top:6px;padding:7px;font-size:11.5px" onclick="JRopen=!JRopen;view()">⚙️ Çöp kuralları ${jrOf(P).auto===1?"· 🧹 oto sat":jrOf(P).auto===2?"· 🧹 oto parçala":""} ${JRopen?"▲":"▼"}</button>${JRopen?jrPanel(cnt):""}
 <p class="mu" style="font-size:9px;margin-top:5px">İksir, sandık, ot ve artı basma malzemeleri tek yuvada toplanır (50 ekipman sınırından yer kaplamaz).</p></div>`}
 
 const junk=i=>junkOf(P,i);
+let JRopen=false;
+function setJR(k,v){P.jr={...jrOf(P),[k]:Number(v)};save();view()}
+function jrPanel(cnt){
+  const r=jrOf(P),gs=[[0,"Hiçbiri"],[1,"GR-I Sıradan"],[2,"GR-II İşlenmiş"],[3,"GR-III Usta İşi"],[4,"GR-IV Kusursuz"]];
+  const sel=(k,opts,cur)=>`<select class="sort-sel" style="flex:none;width:55%" onchange="setJR('${k}',this.value)">${opts.map(([v,t])=>`<option value="${v}" ${v==cur?"selected":""}>${t}</option>`).join("")}</select>`;
+  const row=(t,s)=>`<div class="r" style="margin-bottom:6px;gap:6px"><span style="font-size:11px">${t}</span>${s}</div>`;
+  return`<div class="cd" style="margin-top:6px;padding:9px;border-color:rgba(230,180,80,.4)">
+    <div class="mu" style="font-size:10px;margin-bottom:6px">Aşağıdaki şartların <b>hepsine</b> uyan eşya "çöp" sayılır. Toplu Sat / Toplu Parçala yalnızca bunlara dokunur. Kadim Elit eşyalar hiçbir zaman çöp sayılmaz.</div>
+    ${row("Kendi sınıfımın eşyası, en çok",sel("g",gs,r.g))}
+    ${row("Başka sınıfın eşyası, en çok",sel("og",gs,r.og))}
+    ${row("Efsun sayısı en çok",sel("af",[[0,"0 (efsunsuz)"],[1,"1"],[2,"2"],[3,"3"],[4,"Sınır yok"]],r.af))}
+    ${row("Artı (+) seviyesi en çok",sel("p",[[0,"+0 (artısız)"],[1,"+1"],[2,"+2"],[3,"+3"],[5,"+5"],[10,"+10"]],r.p))}
+    ${row("🧹 Otomatik işlem",sel("auto",[[0,"Kapalı"],[1,"Düşünce otomatik SAT"],[2,"Düşünce otomatik PARÇALA"]],r.auto))}
+    <div class="mu" style="font-size:10px">Şu an kurala uyan: <b class="g">${cnt}</b> eşya${r.auto?" · Savaşta düşen çöp eşyalar anında "+(r.auto===1?"satılır":"parçalanır")+" (çanta dolmaz).":"."}</div>
+  </div>`;
+}
 
 async function salvageItem(n){
   closeM();
@@ -887,7 +904,7 @@ async function sell(n){closeM();const r=await ecoCall({op:"eco",a:"sell",i:n});i
 let CB={on:false,auto:false,fast:false},aT=null;
 const RNG=mkRng(()=>Math.random());
 /* Motorun döndürdüğü olayları ekranda uygula (sıra korunur) */
-function applyEv(out){for(const e of out){if(e.lg!==undefined)lg(e.lg);else if(e.fx)fx(e.fx[0],e.fx[1]);else if(e.snd)A[e.snd]();else if(e.toast)toast(e.toast);else if(e.shake)shake();else if(e.vig)vig();else if(e.ev){ssEv(e.ev[0],e.ev[1]);ev(e.ev[0],e.ev[1])}else if(e.win)ssWin(e.win);else if(e.loot)ssLoot(e.loot);else if(e.kill)onKill(e.kill)}}
+function applyEv(out){for(const e of out){if(e.lg!==undefined)lg(e.lg);else if(e.fx)fx(e.fx[0],e.fx[1]);else if(e.snd)A[e.snd]();else if(e.toast)toast(e.toast);else if(e.shake)shake();else if(e.vig)vig();else if(e.ev){ssEv(e.ev[0],e.ev[1]);ev(e.ev[0],e.ev[1])}else if(e.win)ssWin(e.win);else if(e.junk)ssJunk(e.junk);else if(e.loot)ssLoot(e.loot);else if(e.kill)onKill(e.kill)}}
 /* Öldürme: günlük ve normal görev ilerlemesi */
 function onKill(){}
 /* ---- Savaş sunucuda oynanır (Supabase 'battle' fonksiyonu). Burası sonucu ekranda oynatır. ---- */
@@ -1044,6 +1061,7 @@ const newSS=()=>({t0:Date.now(),k:0,e:0,g:0,x:0,dmg:0,max:0,hits:0,crit:0,items:
 let SS=newSS();
 function ssEv(n,v){if(n==="dmg"){SS.dmg+=v;SS.hits++;if(v>SS.max)SS.max=v}else if(n==="crit")SS.crit++}
 function ssWin(w){SS.k++;if(w.el)SS.e++;SS.g+=w.g;SS.x+=w.x;if(CB.lt==="gain")renderLG()}
+function ssJunk(j){SS.jn=(SS.jn||0)+j.n;SS.jg=(SS.jg||0)+j.g;if(CB.lt==="gain")renderLG()}
 function ssLoot(l){
   const to=l.k==="item"?SS.items:l.k==="mat"?SS.mats:SS.pots;
   const o=to[l.t]||(to[l.t]={n:0,c:l.c||"#fff",g:l.g||0});o.n+=l.n||1;
@@ -1059,6 +1077,7 @@ function gainHtml(){
     <div>⚔️ Toplam hasar: <b>${f(s.dmg)}</b></div><div>💥 En yüksek: <b>${f(s.max)}</b></div>
     <div>🎯 Ort. vuruş: <b>${s.hits?f(s.dmg/s.hits):0}</b></div><div>🔥 Kritik: <b>${s.crit}</b>${s.hits?" (%"+Math.round(s.crit/s.hits*100)+")":""}</div>
     <div>🪙/dk: <b>${f(s.g/mins)}</b></div><div>☠️/dk: <b>${(s.k/mins).toFixed(1)}</b></div></div>
+    ${s.jn?`<div style="margin-bottom:3px">🧹 Otomatik ${s.jn} eşya ${s.jg?"satıldı (+"+f(s.jg)+" 🪙)":"işlendi"}</div>`:""}
     <div style="border-top:1px solid var(--ln);padding-top:4px">${loot||'<span class="mu">Henüz eşya/malzeme düşmedi</span>'}</div>
     <button class="btn s" style="margin-top:5px;padding:3px;font-size:9.5px" onclick="SS=newSS();renderLG()">🔄 Sayacı sıfırla</button>`;
 }
@@ -1431,12 +1450,15 @@ function cWiki(v){
 
   if(wikiSec===1){
     body=`
+      <button class="btn v" style="margin-bottom:8px;padding:9px;font-size:12px" onclick="tutStart(true)">📘 Öğreticiyi tekrar göster</button>
       <div class="cd">
         <div class="ct">1. Karakter Yuvaları ve Temel Sistemler</div>
         <ul class="wk-list">
           <li><b>Çoklu Karakter Yuvası (5 Yuva):</b> Giriş ekranında <b>5 ayrı karakter yuvası</b> bulunur. Sınıflara dokunulduğunda çizim üzerinde bilgi açılır; boş yuvalara dokunularak yeni kahraman oluşturulur.</li>
           <li><b>Pratik Alt Sekme Arayüzü:</b> <i>Karakter</i> (Donanım, Gelişim, Unvan, Kayıt), <i>Harita</i> (Kule + B1–B5 Bölge Sekmeleri), <i>Şehir</i> (Tüccar / Pınar & Simyacı / Banka / Pazar / Takas) ve <i>Görev</i> (Günlük, Bölge, Meydan Okuma) ekranları aşağı kaydırma gerektirmeyen alt menülerle ayrılmıştır.</li>
           <li><b>5×5 Sırt Çantası, Yığınlama (Stack) ve Sıralama:</b> Çanta aynı anda <b>5×5 (25 yuva)</b> gösterir, fazlası aşağı kaydırılır. <i>İksirler, Hazine Sandıkları, Koruma Parşömenleri, Şifalı Ot/Özler ve Artı Basma Malzemeleri</i> tek yuvada yığınlanır ve 50 ekipman kapasitesini doldurmaz. Üstteki sıralama menüsüyle ekipmanlar <b>Nadirlik, Güç, Seviye, Yuva</b> veya <b>İsme</b> göre dizilebilir.</li>
+          <li><b>🧹 Çöp Kuralları ve Otomatik Sat/Parçala:</b> Çanta → <i>⚙️ Çöp kuralları</i>. Kendi sınıfın ve başka sınıfların eşyaları için ayrı <b>kalite sınırı</b>, <b>en çok kaç efsun</b> ve <b>en çok kaç artı (+)</b> seçersin; şartların hepsine uyan eşya "çöp" sayılır ve <i>Toplu Sat / Toplu Parçala</i> yalnızca bunlara dokunur. <b>🧹 Otomatik işlem</b> açıksa savaşta düşen çöp eşya anında satılır ya da parçalanır (çanta dolmaz). Kadim Elit eşyalar hiçbir zaman çöp sayılmaz. Varsayılan kural: kendi sınıfın GR-II ve altı, başka sınıf GR-III ve altı, artısız.</li>
+          <li><b>📘 Öğretici:</b> Yeni karakter açınca 6 kısa adımlık tur başlar (atlayabilirsin). Bu sayfanın en üstündeki düğmeyle istediğin zaman tekrar açabilirsin.</li>
           <li><b>Kayıt Yedeği (Dışa / İçe Aktar):</b> <i>Karakter → Kayıt</i> alt sekmesindeki yedekleme alanından karakter verisi Base64 koduna dönüştürülerek dışa aktarılabilir ve farklı cihazlara yüklenebilir.</li>
           <li><b>Maksimum Seviye ve Seviye Başına Büyüme:</b> Seviye sınırı <b>50</b>'dir. Nitelik puanı dağıtılmasa bile her seviye atlandığında sınıfa göre doğal olarak <b>+44–50 Maks. Can (HP)</b> ve <b>+21–24 Maks. Mana (MP)</b> artışı sağlanır; ayrıca <b>+2 Yetenek Puanı (SP)</b> ve <b>+3 Nitelik Puanı (AP)</b> kazanılarak Can ve Mana tamamen yenilenir.</li>
           <li><b>Savaş Dışı Otomatik Yenilenme:</b> Savaş dışında dolaşırken karakterin Canı her 2 saniyede maksimum HP'nin <b>%3'ü</b>, Manası ise maksimum MP'nin <b>%4'ü</b> kadar kendiliğinden yavaşça dolar.</li>
@@ -1658,6 +1680,7 @@ async function newGame(){
   const created=NEW();
   created.name=charName;
   created.cls=sel;
+  created.tut=0;
   SLOTS[targetCreateSlot]=created;
   activeSlot=targetCreateSlot;
   P=created;
