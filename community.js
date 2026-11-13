@@ -5,7 +5,7 @@
 const COM={names:{},sub:"rank",by:"level",timer:null,msgs:[],sig:"",sending:false,muted:[],lastLb:""};
 try{COM.muted=JSON.parse(localStorage.getItem("kz_muted")||"[]")}catch(e){}
 
-const RANKS={level:["Seviye","Lv."],tower:["Kule","Kat "],elites:["Elit","elit"]};
+const RANKS={level:["Seviye","Lv."],tower:["Kule","Kat "],elites:["Elit","elit"],maxhit:["Hasar","💥 "]};
 
 /* ---- Liderlik tablosuna gönderilecek özet (en yüksek seviyeli karakterin) ---- */
 function comBest(){
@@ -54,6 +54,11 @@ function cCommunity(v){
   if(COM.sub==="rank"){
     v.innerHTML=sub+`<div class="cd"><div class="ct">🏆 Sıralama</div>
       <div class="sub-tabs" style="margin-bottom:8px">${Object.keys(RANKS).map(k=>`<button class="sub-tab ${COM.by==k?"act":""}" onclick="comBy('${k}')">${RANKS[k][0]}</button>`).join("")}</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <input id="rank-q" maxlength="20" placeholder="Karakter adı ara..." autocomplete="off" onkeydown="if(event.key==='Enter')comRankFind()" style="flex:1;min-width:0;padding:9px;background:#000;border:1px solid var(--ln);border-radius:8px;color:#fff;-webkit-user-select:text;user-select:text">
+        <button class="btn" style="width:auto;padding:0 14px" onclick="comRankFind()">🔍 Ara</button>
+      </div>
+      <div id="rank-find"></div>
       <div id="rank-box"><p class="mu" style="font-size:11px">Yükleniyor...</p></div>
       <button class="btn s" style="margin-top:8px;padding:8px;font-size:11px" onclick="comLoadRank()">🔄 Yenile</button></div>`;
     comLoadRank();
@@ -80,7 +85,7 @@ async function comLoadRank(){
   try{
     await comPushLb(true);
     const col=COM.by;
-    const r=await CLOUD.sb.from("leaderboard").select("user_id,username,char_name,cls,level,tower,elites,kills").order(col,{ascending:false}).order("kills",{ascending:false}).limit(25);
+    const r=await CLOUD.sb.from("leaderboard").select("user_id,char_name,cls,level,tower,elites,kills,maxhit").order(col,{ascending:false}).order("kills",{ascending:false}).limit(100);
     if(r.error)throw r.error;
     const rows=r.data||[];
     const box2=$("rank-box");if(!box2||tab!=="community"||COM.sub!=="rank")return;
@@ -88,9 +93,9 @@ async function comLoadRank(){
     const unit=RANKS[col][1];
     box2.innerHTML=rows.map((x,i)=>{
       const mine=CLOUD.user&&x.user_id===CLOUD.user.id,c=CL[x.cls]||CL.tank;
-      const val=col==="elites"?(x[col]+" "+unit):(unit+x[col]);
+      const val=col==="elites"?(x[col]+" "+unit):col==="maxhit"?(unit+Number(x[col]||0).toLocaleString("tr-TR")):(unit+x[col]);
       const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1);
-      return`<div class="q" style="padding:6px 8px;margin-bottom:5px;${mine?"border:1px solid var(--gold);":""}">
+      return`<div class="q" onclick="comProfile('${escH(x.user_id)}')" style="cursor:pointer;padding:6px 8px;margin-bottom:5px;${mine?"border:1px solid var(--gold);":""}">
         <div style="width:30px;text-align:center;font-weight:800">${medal}</div>
         <div style="flex:1;min-width:0"><b style="${mine?"color:var(--gold)":""}">${escH(x.char_name||"?")}</b>${mine?' <span class="mu" style="font-size:9px">(sen)</span>':""}
           <div class="mu" style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.e} ${escH(c.n||x.cls||"")}</div></div>
@@ -175,4 +180,47 @@ function comUnmuteAll(){
   COM.muted=[];
   try{localStorage.removeItem("kz_muted")}catch(e){}
   view();
+}
+
+/* ---- Sıralamada oyuncu arama ve profil ---- */
+async function comRankFind(){
+  const q=($("rank-q")||{}).value||"",box=$("rank-find");if(!box)return;
+  if(!q.trim()){box.innerHTML="";return}
+  box.innerHTML='<p class="mu" style="font-size:11px">Aranıyor...</p>';
+  try{
+    const r=await CLOUD.sb.rpc("kz_rank_find",{p_col:COM.by,p_q:q});
+    if(r.error)throw r.error;
+    const rows=r.data||[];
+    if(!rows.length){box.innerHTML='<p class="mu" style="font-size:11px;margin-bottom:8px">Bu adla oyuncu bulunamadı.</p>';return}
+    const col=COM.by,unit=RANKS[col][1];
+    box.innerHTML='<div class="mu" style="font-size:10px;margin-bottom:4px">Arama sonuçları ('+RANKS[col][0]+' sırasına göre):</div>'+rows.map(x=>{
+      const c=CL[x.cls]||CL.tank,val=col==="elites"?(x[col]+" "+unit):col==="maxhit"?(unit+Number(x[col]||0).toLocaleString("tr-TR")):(unit+x[col]);
+      return`<div class="q" onclick="comProfile('${escH(x.user_id)}')" style="cursor:pointer;padding:6px 8px;margin-bottom:5px;border:1px solid var(--gold)"><div style="width:42px;text-align:center;font-weight:800">#${Number(x.rk)}</div>
+        <div style="flex:1;min-width:0"><b>${escH(x.char_name||"?")}</b><div class="mu" style="font-size:10px">${c.e} ${escH(c.n||x.cls||"")}</div></div><b class="g" style="font-size:12px">${escH(val)}</b></div>`}).join("")+'<hr style="border:0;border-top:1px solid var(--ln);margin:8px 0">';
+  }catch(e){box.innerHTML=`<p style="font-size:11px;color:#fbbf24">Arama yapılamadı: ${escH(cloudErr(e))}<br><span class="mu">Supabase'te sql/liderlik.sql kodunun çalıştırıldığından emin ol.</span></p>`}
+}
+async function comProfile(uid){
+  $("ic").innerHTML='<p class="mu" style="text-align:center;padding:20px">Profil yükleniyor...</p>';$("im").style.display="flex";
+  try{
+    const r=await CLOUD.sb.rpc("kz_profile",{p_user:uid});
+    if(r.error)throw r.error;
+    const p=r.data;
+    if(!p){$("ic").innerHTML='<p class="mu" style="text-align:center;padding:16px">Profil bulunamadı.</p><button class="btn s" onclick="closeM()">Kapat</button>';return}
+    const c=CL[p.cls]||CL.tank,t=(TITLES.find(x=>x.id===p.title)||{}).n;
+    const items=SL.map(k=>{
+      const i=(p.eq||{})[k];
+      if(!i)return`<div class="q" style="padding:5px 8px;margin-bottom:3px"><span class="mu" style="width:62px;font-size:10px">${SN[k]}</span><span class="mu" style="font-size:10px">— boş —</span></div>`;
+      const g=G[i.g]||G[1];
+      const af=(i.af||[]).map(a=>`<div class="mu" style="font-size:9px">✨ ${escH(a.n||"")} +%${Number(a.v)||0}</div>`).join("");
+      return`<div class="q" style="padding:5px 8px;margin-bottom:3px;align-items:flex-start"><span class="mu" style="width:62px;font-size:10px;padding-top:2px">${SN[k]}</span><div style="flex:1;min-width:0"><b style="color:${g.c};font-size:11px">${escH(i.name||"?")} +${Number(i.p)||0}</b> <span class="mu" style="font-size:9px">${g.t||""}</span>${af}</div></div>`}).join("");
+    $("ic").innerHTML=`<div style="text-align:center;margin-bottom:10px"><div style="font-size:30px">${c.e}</div><b style="font-size:16px">${escH(p.name||"?")}</b>
+      <div class="mu" style="font-size:11px">${escH(c.n||p.cls)} · Lv.${Number(p.lv)||1}${t?" · "+escH(t):""}</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;text-align:center">
+        <div class="q" style="display:block;margin:0"><div class="mu" style="font-size:9.5px">Kule</div><b>Kat ${Number(p.tower)||0}</b></div>
+        <div class="q" style="display:block;margin:0"><div class="mu" style="font-size:9.5px">En yüksek vuruş</div><b>💥 ${Number(p.maxhit||0).toLocaleString("tr-TR")}</b></div>
+        <div class="q" style="display:block;margin:0"><div class="mu" style="font-size:9.5px">Elit öldürme</div><b>${Number(p.elites)||0}</b></div>
+        <div class="q" style="display:block;margin:0"><div class="mu" style="font-size:9.5px">Toplam öldürme</div><b>${Number(p.kills||0).toLocaleString("tr-TR")}</b></div></div>
+      <div class="ct" style="font-size:12px;margin-bottom:5px">Kuşandığı eşyalar</div>${items}
+      <button class="btn s" style="margin-top:8px" onclick="closeM()">Kapat</button>`;
+  }catch(e){$("ic").innerHTML=`<p style="font-size:11px;color:#fbbf24;padding:10px">Profil açılamadı: ${escH(cloudErr(e))}<br><span class="mu">Supabase'te sql/liderlik.sql kodunun çalıştırıldığından emin ol.</span></p><button class="btn s" onclick="closeM()">Kapat</button>`}
 }

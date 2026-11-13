@@ -1,4 +1,4 @@
-const GAME_VERSION="1.8.0";
+const GAME_VERSION="1.9.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -657,6 +657,7 @@ v.innerHTML=`<div class="cd" style="padding:9px">
   <button class="sub-tab ${bagFilter=="stk"?"act":""}" onclick="setBagFilter('stk')">Yığın (${stacks.length})</button>
   <button class="sub-tab ${bagFilter=="junk"?"act":""}" onclick="setBagFilter('junk')">Çöp (${cnt})</button>
 </div>
+<button class="btn v" style="margin-bottom:6px;padding:8px;font-size:12px" onclick="autoEquip()">⚡ Çantadaki en iyileri kuşan</button>
 <div class="sort-bar">
   <select class="sort-sel" onchange="setBagSort(this.value)">
     <option value="default" ${bagSort=="default"?"selected":""}>Sıralama: Varsayılan (Yığınlar Üstte)</option>
@@ -794,17 +795,20 @@ const alchHtml=`
     <button class="btn b" ${P.gold>=fountCost()?"":"disabled"} onclick="fount()">Pınardan İç (${fountCost()} 🪙)</button>
   </div>
   <div class="cd">
+    <div class="cd" style="padding:8px"><div class="r" style="margin-bottom:6px"><b style="font-size:12px">🛒 Alınacak adet</b><span class="mu" style="font-size:10px">Toplam fiyat butonlarda yazar</span></div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:6px">${[1,5,10,25,50].map(n=>`<button class="btn ${BUYQ===n?"":"s"}" style="padding:6px 2px;font-size:11px;border:1px solid ${BUYQ===n?"var(--gold)":"rgba(255,255,255,.15)"}" onclick="setBuyQ(${n})">${n}</button>`).join("")}</div>
+    <div style="display:flex;gap:6px"><input type="number" inputmode="numeric" min="1" max="999" value="${BUYQ}" onchange="setBuyQ(this.value)" style="flex:1;min-width:0;padding:8px;background:#000;border:1px solid var(--ln);border-radius:8px;color:#fff;-webkit-user-select:text;user-select:text"><span class="mu" style="align-self:center;font-size:10px">adet (1-999)</span></div></div>
     <div class="ct">🧪 Simyacı — Can İksirleri <span class="mu" style="font-size:10px">Çanta: ${P.pot.hp.S}K · ${P.pot.hp.M}O · ${P.pot.hp.L}B</span></div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;margin-bottom:9px">
-      ${["S","M","L"].map(sz=>{const d=POT_DEF.hp[sz];return`<div class="q" style="display:block;margin:0;padding:7px 4px;border:1px solid ${G[d.g].c}44"><b style="color:${G[d.g].c};font-size:10.5px">${d.sz} Can</b><div class="mu" style="font-size:9.5px">+${d.amt} HP · <span style="color:#fff">×${P.pot.hp[sz]||0}</span></div><button class="btn" style="margin-top:5px;padding:6px;font-size:11px" ${P.gold>=d.cost?"":"disabled"} onclick="buy('hp',${d.cost},'${sz}')">${d.cost} 🪙</button></div>`}).join("")}
+      ${["S","M","L"].map(sz=>{const d=POT_DEF.hp[sz];return`<div class="q" style="display:block;margin:0;padding:7px 4px;border:1px solid ${G[d.g].c}44"><b style="color:${G[d.g].c};font-size:10.5px">${d.sz} Can</b><div class="mu" style="font-size:9.5px">+${d.amt} HP · <span style="color:#fff">×${P.pot.hp[sz]||0}</span></div><button class="btn" style="margin-top:5px;padding:6px;font-size:11px" ${P.gold>=d.cost*BUYQ?"":"disabled"} onclick="buy('hp',${d.cost},'${sz}')">${d.cost*BUYQ} 🪙</button></div>`}).join("")}
     </div>
     <div class="ct">💧 Simyacı — Mana İksirleri <span class="mu" style="font-size:10px">Çanta: ${P.pot.mp.S}K · ${P.pot.mp.M}O · ${P.pot.mp.L}B</span></div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;margin-bottom:9px">
-      ${["S","M","L"].map(sz=>{const d=POT_DEF.mp[sz];return`<div class="q" style="display:block;margin:0;padding:7px 4px;border:1px solid ${G[d.g].c}44"><b style="color:${G[d.g].c};font-size:10.5px">${d.sz} Mana</b><div class="mu" style="font-size:9.5px">+${d.amt} MP · <span style="color:#fff">×${P.pot.mp[sz]||0}</span></div><button class="btn b" style="margin-top:5px;padding:6px;font-size:11px" ${P.gold>=d.cost?"":"disabled"} onclick="buy('mp',${d.cost},'${sz}')">${d.cost} 🪙</button></div>`}).join("")}
+      ${["S","M","L"].map(sz=>{const d=POT_DEF.mp[sz];return`<div class="q" style="display:block;margin:0;padding:7px 4px;border:1px solid ${G[d.g].c}44"><b style="color:${G[d.g].c};font-size:10.5px">${d.sz} Mana</b><div class="mu" style="font-size:9.5px">+${d.amt} MP · <span style="color:#fff">×${P.pot.mp[sz]||0}</span></div><button class="btn b" style="margin-top:5px;padding:6px;font-size:11px" ${P.gold>=d.cost*BUYQ?"":"disabled"} onclick="buy('mp',${d.cost},'${sz}')">${d.cost*BUYQ} 🪙</button></div>`}).join("")}
     </div>
     <div class="q" style="margin:0;padding:8px 10px">
       <div><b style="color:#c084fc">📜 Koruma Parşömeni</b> <span class="mu">(Çanta: ×${P.sc})</span><div class="mu" style="font-size:9.5px">+6 ve üzeri yükseltmelerde kırılmayı/düşmeyi önler</div></div>
-      <button class="btn v" style="width:auto;padding:7px 12px;font-size:11px" ${P.gold>=150?"":"disabled"} onclick="buy('sc',150)">150 🪙</button>
+      <button class="btn v" style="width:auto;padding:7px 12px;font-size:11px" ${P.gold>=150*BUYQ?"":"disabled"} onclick="buy('sc',150)">${150*BUYQ} 🪙</button>
     </div>
   </div>`;
 v.innerHTML=subNav+(citySub=="shop"?shopHTML():alchHtml);
@@ -812,7 +816,9 @@ v.innerHTML=subNav+(citySub=="shop"?shopHTML():alchHtml);
 async function claim(id){const r=await ecoCall({op:"eco",a:"claim",kind:"q",id});if(r){hud();view()}}
 const fountCost=()=>20+P.lv*8;
 function fount(){if(P.hp>=P.maxHp&&P.mp>=P.maxMp)return toast("Canın ve manan zaten dolu");const c=fountCost();if(P.gold<c)return toast("Yetersiz altın ("+c+" 🪙 gerekir)");P.gold-=c;P.hp=P.maxHp;P.mp=P.maxMp;A.pot();hud();save();view();toast("Can ve mana doldu (-"+c+" 🪙)")}
-async function buy(t,c,sz="S"){if(P.gold<c)return toast("Yetersiz altın");const r=await ecoCall({op:"eco",a:"buy",t,sz});if(r){hud();view()}}
+let BUYQ=1;
+function setBuyQ(v){BUYQ=Math.max(1,Math.min(999,Math.floor(Number(v))||1));view()}
+async function buy(t,c,sz="S"){const n=BUYQ;if(P.gold<c*n)return toast("Yetersiz altın");const r=await ecoCall({op:"eco",a:"buy",t,sz,n});if(r){hud();view()}}
 function cSkills(v){v.innerHTML=skillsHTML()}
 function resetSk(){const c=P.lv*30;if(armed!="rsk"){armed="rsk";view();return}armed="";if(P.gold<c)return toast("Yetersiz altın");const t=Object.values(P.sr).reduce((a,b)=>a+(b|0),0);if(!t)return;P.gold-=c;P.sp+=t;P.sr={};sync();save();view();toast("Yetenekler sıfırlandı: +"+t+" SP")}
 function upSk(i){if(P.sp<=0)return;P.sp--;P.sr[i]=(P.sr[i]||0)+1;A.lvl();save();view()}
@@ -1170,6 +1176,9 @@ function openAutoSetup(alreadyRunning){
       </div>
     </div>
 
+    <div class="q" style="display:block;margin-bottom:10px">
+      <button class="btn ${cfg.buy?"":"s"}" style="width:100%;padding:8px;font-size:11px;border:1px solid ${cfg.buy?"var(--gold)":"rgba(255,255,255,.15)"}" onclick="setAutoCfg('buy',${cfg.buy?"false":"true"})"><b>${cfg.buy?"✅":"⛔"} İksir bitince otomatik satın al</b><div style="font-size:9px;opacity:.85;margin-top:2px">Seçili iksir bitince ve gerekince 10 adede kadar altınla alır</div></button>
+    </div>
     <button class="btn" onclick="startAutoWithCfg()">${alreadyRunning?"✅ Ayarları Uygula":"▶ Otomatik Savaşı Başlat"}</button>
     <button class="btn s" style="margin-top:6px" onclick="closeM()">Vazgeç</button>
   `;
@@ -1663,4 +1672,17 @@ function toggleFS(){
   if(on){ex&&ex.call(document);return}
   if(rq){try{const p=rq.call(de);if(p&&p.catch)p.catch(()=>toast("Tam ekran bu tarayıcıda açılamadı"))}catch(e){toast("Tam ekran bu tarayıcıda açılamadı")}return}
   toast("iPhone: Paylaş ⬆️ → «Ana Ekrana Ekle» ile tam ekran açılır");
+}
+
+/* ---------- OTOMATİK KUŞAN ---------- */
+function autoEquip(){
+  let n=0;const names=[];
+  SL.forEach(sl=>{
+    const cur=P.eq[sl],curOn=cur&&effLv(cur)<=P.lv;
+    let best=-1,bp=curOn?pw(cur):-1;
+    P.inv.forEach((i,k)=>{if(i.slot!==sl||i.rc!==P.cls||effLv(i)>P.lv)return;const v=pw(i);if(v>bp){bp=v;best=k}});
+    if(best>-1){const it=P.inv[best];P.inv.splice(best,1);if(cur)P.inv.push(cur);P.eq[sl]=it;n++;names.push(it.name)}
+  });
+  if(!n)return toast("Çantada kuşanılacak daha iyi eşya yok");
+  A.pot();sync();save();view();toast("⚡ "+n+" eşya kuşanıldı");
 }

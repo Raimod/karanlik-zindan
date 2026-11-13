@@ -210,10 +210,22 @@ function bPot(p,t,sz,quiet){
 }
 
 /* Oto savaşın bir adımı. kind: "pot" (iksir içti), "stop" (oto savaş durmalı), "act" (k numaralı hamle yap, -1 temel saldırı) */
+/* Oto savaş: seçili boy bittiyse ve altın yetiyorsa 10 adede kadar satın al (yalnızca iksir gerektiğinde) */
+function autoBuyOf(p,t,sz,thr,out){
+  if(!["S","M","L"].includes(sz))return;
+  if((p.pot[t][sz]||0)>0)return;
+  const need=t==="hp"?p.hp<p.maxHp*(thr/100):p.mp<p.maxMp*(thr/100);
+  if(!need)return;
+  const d=POT_DEF[t][sz],n=Math.min(10,Math.floor(p.gold/d.cost));
+  if(n<1)return;
+  p.gold-=d.cost*n;p.pot[t][sz]=(p.pot[t][sz]||0)+n;
+  _lg(out,`🛒 Otomatik satın alma: ${n}× ${d.n} (-${d.cost*n} 🪙)`);
+}
 function bAutoStep(B,p,rng){
   const out=[];
   const cfg=p.autoCfg||{hp:"S",mp:"S",hpThr:40,mpThr:25,skills:[1,1,1,1]};
   const skOn=Array.isArray(cfg.skills)?cfg.skills:[1,1,1,1];
+  if(cfg.buy){autoBuyOf(p,"hp",cfg.hp,cfg.hpThr,out);autoBuyOf(p,"mp",cfg.mp,cfg.mpThr,out)}
   if(p.hp<p.maxHp*(cfg.hpThr/100)){
     const hSz=pickBestAvailPotOf(p,"hp",cfg.hp);
     if(hSz){const o=bPot(p,"hp",hSz,true);out.push(...o);if(o.ok)return{out,kind:"pot"}}
@@ -236,7 +248,7 @@ function dropItem(p,m,fg,rng){
   const out=[];
   if(p.inv.length>=50){_lg(out,"⚠️ Çanta dolu, eşya kayboldu!");return out}
   const ks=Object.keys(CL),rc=rng.R(1)<.6?p.cls:ks[rng.RI(0,4)],si=rng.RI(0,7),sl=SL[si],r=RG[m.ri];let g=1,x=rng.R(100);
-  if(m.el)g=x<=.7?5:x<=9?4:x<=32?3:x<=65?2:1;else g=x<=.4?5:x<=5?4:x<=18?3:x<=45?2:1;
+  if(m.el)g=x<=.5?5:x<=4?4:x<=22?3:x<=60?2:1;else g=x<=.4?5:x<=5?4:x<=18?3:x<=45?2:1;
   if(fg)g=Math.max(g,fg);
   const ac=(()=>{const y=rng.R(100);return y<=1?4:y<=5?3:y<=13?2:y<=28?1:0})(),P0=[["atk","Saldırı Gücü"],["def","Zırh Direnci"],["crit","Kritik Vuruş"]],af=[];
   for(let n=0;n<ac;n++){const q=P0[rng.RI(0,2)];af.push({t:q[0],n:q[1],v:rng.RI(1,10),l:false})}
@@ -274,7 +286,7 @@ function bWin(B,p,rng){
   if(rng.R(1)<.16){const t=rng.R(1)<.5?"hp":"mp",r=rng.R(100),sz=r<65?"S":r<92?"M":"L",d=POT_DEF[t][sz];p.pot[t][sz]=(p.pot[t][sz]||0)+1;_lg(out,`${d.e} 1× <b style=color:${G[d.g].c}>${d.n}</b> buldun`)}
   matDropOf(p,m,rng,out);
   if(B.tw){out.push({ev:["tower",B.tw]});p.tw=Math.max(p.tw,B.tw);if(B.tw%5==0){p.ch++;_lg(out,"🎁 Kat ödülü: sandık!")}}
-  if(m.el||rng.R(100)<12)out.push(...dropItem(p,m,0,rng));
+  if(m.el?rng.R(100)<15:rng.R(100)<12)out.push(...dropItem(p,m,0,rng));
   syncP(p);
   return out;
 }
@@ -376,7 +388,7 @@ function killQ(p,k){
   QS.forEach(q=>{if(q.ri<0||(q.ri==k.ri&&q.mi==k.mi)){const s=qpOf(p,q);if(s.p<q.n)s.p++}});
 }
 /* savaş/işlem çıktısındaki olayları görev ilerlemesine işle */
-function questOut(p,out){for(const e of out||[]){if(e.ev)evQ(p,e.ev[0],e.ev[1]);else if(e.kill)killQ(p,e.kill)}}
+function questOut(p,out){for(const e of out||[]){if(e.ev&&e.ev[0]==="dmg"&&p.st&&Number.isFinite(e.ev[1]))p.st.mh=Math.max(p.st.mh|0,Math.min(2e9,Math.floor(e.ev[1])));if(e.ev)evQ(p,e.ev[0],e.ev[1]);else if(e.kill)killQ(p,e.kill)}}
 function rollDaily(p,rng,t){
   if(!p.dl||typeof p.dl!=="object"||Array.isArray(p.dl))p.dl={d:"",s:0,c:0,q:[]};
   const d=p.dl;if(d.d==t)return false;
@@ -454,14 +466,15 @@ function ecoDo(p,body,rng,t,now){
     out.push({toast:"Satıldı: +"+(STK_SELL[k]*c)+" 🪙"});out.ok=true;return out;
   }
   if(a==="buy"){
-    const tt=body.t;let cost;
+    const tt=body.t,n=body.n===undefined?1:body.n;let cost;
+    if(!Number.isInteger(n)||n<1||n>999)return _bad(out,"Geçersiz adet");
     if(tt==="sc")cost=150;
     else if((tt==="hp"||tt==="mp")&&["S","M","L"].includes(body.sz))cost=POT_DEF[tt][body.sz].cost;
     else return _bad(out,"Geçersiz istek");
-    if(p.gold<cost)return _bad(out,"Yetersiz altın");
-    p.gold-=cost;
-    if(tt==="sc")p.sc++;else p.pot[tt][body.sz]=(p.pot[tt][body.sz]||0)+1;
-    out.push({snd:"pot"});out.push({toast:"Satın alındı"});out.ok=true;return out;
+    if(p.gold<cost*n)return _bad(out,"Yetersiz altın");
+    p.gold-=cost*n;
+    if(tt==="sc")p.sc+=n;else p.pot[tt][body.sz]=(p.pot[tt][body.sz]||0)+n;
+    out.push({snd:"pot"});out.push({toast:"Satın alındı: "+n+" adet (-"+(cost*n)+" 🪙)"});out.ok=true;return out;
   }
   if(a==="claim"){
     const kd=body.kind;

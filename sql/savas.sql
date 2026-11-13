@@ -198,7 +198,8 @@ begin
     return 'ilerleme degistirilemez (seviye/tecrube)'; end if;
   if public.kz_n(ns,'tw') <> public.kz_n(os,'tw') then return 'ilerleme degistirilemez (kule)'; end if;
   if public.kz_n(ns->'st','k') <> public.kz_n(os->'st','k') or public.kz_n(ns->'st','e') <> public.kz_n(os->'st','e')
-     or public.kz_n(ns->'st','l') <> public.kz_n(os->'st','l') then
+     or public.kz_n(ns->'st','l') <> public.kz_n(os->'st','l')
+     or public.kz_n(ns->'st','mh') <> public.kz_n(os->'st','mh') then
     return 'ilerleme degistirilemez (sayaclar)'; end if;
   if coalesce(ns->'boss','{}'::jsonb) <> coalesce(os->'boss','{}'::jsonb) then
     return 'ilerleme degistirilemez (boss)'; end if;

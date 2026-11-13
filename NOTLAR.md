@@ -111,3 +111,11 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 - Koruma parşömeni seçimli (demirci panelinde kutucuk, varsayılan kapalı; sunucuya prot:true gider).
 - Yetenek sıfırlama (seviye×30 altın), SP geri verilir.
 - Edge Function yeniden yüklenmeli (engine.js değişti).
+
+## 1.9.0 (Paket C)
+- Elit: eşya düşme şansı %15, daha düşük kalite dağılımı.
+- Sıralamada "Hasar" sekmesi (en yüksek tek vuruş), oyuncu arama, ilk 100 oyuncu, tıklayınca profil.
+- İksir alırken miktar seçimi (1/5/10/25/50 veya yaz).
+- "Çantadaki en iyileri kuşan" düğmesi.
+- Otomatik savaşta otomatik iksir alma (ayarlardan aç/kapa).
+- Çalıştırma sırası: Edge Function yeniden dağıt (battle-index.ts), SQL: savas.sql sonra liderlik.sql, dosyaları GitHub'a yükle.
