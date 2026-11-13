@@ -523,6 +523,115 @@ function normPotOf(p){
   if(!p.mat||typeof p.mat!=="object")p.mat={};
 }
 
-const KZ={healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
+/* ---- Paket D: banka, pazar, takas. Saf mantık: d = {bank,row,mcnt,tcnt,to_uid,uid}; dönüş {ok,msg,act} ya da {ok:false,msg} ---- */
+const MK_MINLV=5,MK_MAXP=1e8,MK_INV=50,MK_BANKN=100;
+function mkDo(p,body,d,now){
+  const a=body.a,bad=m=>({ok:false,msg:m});
+  const I=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
+  const idxs=(arr,len,mx)=>{
+    if(!Array.isArray(arr)||arr.length>mx)return null;
+    const u=[...new Set(arr)];
+    if(u.length!==arr.length||u.some(x=>!I(x,0,len-1)))return null;
+    return u;
+  };
+  const isEq=i=>i&&typeof i==="object"&&typeof i.slot==="string"&&typeof i.name==="string";
+  const room=n=>p.inv.length+n<=MK_INV;
+  const takeInv=ix=>{const out=ix.map(k=>p.inv[k]);[...ix].sort((x,y)=>y-x).forEach(k=>p.inv.splice(k,1));return out};
+  const bank=d.bank||{gold:0,items:[],ver:0},row=d.row||null;
+  const mine=row&&(row.seller===d.uid||row.from_uid===d.uid);
+  if(a==="bdep"){
+    const g=body.g===undefined?0:body.g,ix=idxs(body.ii||[],p.inv.length,25);
+    if(!ix||!I(g,0,2e9)||(!ix.length&&!g))return bad("Geçersiz istek");
+    if(ix.some(k=>!isEq(p.inv[k])))return bad("Yalnızca ekipman bankaya konur");
+    if(g>p.gold)return bad("Yetersiz altın");
+    if(bank.items.length+ix.length>MK_BANKN)return bad("Banka dolu (en çok "+MK_BANKN+" eşya)");
+    const its=takeInv(ix);p.gold-=g;
+    return{ok:true,msg:"🏦 Bankaya konuldu"+(its.length?": "+its.length+" eşya":"")+(g?" "+g+" 🪙":""),act:{t:"bank",ver:bank.ver,gold:bank.gold+g,items:bank.items.concat(its)}};
+  }
+  if(a==="bwd"){
+    const g=body.g===undefined?0:body.g,ix=idxs(body.bi||[],bank.items.length,25);
+    if(!ix||!I(g,0,2e9)||(!ix.length&&!g))return bad("Geçersiz istek");
+    if(g>bank.gold)return bad("Bankada o kadar altın yok");
+    if(!room(ix.length))return bad("Çantada yer yok");
+    const out=ix.map(k=>bank.items[k]),rest=bank.items.filter((_,k)=>!ix.includes(k));
+    out.forEach(i=>p.inv.push(i));p.gold+=g;
+    return{ok:true,msg:"🏦 Bankadan alındı"+(out.length?": "+out.length+" eşya":"")+(g?" "+g+" 🪙":""),act:{t:"bank",ver:bank.ver,gold:bank.gold-g,items:rest}};
+  }
+  if(["msell","mbuy","tsend","tacc"].includes(a)&&p.lv<MK_MINLV)return bad("Pazar ve takas için seviye "+MK_MINLV+" gerekir");
+  if(a==="msell"){
+    if(!I(body.i,0,p.inv.length-1)||!I(body.price,1,MK_MAXP))return bad("Geçersiz istek");
+    const it=p.inv[body.i];if(!isEq(it))return bad("Yalnızca ekipman satılır");
+    if((d.mcnt|0)>=10)return bad("En çok 10 tezgâh (süresi dolanları ya da satılanları topla)");
+    p.inv.splice(body.i,1);
+    return{ok:true,msg:"🏪 Tezgâha kondu: "+it.name+" ("+body.price+" 🪙, 24 saat açık)",act:{t:"msell",item:it,price:body.price,name:p.name}};
+  }
+  if(a==="mbuy"){
+    if(!row||body.k!=="m"||!row.live||row.seller===d.uid)return bad("Bu ilan artık yok ya da satıldı");
+    if(p.gold<row.price)return bad("Yetersiz altın");
+    if(!room(1))return bad("Çanta dolu");
+    p.gold-=row.price;p.inv.push(row.item);
+    return{ok:true,msg:"🛒 Satın alındı: "+row.item.name,act:{t:"mbuy",id:String(row.id),price:row.price,name:p.name}};
+  }
+  if(a==="mcancel"){
+    if(!row||body.k!=="m"||!mine||!row.live)return bad("İlan bulunamadı");
+    if(!room(1))return bad("Çanta dolu");
+    p.inv.push(row.item);
+    return{ok:true,msg:"Tezgâh kapatıldı, eşya çantana döndü",act:{t:"mcancel",id:String(row.id)}};
+  }
+  if(a==="mclaim"){
+    if(!row||body.k!=="m"||!mine)return bad("İlan bulunamadı");
+    if(row.status==="sold"){p.gold+=row.proceeds;return{ok:true,msg:"💰 Satış geliri alındı: "+row.proceeds+" 🪙 (%5 vergi kesildi)",act:{t:"mclaim",id:String(row.id),st:"sold"}}}
+    if(row.status==="open"&&!row.live){
+      if(!room(1))return bad("Çanta dolu");
+      p.inv.push(row.item);
+      return{ok:true,msg:"Süresi dolan eşya çantana alındı",act:{t:"mclaim",id:String(row.id),st:"expired"}};
+    }
+    return bad("Bu ilan hâlâ tezgâhta");
+  }
+  if(a==="tsend"){
+    const ix=idxs(body.ii||[],p.inv.length,10),g=body.g===undefined?0:body.g,w=body.want===undefined?0:body.want;
+    const wn=body.wn===undefined?0:body.wn,ws=body.ws===undefined?"":body.ws;
+    if(!ix||!I(g,0,2e9)||!I(w,0,1e9)||!I(wn,0,5)||(ws!==""&&!SL.includes(ws))||(!ix.length&&!g)||typeof body.to!=="string"||!body.to.trim())return bad("Geçersiz istek");
+    if(!d.to_uid)return bad("Bu adda bir oyuncu bulunamadı");
+    if(d.to_uid===d.uid)return bad("Kendine teklif gönderemezsin");
+    if((d.tcnt|0)>=5)return bad("En çok 5 açık teklifin olabilir");
+    if(ix.some(k=>!isEq(p.inv[k])))return bad("Yalnızca ekipman gönderilir");
+    if(g>p.gold)return bad("Yetersiz altın");
+    const its=takeInv(ix);p.gold-=g;
+    return{ok:true,msg:"🤝 Teklif gönderildi (24 saat geçerli)",act:{t:"tsend",to:body.to.trim().slice(0,14),to_uid:d.to_uid,name:p.name,items:its,gold:g,want:w,want_n:wn,want_slot:wn?ws:""}};
+  }
+  if(a==="tacc"){
+    if(!row||body.k!=="t"||row.to_uid!==d.uid||!row.live)return bad("Teklif artık geçerli değil");
+    if(p.gold<row.want)return bad("Yetersiz altın");
+    const wn=row.want_n|0,ix=idxs(body.ii||[],p.inv.length,5);
+    if(!ix||ix.length!==wn)return bad(wn?"Karşılığında tam "+wn+" eşya seçmelisin":"Geçersiz istek");
+    if(ix.some(k=>!isEq(p.inv[k])||(row.want_slot&&p.inv[k].slot!==row.want_slot)))return bad(row.want_slot?"İstenen bölme: "+(SN[row.want_slot]||row.want_slot):"Yalnızca ekipman verilir");
+    if(p.inv.length-wn+row.items.length>MK_INV)return bad("Çantada yer yok");
+    const ret=takeInv(ix);
+    p.gold=p.gold-row.want+row.gold;row.items.forEach(i=>p.inv.push(i));
+    return{ok:true,msg:"🤝 Takas tamam: "+row.items.length+" eşya"+(row.gold?" + "+row.gold+" 🪙":"")+" aldın",act:{t:"tacc",id:String(row.id),want:row.want,ret}};
+  }
+  if(a==="tdec"){
+    if(!row||body.k!=="t"||row.to_uid!==d.uid||!row.live)return bad("Teklif artık geçerli değil");
+    return{ok:true,msg:"Teklif reddedildi",act:{t:"tdec",id:String(row.id)}};
+  }
+  if(a==="tcancel"||a==="tclaim"){
+    if(!row||body.k!=="t"||row.from_uid!==d.uid)return bad("Teklif bulunamadı");
+    let st;
+    if(a==="tcancel"){if(!row.live)return bad("Teklif bulunamadı");st="open"}
+    else st=row.status==="done"?"done":row.status==="back"?"back":!row.live?"expired":"";
+    if(!st)return bad("Teklif hâlâ açık");
+    if(st==="done"){
+      const ri=row.ret_items||[];if(!room(ri.length))return bad("Çantada yer yok");
+      p.gold+=row.want;ri.forEach(i=>p.inv.push(i));
+      return{ok:true,msg:"💰 Takas tamam: "+row.want+" 🪙"+(ri.length?" + "+ri.length+" eşya":"")+" aldın",act:{t:"tclaim",id:String(row.id),st}};
+    }
+    if(!room(row.items.length))return bad("Çantada yer yok");
+    row.items.forEach(i=>p.inv.push(i));p.gold+=row.gold;
+    return{ok:true,msg:"Teklifteki eşya ve altın geri alındı",act:a==="tcancel"?{t:"tcancel",id:String(row.id)}:{t:"tclaim",id:String(row.id),st}};
+  }
+  return bad("Geçersiz istek");
+}
+const KZ={mkDo,MK_MINLV,healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
 (typeof globalThis!=="undefined"?globalThis:window).KZ=KZ;
 if(typeof module!=="undefined"&&module.exports)module.exports=KZ;

@@ -119,3 +119,11 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 - "Çantadaki en iyileri kuşan" düğmesi.
 - Otomatik savaşta otomatik iksir alma (ayarlardan aç/kapa).
 - Çalıştırma sırası: Edge Function yeniden dağıt (battle-index.ts), SQL: savas.sql sonra liderlik.sql, dosyaları GitHub'a yükle.
+
+## 2.0.0 (Paket D)
+- Banka (Şehir → Banka): hesap başına ortak kasa, 100 ekipman + altın.
+- Pazar: 24 saat açık tezgâh, %5 vergi, süresi dolanlar iade listesine düşer, sahibi çevrimdışı olsa da satış sürer.
+- Takas: oyuncuya adıyla teklif (eşya/altın verip altın ve/veya eşya isteme, en çok 5 eşya), emanet sistemi, 24 saat.
+- Hepsi sunucuda tek işlemde yapılır (kz_m_put): eşya kopyalanamaz. Pazar ve takas için seviye 5 gerekir.
+- Yeni dosyalar: pazar.js, sql/pazar.sql. Çalıştırma: Edge Function yeniden dağıt, SQL'de sql/pazar.sql (savas.sql ve liderlik.sql zaten çalışmış olmalı), dosyaları GitHub'a yükle (pazar.js dahil!).
+- Wiki güncellendi (Banka, Pazar, Takas, elit ödülü, sıralama, pratik araçlar).

@@ -1,4 +1,4 @@
-const GAME_VERSION="1.9.0";
+const GAME_VERSION="2.0.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -785,8 +785,11 @@ let citySub="shop"; // "shop" | "alch"
 function setCitySub(s){citySub=s;armed="";view()}
 function cCity(v){
 const subNav=`<div class="sub-tabs">
-  <button class="sub-tab ${citySub=="shop"?"act":""}" onclick="setCitySub('shop')">🏪 Tüccar Maren</button>
-  <button class="sub-tab ${citySub=="alch"?"act":""}" onclick="setCitySub('alch')">⛲ Pınar & Simyacı</button>
+  <button class="sub-tab ${citySub=="shop"?"act":""}" onclick="setCitySub('shop')">🏪 Tüccar</button>
+  <button class="sub-tab ${citySub=="alch"?"act":""}" onclick="setCitySub('alch')">⛲ Pınar</button>
+  <button class="sub-tab ${citySub=="bank"?"act":""}" onclick="setCitySub('bank')">🏦 Banka</button>
+  <button class="sub-tab ${citySub=="market"?"act":""}" onclick="setCitySub('market')">🛒 Pazar</button>
+  <button class="sub-tab ${citySub=="trade"?"act":""}" onclick="setCitySub('trade')">🤝 Takas</button>
 </div>`;
 const alchHtml=`
   <div class="cd" style="background:linear-gradient(135deg,#12305a66,var(--pn))">
@@ -811,6 +814,7 @@ const alchHtml=`
       <button class="btn v" style="width:auto;padding:7px 12px;font-size:11px" ${P.gold>=150*BUYQ?"":"disabled"} onclick="buy('sc',150)">${150*BUYQ} 🪙</button>
     </div>
   </div>`;
+if(typeof mkOpen==="function"&&["bank","market","trade"].includes(citySub)){v.innerHTML=subNav+'<div id="mk-box"></div>';mkOpen(citySub);return}
 v.innerHTML=subNav+(citySub=="shop"?shopHTML():alchHtml);
 }
 async function claim(id){const r=await ecoCall({op:"eco",a:"claim",kind:"q",id});if(r){hud();view()}}
@@ -1389,7 +1393,7 @@ function cWiki(v){
         <div class="ct">1. Karakter Yuvaları ve Temel Sistemler</div>
         <ul class="wk-list">
           <li><b>Çoklu Karakter Yuvası (5 Yuva):</b> Giriş ekranında <b>5 ayrı karakter yuvası</b> bulunur. Sınıflara dokunulduğunda çizim üzerinde bilgi açılır; boş yuvalara dokunularak yeni kahraman oluşturulur.</li>
-          <li><b>Pratik Alt Sekme Arayüzü:</b> <i>Karakter</i> (Donanım, Gelişim, Unvan, Kayıt), <i>Harita</i> (Kule + B1–B5 Bölge Sekmeleri), <i>Şehir</i> (Tüccar / Pınar & Simyacı) ve <i>Görev</i> (Günlük, Bölge, Meydan Okuma) ekranları aşağı kaydırma gerektirmeyen alt menülerle ayrılmıştır.</li>
+          <li><b>Pratik Alt Sekme Arayüzü:</b> <i>Karakter</i> (Donanım, Gelişim, Unvan, Kayıt), <i>Harita</i> (Kule + B1–B5 Bölge Sekmeleri), <i>Şehir</i> (Tüccar / Pınar & Simyacı / Banka / Pazar / Takas) ve <i>Görev</i> (Günlük, Bölge, Meydan Okuma) ekranları aşağı kaydırma gerektirmeyen alt menülerle ayrılmıştır.</li>
           <li><b>5×5 Sırt Çantası, Yığınlama (Stack) ve Sıralama:</b> Çanta aynı anda <b>5×5 (25 yuva)</b> gösterir, fazlası aşağı kaydırılır. <i>İksirler, Hazine Sandıkları, Koruma Parşömenleri, Şifalı Ot/Özler ve Artı Basma Malzemeleri</i> tek yuvada yığınlanır ve 50 ekipman kapasitesini doldurmaz. Üstteki sıralama menüsüyle ekipmanlar <b>Nadirlik, Güç, Seviye, Yuva</b> veya <b>İsme</b> göre dizilebilir.</li>
           <li><b>Kayıt Yedeği (Dışa / İçe Aktar):</b> <i>Karakter → Kayıt</i> alt sekmesindeki yedekleme alanından karakter verisi Base64 koduna dönüştürülerek dışa aktarılabilir ve farklı cihazlara yüklenebilir.</li>
           <li><b>Maksimum Seviye ve Seviye Başına Büyüme:</b> Seviye sınırı <b>50</b>'dir. Nitelik puanı dağıtılmasa bile her seviye atlandığında sınıfa göre doğal olarak <b>+44–50 Maks. Can (HP)</b> ve <b>+21–24 Maks. Mana (MP)</b> artışı sağlanır; ayrıca <b>+2 Yetenek Puanı (SP)</b> ve <b>+3 Nitelik Puanı (AP)</b> kazanılarak Can ve Mana tamamen yenilenir.</li>
@@ -1531,7 +1535,13 @@ function cWiki(v){
 • <b>Mana İksirleri:</b> Küçük (+60 MP · 8 🪙) · Orta (+180 MP · 20 🪙) · Büyük (+400 MP · 50 🪙)<br>
 • <b>Koruma Parşömeni:</b> 150 🪙 (+6 ve üzeri yükseltmeleri korur).</li>
           <li><b>🗼 Sonsuz Kule:</b> Her katta düşmanlar <b>+%7</b> güçlenir. Her <b>5 katta bir</b> Kule Muhafızı (Boss) çıkar ve zaferde <b>🎁 Hazine Sandığı</b> verir.</li>
-          <li><b>🎁 Hazine Sandıkları (Tekli & Toplu Açım):</b> Bölge elit bosslarından <b>%50 ihtimalle</b>, Sonsuz Kule'nin her 5. kat bossundan, günlük görevlerden ve 4+ saat çevrimdışı ödülden kazanılır (normal canavarlardan düşmez). Çantada tek yuvada birikir ve toplu açılabilir; içinden <b>%53 Altın</b>, <b>%30 İksir Paketi</b> (2 Can + 2 Mana), <b>%10 Nadir Ekipman (GR-III+)</b> veya <b>%7 Koruma Parşömeni</b> çıkar.</li>
+          <li><b>👑 Elit Boss Ödülü:</b> Elit boss her kesişte eşya vermez; yaklaşık <b>%15 ihtimalle (8 kesişte 1)</b> bir ekipman düşer. Düşen eşyalar çoğunlukla düşük/orta kalitedir, Kadim kalite çok nadirdir. Elit bosslar sandık düşürmez ve Kadim elit artık seviye bonusu almaz.</li>
+          <li><b>🏆 Sıralama:</b> Seviye, Kule, Elit ve <b>Hasar (en yüksek tek vuruş)</b> sekmeleri; ilk 100 oyuncu listelenir, oyuncu adıyla arayıp sırasını bulabilir, bir oyuncuya dokunarak profilini (kuşandığı eşyalar dahil) görebilirsin.</li>
+          <li><b>🛒 Pratik Araçlar:</b> Simyacıda iksiri <b>1/5/10/25/50 veya yazdığın adet</b> kadar toplu alabilirsin. Çantadaki <b>⚡ en iyileri kuşan</b> tuşu her slotta seviyene uygun en güçlü eşyayı giydirir. Oto savaş ayarındaki <b>otomatik iksir alma</b> seçeneği iksirin bitince altınla yenisini alır. Şifacı'nın şifa yeteneği sabit bir can verir ve seviyeyle artar.</li>
+          <li><b>🏦 Banka:</b> Şehir → Banka. Tüm karakterlerin ortak kasasıdır: en çok <b>100 ekipman</b> ve sınırsız altın saklar. Eşya ve altını istediğin zaman yatırıp çekebilirsin; bu sayede eşyaları kendi karakterlerin arasında taşıyabilirsin.</li>
+          <li><b>🛒 Pazar (Tezgâh):</b> Seviye 5'ten itibaren ekipmanını fiyat belirleyip tezgâha koyarsın (en çok 10 tezgâh). Tezgâh <b>24 saat</b> açık kalır; sen çevrimdışı olsan da satış sürer. Satış gelirinden <b>%5 vergi</b> kesilir. Satılanların parasını <i>Tezgâhım → Satılanlar</i> bölümünden toplarsın. 24 saatte satılmayan eşya otomatik kapanır ve <b>⚠️ Süresi dolanlar</b> listesine düşer; oradan çantana alırsın. Süresi dolmadan tezgâhı istediğin an kapatabilirsin.</li>
+          <li><b>🤝 Takas:</b> Bir oyuncuya karakter adıyla teklif gönderirsin: sen eşya ve/veya altın verirsin, karşılığında altın ve/ya en çok 5 eşya (istersen belirli bir bölme) istersin. Karşı taraf eşyayı kendi çantasından seçip verir. Teklif 24 saat geçerlidir (en çok 5 açık teklif); verdiklerin teklif süresince emanette durur. Kabul edilirse ödemeyi <i>Gönderdiklerim</i> bölümünden toplarsın; reddedilir ya da süresi dolarsa eşyanı geri alırsın.</li>
+          <li><b>🎁 Hazine Sandıkları (Tekli & Toplu Açım):</b> Sonsuz Kule'nin her 5. kat bossundan, günlük görevlerden ve 4+ saat çevrimdışı ödülden kazanılır (normal canavarlardan ve elit bosslardan düşmez). Çantada tek yuvada birikir ve toplu açılabilir; içinden <b>%53 Altın</b>, <b>%30 İksir Paketi</b> (2 Can + 2 Mana), <b>%10 Nadir Ekipman (GR-III+)</b> veya <b>%7 Koruma Parşömeni</b> çıkar.</li>
         </ul>
       </div>
       <div class="cd">
