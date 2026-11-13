@@ -1,4 +1,4 @@
-const GAME_VERSION="2.3.0";
+const GAME_VERSION="2.4.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -493,10 +493,11 @@ function toast(m){const e=document.createElement("div");e.className="t";e.innerT
 
 /* ---------- GÖRSELLER (SVG) ---------- */
 function banner(h){return`<svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="b${h}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="hsl(${h},50%,24%)"/><stop offset="1" stop-color="hsl(${h},40%,8%)"/></linearGradient></defs><rect width="400" height="120" fill="url(#b${h})"/><circle cx="325" cy="30" r="15" fill="hsl(${h},70%,82%)" opacity=".85"/><path d="M0 120V70L60 36 110 74 170 28 240 78 300 44 400 82V120Z" fill="hsl(${h},35%,13%)"/><path d="M0 120V92L80 66 150 94 230 68 320 96 400 74V120Z" fill="hsl(${h},30%,6%)"/></svg>`}
-function mobSVG(m){const h=RG[m.ri].h,i=m.mi,id="g"+m.id,e=m.el,c1=`hsl(${h+i*14},45%,${30+i*4}%)`,c2=`hsl(${h+i*14},55%,13%)`,ey=e?"#ffd166":"#ff5d5d";
+function mobSVGold(m){const h=RG[m.ri].h,i=m.mi,id="g"+m.id,e=m.el,c1=`hsl(${h+i*14},45%,${30+i*4}%)`,c2=`hsl(${h+i*14},55%,13%)`,ey=e?"#ffd166":"#ff5d5d";
 const hr=i%2?`<path d="M26 30L14 6 38 24ZM74 30L86 6 62 24Z" fill="#e8dcc0"/>`:`<path d="M20 42L4 28 26 30ZM80 42L96 28 74 30Z" fill="${c1}"/>`;
 const sp=i>1?`<path d="M30 80L36 95 44 83 50 97 56 83 64 95 70 80Z" fill="${c2}"/>`:"";
-return`<svg viewBox="0 0 100 100"><defs><radialGradient id="${id}" cx="50%" cy="35%"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></radialGradient></defs>${e?`<circle cx="50" cy="54" r="46" fill="none" stroke="#e6b450" stroke-width="1.5" stroke-dasharray="3 4" opacity=".8"/>`:""}${hr}${sp}<ellipse cx="50" cy="56" rx="33" ry="31" fill="url(#${id})" stroke="#000" stroke-opacity=".5"/><path d="M29 50Q38 41 47 52L34 57ZM71 50Q62 41 53 52L66 57Z" fill="${ey}"/><path d="M33 72Q50 84 67 72L62 70 58 77 50 71 42 77 38 70Z" fill="#0b0a10"/><path d="M40 73L42 77 44 73ZM56 73L58 77 60 73Z" fill="#fff"/>${e?`<path d="M34 24L40 12 46 22 50 8 54 22 60 12 66 24Z" fill="#e6b450"/>`:""}</svg>`}
+return`<svg viewBox="0 0 100 100"><defs><radialGradient id="${id}" cx="50%" cy="35%"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></radialGradient></defs>${e?`<circle cx="50" cy="54" r="46" fill="none" stroke="#e6b450" stroke-width="1.5" stroke-dasharray="3 4" opacity=".8"/>`:""}${hr}${sp}<ellipse cx="50" cy="56" rx="33" ry="31" fill="url(#${id})" stroke="#000" stroke-opacity=".5"/><path d="M29 50Q38 41 47 52L34 57ZM71 50Q62 41 53 52L66 57Z" fill="${ey}"/><path d="M33 72Q50 84 67 72L62 70 58 77 50 71 42 77 38 70Z" fill="#0d0908"/><path d="M40 73L42 77 44 73ZM56 73L58 77 60 73Z" fill="#fff"/>${e?`<path d="M34 24L40 12 46 22 50 8 54 22 60 12 66 24Z" fill="#e6b450"/>`:""}</svg>`}
+function mobSVG(m){const b=MONS[m.ri+"_"+m.mi];if(!b)return mobSVGold(m);return`<svg viewBox="0 0 200 200">${m.el?`<circle cx="100" cy="104" r="95" fill="none" stroke="#e8b04a" stroke-width="2" stroke-dasharray="4 6" opacity=".85"/>`:""}${b}</svg>`}
 const IC={weapon:"M14.5 2.5l7 7-8.5 8.5-7-7zM9.5 16l3.5 3.5-7 2.5z",offhand:"M12 2L4 5v6c0 5 3.4 9.8 8 11 4.6-1.2 8-6 8-11V5z",helm:"M12 3a9 9 0 00-9 9v3h18v-3a9 9 0 00-9-9z",chest:"M12 2L8 5H4v7l3 2v6h10v-6l3-2V5h-4z",pants:"M6 2l1 18 4-2 1 4 1-4 4 2 1-18z",boots:"M4 3v13l4 3 6-1 2 3h4v-7l-5-2V3z",necklace:"M12 2a7 7 0 00-7 7c0 4 7 11 7 11s7-7 7-11a7 7 0 00-7-7z",ring:"M12 2a8 8 0 100 16 8 8 0 000-16zm0 12a4 4 0 110-8 4 4 0 010 8z"};
 const ico=s=>`<svg viewBox="0 0 24 24"><path d="${IC[s]}"/></svg>`;
 
@@ -1370,13 +1371,13 @@ TIERS.filter(t=>t==1).forEach(t=>cs.forEach(c=>o.push(tierItem(c,si,t))));return
 function shopHTML(){
 const n=SL.filter(k=>P.eq[k]).length,junkN=P.inv.filter(junk).length,cap=shopCap();
 const line=!P.eq.weapon?"Silahsız mı geziyorsun evlat? Tezgâha bir göz at, ilk parçayı hemen kuşanırsın.":P.inv.length>=45?"Çantan dolmuş! Fazlalıkları bana sat, yer aç.":n<8?"Eksik parçaların var. İyi ekipman, uzun ömür demek.":"Hepsi üstünde, aferin. Mallarım hiç değişmez, güvenebilirsin.";
-const tabs=SL.map(k=>`<button class="sub-tab ${shopSlot==k?"act":""}" style="padding:5px 7px;font-size:10.5px" onclick="setShopSlot('${k}')">${SN[k]}</button>`).join("");
+const tabs=SL.map(k=>`<button class="sub-tab ${shopSlot==k?"act":""}" style="padding:7px 2px;font-size:10.5px" onclick="setShopSlot('${k}')">${SN[k]}</button>`).join("");
 const rows=shopList().map(i=>{const c=price(i),cur=P.eq[i.slot];const bt=i.rc==P.cls&&effLv(i)<=P.lv&&pw(i)>(cur?pw(cur):0);
 const wl=i.slot=="weapon"?`<div class="mu" style="font-size:9.5px;color:#fbbf24">⚔️ ${wLine(i)}</div>`:"";
 return`<div class="q" style="padding:5px 8px;margin-bottom:4px"><div style="flex:1"><b style="color:${G[i.g].c};font-size:11px">${i.name}</b>${bt?' <span style="color:#4ade80;font-weight:900">▲</span>':""}<div class="mu" style="font-size:9.5px">${shopAll?CL[i.rc].n+" · ":""}Güç ${pw(i)} · Lv.${i.rl}</div>${wl}</div><button class="btn" style="padding:5px 9px;font-size:10.5px" ${P.gold>=c?"":"disabled"} onclick="buyShop('${i.rc}',${SL.indexOf(i.slot)},${i.rl})">${c} 🪙</button></div>`}).join("");
 return`<div class="cd" style="background:linear-gradient(135deg,#5a2e1033,var(--pn))"><div class="ct"><span>🏪 Tüccar Maren</span><span class="mu" style="font-size:10px">Sabit tezgâh · Lv.1 eşyalar</span></div>
 <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px"><div class="em" style="width:46px;height:46px;font-size:24px;flex-shrink:0">🧔</div><div class="q" style="margin:0;flex:1;font-style:italic">“${line}”</div></div>
-<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${tabs}</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px">${tabs}</div>
 <div class="pr" style="margin:0 0 8px"><button style="${shopAll?"":"border-color:var(--gold);color:var(--gold)"}" onclick="setShopAll(false)">${CL[P.cls].e} Sınıfım</button><button style="${shopAll?"border-color:var(--gold);color:var(--gold)":""}" onclick="setShopAll(true)">Tüm sınıflar</button></div>
 ${rows}
 <p class="mu" style="font-size:10px;text-align:center;margin:6px 0">Üst seviye eşyalar yalnızca savaşta düşer.</p>
@@ -1606,6 +1607,7 @@ function cWiki(v){
       <div class="cd">
         <div class="ct">6. Şehir, Sonsuz Kule ve Sandıklar</div>
         <ul class="wk-list">
+          <li><b>🎨 Kor Teması ve Çizimler:</b> Oyunun görünümü kızıl-altın <i>Kor</i> temasına geçti. Emojilerin yerine özgün çizim ikonlar, 20 canavarın her biri için ise kendi çizimi geldi. Kule canavarları bağlı oldukları bölge canavarının çizimini kullanır.</li>
           <li><b>🏪 Tüccar Maren:</b> Tezgâhı <b>sabittir</b>, yenilenmez. Tüm sınıfların GR-I eşyalarını <b>kategori sekmeleriyle</b> (Silah, Sol El, Kask, Zırh, Pantolon, Çizme, Kolye, Yüzük) satar. Varsayılan olarak kendi sınıfının eşyaları görünür; <i>Tüm sınıflar</i> ile hepsini görebilirsin. Yalnızca <b>Lv 1</b> eşyalar satılır; üst seviye eşyalar savaşta düşer. Silahların hasar aralığı ve hızı satırında görünür.</li>
           <li><b>⛲ Yaşam Pınarı & 🧪 Simyacı (İksir Boyutları):</b> Pınar Can ve Manayı doldurur (seviyene göre altın ister: 20 + 8×seviye). İksirler 3 boyuttadır; boyut büyüdükçe etkisi ve fiyatı artar, yaratıklardan düşme şansı azalır (Düşme dağılımı: <b>%65 Küçük, %27 Orta, %8 Büyük</b>):<br>
 • <b>Can İksirleri:</b> Küçük (+150 HP · 10 🪙) · Orta (+400 HP · 25 🪙) · Büyük (+900 HP · 60 🪙)<br>
