@@ -327,9 +327,9 @@ function bWin(B,p,rng){
   return out;
 }
 
-/* Yenilgi: altının %10'u gider, can %30 */
+/* Yenilgi: altın kaybı yok (2.4.1), can %30 */
 function bLose(p){
-  const l=Math.floor(p.gold*.1);p.gold-=l;p.st.dm++;p.stk=0;p.hp=Math.max(1,Math.floor(p.maxHp*.3));syncP(p);
+  const l=0;p.st.dm++;p.stk=0;p.hp=Math.max(1,Math.floor(p.maxHp*.3));syncP(p);
   return{lost:l};
 }
 
