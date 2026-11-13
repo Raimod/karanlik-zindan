@@ -23,12 +23,20 @@ healer:{n:"Şifacı",e:"✨",h:45,d:"Kutsal ışık, şifa ve koruyucu kubbe.",b
 
 const G={1:{t:"GR-I",n:"Sıradan",m:1,c:"#64748b"},2:{t:"GR-II",n:"İşlenmiş",m:1.15,c:"#22c55e"},3:{t:"GR-III",n:"Usta İşi",m:1.3,c:"#38bdf8"},4:{t:"GR-IV",n:"Kusursuz",m:1.5,c:"#a855f7"},5:{t:"👑 ELİT",n:"Kadim Elit",m:1.75,c:"#e6b450"}};
 const RG=[
-{n:"Çırak Ormanı",req:1,ore:"Çırak",pw:25,h:130,m:[["Yaban Domuzu",2,340,42,10,1,3,18],["Goblin Çırağı",5,750,85,25,2,5,40],["Orman Kurdu",8,1450,155,45,4,8,75],["Haydut Reisi",10,3200,260,75,15,25,220]]},
-{n:"Zehirli Madenler",req:11,ore:"Çelik",pw:70,h:38,m:[["Mağara Akrebi",12,3600,320,110,8,14,280],["Maden Golemi",15,6200,460,190,12,20,420],["Goblin Kazıcı Başı",18,9500,640,240,18,30,620],["Zehirli Kraliçe",20,18000,920,340,40,70,1200]]},
-{n:"Batık Çöl Harabeleri",req:21,ore:"Obsidyen",pw:150,h:28,m:[["Kum Yılanı",22,12000,850,380,22,38,1100],["Lanetli Mumya",25,18500,1150,520,30,50,1600],["Antik Muhafız",28,26000,1520,700,42,70,2400],["Firavun Ruhu",30,48000,2200,980,90,160,4800]]},
-{n:"Donmuş Ruhlar Zirvesi",req:31,ore:"Kristal",pw:280,h:200,m:[["Buzul Kurdu",32,34000,1950,1100,55,90,5200],["Donmuş Ruh",35,52000,2600,1450,75,120,7800],["Buzul Yetisi",38,76000,3500,1900,110,180,11500],["Buz Devi",40,135000,4900,2600,220,380,22000]]},
-{n:"Ejderha Yarığı",req:41,ore:"Ejderha",pw:550,h:4,m:[["Lav Golemi",42,95000,4200,2400,140,240,22000],["Kıyamet İblisi",45,145000,5800,3200,200,350,34000],["Ejderha Muhafızı",48,220000,7800,4400,300,520,52000],["Kadim Kara Ejderha",50,450000,11500,6500,800,1500,120000]]}];
-RG.forEach((r,ri)=>{r.id=ri;r.mobs=r.m.map((a,mi)=>({id:ri+"_"+mi,ri,mi,name:a[0],lv:a[1],hp:a[2],mx:a[2],atk:a[3],def:a[4],g:[a[5],a[6]],xp:a[7],el:mi==3}))});
+{n:"Çırak Ormanı",req:1,ore:"Çırak",pw:25,h:130,x:70,y:520,d:"Valdrenn'in kapısındaki yaşlı orman. Her büyük yolculuk burada başlar.",m:[["Yaban Domuzu",2,340,42,10,1,3,18],["Kuduz Tilki",3,443,53,14,2,5,23],["Dev Örümcek",4,576,67,19,3,5,31],["Goblin Çırağı",5,750,85,25,2,5,40],["Çürük Ağaç Ruhu",7,1164,127,37,4,8,61],["Orman Kurdu",8,1450,155,45,4,8,75],["Ayı Kafalı Haydut",9,1806,189,55,6,10,92],["Haydut Reisi",10,3200,260,75,15,25,220]]},
+{n:"Zehirli Madenler",req:11,ore:"Çelik",pw:70,h:38,x:180,y:495,d:"Eski cücelerin terk ettiği madenler; derinlerde zehir ve çürüme var.",m:[["Mağara Akrebi",12,3600,320,110,8,14,280],["Maden Yarasası",13,4315,361,132,10,17,321],["Zehir Solucanı",14,5172,408,158,12,19,367],["Maden Golemi",15,6200,460,190,12,20,420],["Taş Gargoyl",17,8240,573,222,17,27,545],["Goblin Kazıcı Başı",18,9500,640,240,18,30,620],["Ölü Madenci",19,10952,714,259,22,35,706],["Zehirli Kraliçe",20,18000,920,340,40,70,1200]]},
+{n:"Batık Çöl Harabeleri",req:21,ore:"Obsidyen",pw:150,h:28,x:290,y:455,d:"Kumlar altında kalmış kadim bir krallığın lanetli kalıntıları.",m:[["Kum Yılanı",22,12000,850,380,22,38,1100],["Kum Hortlağı",23,13863,940,422,25,43,1246],["Leş Akbabası",24,16014,1040,468,28,47,1412],["Lanetli Mumya",25,18500,1150,520,30,50,1600],["Kum Golemi",27,23212,1385,634,39,64,2097],["Antik Muhafız",28,26000,1520,700,42,70,2400],["Mezar Soyguncusu",29,29123,1668,773,48,79,2747],["Firavun Ruhu",30,48000,2200,980,90,160,4800]]},
+{n:"Donmuş Ruhlar Zirvesi",req:31,ore:"Kristal",pw:280,h:200,x:225,y:395,d:"Ölenlerin ruhlarının donarak kaldığı, sonsuz kış tepesi.",m:[["Buzul Kurdu",32,34000,1950,1100,55,90,5200],["Kar Baykuşu",33,39173,2146,1206,62,100,5953],["Buz Örümceği",34,45133,2362,1322,69,110,6814],["Donmuş Ruh",35,52000,2600,1450,75,120,7800],["Dondurulmuş Savaşçı",37,66969,3170,1736,98,158,10104],["Buzul Yetisi",38,76000,3500,1900,110,180,11500],["Kış Cadısı",39,86248,3865,2079,126,207,13089],["Buz Devi",40,135000,4900,2600,220,380,22000]]},
+{n:"Ejderha Yarığı",req:41,ore:"Ejderha",pw:550,h:4,x:105,y:375,d:"Dünyayı ikiye yaran, lav ve ejderha yuvalarıyla dolu yarık.",m:[["Lav Golemi",42,95000,4200,2400,140,240,22000],["Magma Böceği",43,109380,4677,2642,159,273,25436],["Ejderha Yavrusu",44,125937,5208,2907,179,310,29408],["Kıyamet İblisi",45,145000,5800,3200,200,350,34000],["Kül Şövalyesi",47,191457,7067,3957,263,457,45133],["Ejderha Muhafızı",48,220000,7800,4400,300,520,52000],["Ejderha Kâhini",49,252798,8610,4893,344,594,59912],["Kadim Kara Ejderha",50,450000,11500,6500,800,1500,120000]]},
+{n:"Çürük Bataklık",req:51,ore:"Zümrüt",pw:900,h:100,x:70,y:315,d:"Sisin içinde yaşayan, zehirli ve çürümüş bir bataklık.",m:[["Bataklık Sülüğü",51,270967,9229,5437,319,637,72082],["Çamur Yengeci",52,291475,9698,5789,341,682,81175],["Kurbağa Şamanı",53,302382,9864,5878,365,729,91407],["Çürük Timsah",54,313505,10031,5967,390,780,102918],["Yırtıcı Sarmaşık",55,357520,11177,6878,418,835,115867],["Bataklık Cadısı",56,383174,11741,7302,447,893,130434],["Sis Hortlağı",56,386824,11741,7302,447,893,131676],["Çürümüş Hidra",57,710507,15505,9259,1386,2772,318570]]},
+{n:"Kemik Vadisi",req:58,ore:"Kemik",pw:1250,h:60,x:170,y:285,d:"Bitmeyen savaşların cesetlerini yutmuş, kemik beyazı bir vadi.",m:[["İskelet Okçu",58,383050,12115,7512,512,1023,154437],["Kemik Köpeği",59,396092,12304,7618,548,1095,173919],["Mezar Bekçisi",60,461950,14025,9028,586,1171,195840],["Hortlak Şövalye",61,477013,14232,9151,627,1253,220503],["Kemik Golemi",62,492701,14425,9274,671,1341,248247],["Ruh Toplayıcı",63,508303,14635,9397,718,1435,279457],["Ölü Rahip",63,513144,14635,9397,718,1435,282119],["Kemik Kral",64,939632,19301,11900,2226,4452,682541]]},
+{n:"Gölge Katedrali",req:65,ore:"Gölge",pw:1650,h:275,x:285,y:255,d:"Gölgelerin ibadet ettiği, çanları kendiliğinden çalan terk edilmiş katedral.",m:[["Gölge Çırağı",65,546697,16251,10671,822,1643,330884],["Vitray Gargoyl",66,563570,16476,10808,879,1758,372625],["Kara Rahibe",67,580708,16704,10944,941,1881,419591],["Fısıltı Hayaleti",68,598109,16932,11081,1006,2012,472430],["Çan Kulesi Bekçisi",69,615820,17161,11217,1077,2153,531874],["Gece Gezgini",70,681553,18648,12449,1152,2304,598742],["Karanlık Şövalye",70,688044,18648,12449,1152,2304,604444],["Gölge Başpiskopos",71,1257419,24560,15749,3575,7149,1462356]]},
+{n:"Fırtına Zirveleri",req:72,ore:"Fırtına",pw:2150,h:215,x:235,y:195,d:"Şimşeklerin hiç dinmediği, bulutların üstündeki zirveler.",m:[["Fırtına Kartalı",72,674159,19120,12748,1319,2638,708925],["Şimşek Elementali",73,693443,19366,12897,1411,2822,798356],["Bulut Devi Çırağı",74,713034,19614,13047,1510,3020,898980],["Rüzgâr Cini",75,783385,21177,14354,1616,3231,1012190],["Yıldırım Boğası",76,804871,21439,14516,1729,3457,1139549],["Gök Gürültüsü Grifonu",77,826609,21702,14679,1850,3699,1282814],["Fırtına Okçusu",77,834481,21702,14679,1850,3699,1295032],["Fırtına Efendisi",78,1521349,28558,18552,5740,11479,3133121]]},
+{n:"Cehennem Dişleri",req:79,ore:"Cehennem",pw:2750,h:12,x:115,y:175,d:"Yerin dibinden yükselen, kor ve zincirlerle kaplı sivri kayalıklar.",m:[["Kül İmpi",79,814206,22233,15005,2118,4235,1518883],["Lav Solucanı",80,889332,23880,16393,2266,4532,1710490],["Zincirli İblis",81,913249,24160,16569,2425,4849,1926079],["Kor Cehennem Köpeği",82,937072,24423,16744,2595,5189,2168633],["Alev Cadısı",83,961217,24705,16920,2776,5552,2441502],["Obsidyen Cellat",84,985683,24989,17096,2970,5940,2748450],["Kızıl Süvari",84,995071,24989,17096,2970,5940,2774626],["Cehennem Lordu",85,1918700,34731,23203,9217,18433,6712762]]},
+{n:"Kadim Boşluk",req:86,ore:"Boşluk",pw:3500,h:300,x:75,y:115,d:"Zamanın ve mekânın çözüldüğü, yıldızsız bir boşluk.",m:[["Boşluk Sürüngeni",86,1025162,27014,18751,3401,6801,3254230],["Yıldız Parçası",87,1051001,27314,18941,3639,7277,3664752],["Boşluk Gezgini",88,1077208,27615,19130,3894,7787,4126655],["Delik Gözcüsü",89,1103784,27917,19319,4166,8332,4646331],["Rüya Yiyen",90,1193168,29719,20860,4458,8915,5230957],["Zaman Hırsızı",91,1222357,30036,21062,4770,9539,5888598],["Kadim Bekçi",91,1233998,30036,21062,4770,9539,5944680],["Boşluğun Yutan Gözü",92,2243102,39433,26579,14800,29600,14382201]]},
+{n:"Valdrenn Tahtı",req:93,ore:"Kadim",pw:4400,h:45,x:200,y:55,d:"Gölgelerin mirasının saklandığı son taht. Her yol buraya çıkar.",m:[["Taht Muhafızı",93,1197098,30652,21466,5461,10921,6972241],["Kadim Şövalye",94,1225780,30972,21668,5843,11686,7851789],["Gölge Cellat",95,1319980,32859,23291,6252,12504,8841425],["Lanetli Danışman",96,1350869,33193,23506,6690,13379,9954838],["Kemik Ejderha",97,1382200,33529,23722,7158,14316,11207408],["Hükümdarın Gölgesi",98,1413876,33867,23937,7659,15318,12616416],["Sonsuz Nöbetçi",99,1445962,34205,24153,8195,16390,14201279],["Kadim Kral Valdrenn",100,2753595,47022,32317,25429,50858,34357716]]}];
+RG.forEach((r,ri)=>{r.id=ri;r.mobs=r.m.map((a,mi)=>({id:ri+"_"+mi,ri,mi,name:a[0],lv:a[1],hp:a[2],mx:a[2],atk:a[3],def:a[4],g:[a[5],a[6]],xp:a[7],el:mi==r.m.length-1}))});
+const rgOf=l=>{let r=0;RG.forEach((g,i)=>{if(l>=g.req)r=i});return r};
 
 const TITLES=[
   {id:"t0",n:"Çaylak Maceracı",desc:"Yolculuğun başlangıcı",bonus:"Yok",b:{},chk:p=>true},
@@ -37,7 +45,8 @@ const TITLES=[
   {id:"t3",n:"Kule Fatihi",desc:"Sonsuz Kule 15. kata çık",bonus:"+%10 Maksimum Can",b:{hp:10},chk:p=>p.tw>=15},
   {id:"t4",n:"Demir Ustası",desc:"20 başarılı yükseltme yap",bonus:"+%10 Fiziksel Zırh",b:{arm:10},chk:p=>(p.st.fok||0)>=20},
   {id:"t5",n:"Efsanevi Kahraman",desc:"40. seviyeye ulaş",bonus:"+%12 Saldırı & Zırh",b:{atk:12,arm:12},chk:p=>p.lv>=40},
-  {id:"t6",n:"Karanlığın Efendisi",desc:"Kadim Kara Ejderha'yı yen",bonus:"+%15 Tüm Güç & +%5 Kritik",b:{atk:15,arm:15,hp:15,cr:5},chk:p=>!!p.boss[4]}
+  {id:"t6",n:"Karanlığın Efendisi",desc:"Kadim Kara Ejderha'yı yen",bonus:"+%15 Tüm Güç & +%5 Kritik",b:{atk:15,arm:15,hp:15,cr:5},chk:p=>!!p.boss[4]},
+  {id:"t7",n:"Gölgelerin Mirasçısı",desc:"Kadim Kral Valdrenn'i yen",bonus:"+%20 Tüm Güç & +%8 Kritik",b:{atk:20,arm:20,hp:20,cr:8},chk:p=>!!p.boss[11]}
 ];
 
 const POT_DEF={
@@ -55,21 +64,24 @@ const POT_DEF={
 
 const CW={tank:{str:2.8,dex:.8,int:.2},mage:{str:.2,dex:.5,int:3.2},archer:{str:.5,dex:3.2,int:.3},assassin:{str:1.2,dex:2.8,int:.2},healer:{str:.5,dex:.3,int:2.4}};
 
-const reqXp=l=>l>=50?1e12:Math.floor(140*Math.pow(l,2.38)*(l>25?Math.pow(1.085,l-25):1)*(l>40?Math.pow(1.18,l-40):1));
+const MAXLV=100;
+const reqXp0=l=>Math.floor(140*Math.pow(l,2.38)*(l>25?Math.pow(1.085,l-25):1)*(l>40?Math.pow(1.18,l-40):1));
+const reqXp=l=>l>=MAXLV?1e15:l<50?reqXp0(l):Math.floor(reqXp0(49)*Math.pow(1.115,l-49));
 function killXp(x,ml,pl){const d=pl-ml;if(d>=7)return 0;if(d>=4)return Math.floor(x*.25);if(d>=2)return Math.floor(x*.65);if(ml-pl>=6)return Math.floor(x*.35);return x}
 const healAmt=p=>Math.floor((100+p.lv*30)*(1+p.at.int*.01));
 const effLv=i=>i.rl;
 const pw=i=>Math.floor(i.bp*G[i.g].m*(1+i.p*.12));
 
 /* ---------- KADEMELER (1-50), SİLAH HASAR ARALIĞI VE HIZI, ÖZEL EFSUNLAR ---------- */
-const TIERS=[1,5,10,15,20,25,30,35,40,45,50],TBP={1:25,5:38,10:62,15:92,20:130,25:180,30:250,35:340,40:440,45:550,50:650};
+const TIERS=[1,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100],TBP={1:25,5:38,10:62,15:92,20:130,25:180,30:250,35:340,40:440,45:550,50:650};
+for(let t=55;t<=100;t+=5)TBP[t]=650+(t-50)*18;
 const tierOf=lv=>{let t=1;for(const x of TIERS)if(x<=lv)t=x;return t};
-const oreIx=rl=>Math.min(4,Math.floor((Math.max(1,rl)-1)/10));
+const oreIx=rl=>rgOf(Math.max(1,rl));
 const tierSuf=t=>{const o=oreIx(t),f=TIERS.filter(x=>oreIx(x)==o),k=f.indexOf(t);return k>0?" "+["","II","III"][k]:""};
 const mkName=(rc,si,t)=>RG[oreIx(t)].ore+" "+CL[rc].it[si]+tierSuf(t);
 const tierItem=(rc,si,t,g,af)=>({name:mkName(rc,si,t),setOre:RG[oreIx(t)].ore,slot:SL[si],rc,rl:t,g:g||1,p:0,bp:TBP[t],af:af||[]});
 /* Milestone silahlar (Lv 10/30/50): düz vuruş (ba) ve beceri vuruşu (sk) ortalamasını artıran özel efsunlar */
-const SPC={10:{ba:20,sk:12},30:{ba:35,sk:21},50:{ba:50,sk:30}};
+const SPC={10:{ba:20,sk:12},30:{ba:35,sk:21},50:{ba:50,sk:30},75:{ba:65,sk:38},100:{ba:80,sk:45}};
 const SPN={ba:"Düz Vuruş Ortalaması",sk:"Beceri Vuruşu Ortalaması"};
 const spcRoll=(t,k,rng)=>Math.max(.1,Math.round(SPC[t][k]*Math.pow(rng.R(1),3)*10)/10);
 const isSpcW=i=>i&&i.slot==="weapon"&&!!SPC[i.rl];
@@ -157,8 +169,8 @@ function pickBestAvailPotOf(p,t,pref){
   if(pref&&pref!=="off"&&(p.pot[t][pref]||0)>0)return pref;
   return null;
 }
-function towerMobOf(p,f){const r=Math.min(4,Math.floor((p.lv-1)/10)),b=f%5==0,t=RG[r].mobs[b?3:f%3],s=1+f*.07;
-return{...t,id:"t"+f,lv:Math.min(60,p.lv+Math.floor(f/4)),hp:Math.floor(t.hp*s),mx:Math.floor(t.hp*s),atk:Math.floor(t.atk*s),def:Math.floor(t.def*s),xp:Math.floor(t.xp*s*.6),el:b,name:(b?"Kule Muhafızı ":"")+t.name+" · Kat "+f}}
+function towerMobOf(p,f){const r=rgOf(p.lv),b=f%5==0,t=RG[r].mobs[b?RG[r].mobs.length-1:f%(RG[r].mobs.length-1)],s=1+f*.07;
+return{...t,id:"t"+f,lv:Math.min(105,p.lv+Math.floor(f/4)),hp:Math.floor(t.hp*s),mx:Math.floor(t.hp*s),atk:Math.floor(t.atk*s),def:Math.floor(t.def*s),xp:Math.floor(t.xp*s*.6),el:b,name:(b?"Kule Muhafızı ":"")+t.name+" · Kat "+f}}
 
 /* Yeni savaş durumu */
 function newBattle(p,ri,mi,tw){
@@ -313,8 +325,8 @@ function bWin(B,p,rng){
   if(m.el){p.st.e++;if(!B.tw)p.boss[m.ri]=true}
   out.push({win:{g,x,el:!!m.el}});
   _lg(out,"🎉 <b>"+m.name+"</b> yenildi! +"+g+"🪙 "+(x?"+"+x+" XP":"(0 XP, seviye farkı)"));
-  if(m.el&&!B.tw&&m.ri<4&&!p.boss[m.ri+1])_lg(out,"🗝️ Yeni bölgenin kapısı açıldı!");
-  while(p.xp>=reqXp(p.lv)&&p.lv<50){
+  if(m.el&&!B.tw&&m.ri<RG.length-1&&!p.boss[m.ri+1])_lg(out,"🗝️ Yeni bölgenin kapısı açıldı!");
+  while(p.xp>=reqXp(p.lv)&&p.lv<MAXLV){
     const prevHp=p.maxHp,prevMp=p.maxMp;p.xp-=reqXp(p.lv);p.lv++;p.sp+=2;p.ap+=3;
     out.push({ev:["lvl",p.lv]});out.push({snd:"lvl"});syncP(p);
     const dHp=p.maxHp-prevHp,dMp=p.maxMp-prevMp;
@@ -386,7 +398,7 @@ function chestOpen(p,n,rng){
     const x=rng.R(100);
     if(x<6){
       if(p.inv.length<50){
-        const o=dropItem(p,RG[Math.min(4,Math.floor((p.lv-1)/10))].mobs[0],3,rng);
+        const o=dropItem(p,RG[rgOf(p.lv)].mobs[0],3,rng);
         for(const e of o)if(e.ev)out.push(e);
         res.items.push(p.inv[p.inv.length-1]);
       }else{res.skipped++;const g=rng.RI(p.lv*10,p.lv*22)+20;p.gold+=g;res.gold+=g}
@@ -398,7 +410,7 @@ function chestOpen(p,n,rng){
 }
 
 /* ===== EKONOMİ, GÖREV, GÜNLÜK (sunucuda işlenir; telefon yalnızca sonucu gösterir) ===== */
-const QS=[];RG.forEach((r,ri)=>[[0,8,40],[2,6,70],[3,1,180]].forEach(([mi,n,g],k)=>QS.push({id:"q"+ri+mi,ri,mi,n,g:Math.floor(g*Math.pow(ri+1,1.6)),sc:k==2?1:0,t:r.m[mi][0]})));
+const QS=[];RG.forEach((r,ri)=>[[0,8,40],[ri<5?5:4,6,70],[r.m.length-1,1,180]].forEach(([mi,n,g],k)=>QS.push({id:"q"+ri+[0,2,3][k],ri,mi,n,g:Math.floor(g*Math.pow(ri+1,1.6)),sc:k==2?1:0,t:r.m[mi][0]})));
 QS.push({id:"qa",ri:-1,mi:-1,n:60,g:400,sc:1,t:"herhangi bir canavar"});
 const QV=[
 {id:"v1",h:"Savaş",k:"crit",n:30,txt:"30 kritik vuruş yap",g:150,m:{kirik:5}},
@@ -682,6 +694,6 @@ function mkDo(p,body,d,now){
   }
   return bad("Geçersiz istek");
 }
-const KZ={TIERS,TBP,tierOf,tierItem,mkName,SPC,SPN,isSpcW,rerollCost,wInfo,wLine,spdTxt,jrOf,autoJunk,mkDo,MK_MINLV,healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
+const KZ={MAXLV,rgOf,reqXp,TIERS,TBP,tierOf,tierItem,mkName,SPC,SPN,isSpcW,rerollCost,wInfo,wLine,spdTxt,jrOf,autoJunk,mkDo,MK_MINLV,healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
 (typeof globalThis!=="undefined"?globalThis:window).KZ=KZ;
 if(typeof module!=="undefined"&&module.exports)module.exports=KZ;

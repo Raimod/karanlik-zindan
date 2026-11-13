@@ -16,7 +16,7 @@ function comBest(){
   return{
     char_name:String(top.name||"").slice(0,14),
     cls:CL[top.cls]?top.cls:"tank",
-    level:Math.max(1,Math.min(50,top.lv|0)),
+    level:Math.max(1,Math.min(100,top.lv|0)),
     tower:Math.max(0,Math.min(500,Math.max(...l.map(s=>s.tw|0)))),
     elites:Math.min(100000,l.reduce((n,s)=>n+((s.st&&s.st.e)|0),0)),
     kills:Math.min(10000000,l.reduce((n,s)=>n+kills(s),0))

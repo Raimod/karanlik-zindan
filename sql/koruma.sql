@@ -45,9 +45,17 @@ $$;
 -- Seviye l'den l+1'e geçmek için gereken XP (oyundaki reqXp ile aynı formül)
 create or replace function public.kz_reqxp(l int)
 returns numeric language sql immutable as $$
-  select floor(140 * power(l, 2.38)
-         * (case when l > 25 then power(1.085, l - 25) else 1 end)
-         * (case when l > 40 then power(1.18, l - 40) else 1 end));
+  select floor(140 * power(least(l,49), 2.38)
+         * (case when least(l,49) > 25 then power(1.085, least(l,49) - 25) else 1 end)
+         * (case when least(l,49) > 40 then power(1.18, least(l,49) - 40) else 1 end)
+         * (case when l > 49 then power(1.115, l - 49) else 1 end));
+$$;
+-- Seviyeye göre bölge numarası (0-11), oyundaki rgOf ile aynı
+create or replace function public.kz_rg(lv int)
+returns int language sql immutable as $$
+  select case when lv <= 50 then least(4, greatest(lv - 1, 0) / 10)
+              when lv < 58 then 5 when lv < 65 then 6 when lv < 72 then 7
+              when lv < 79 then 8 when lv < 86 then 9 when lv < 93 then 10 else 11 end;
 $$;
 -- Bir seviyeye gelene kadar toplam harcanan XP
 create or replace function public.kz_cumxp(lv int)
@@ -59,9 +67,9 @@ $$;
 create or replace function public.kz_item_err(it jsonb, lv int)
 returns text language plpgsql immutable as $$
 declare
-  r int := least(4, greatest(lv - 1, 0) / 10);
-  reqs int[] := array[10,20,30,40,50];      -- bolgede dusebilecek en yuksek kademe
-  pws  int[] := array[62,130,250,440,650];
+  r int := public.kz_rg(lv);
+  reqs int[] := array[10,20,30,40,50,55,60,70,75,85,90,100];      -- bolgede dusebilecek en yuksek kademe
+  pws  int[] := array[62,130,250,440,650,740,830,1010,1100,1280,1370,1550];
   g numeric; at text; sc numeric; p numeric; rl numeric; bp numeric; a jsonb;
 begin
   if jsonb_typeof(it) <> 'object' then return 'bozuk esya'; end if;
@@ -77,10 +85,10 @@ begin
       if at in ('atk','def','crit') then
         if public.kz_n(a,'v') < 0 or public.kz_n(a,'v') > 10 then return 'esya efsun degeri'; end if;
       elsif at in ('ba','sk') then
-        -- Ozel silah efsunu: yalnizca Lv 10/30/50 silahlarda; ust sinir kademeye gore
-        if (it->>'slot') is distinct from 'weapon' or rl not in (10,30,50) then return 'esya efsun turu'; end if;
-        sc := case when at = 'ba' then (case rl when 10 then 20 when 30 then 35 else 50 end)
-                   else (case rl when 10 then 12 when 30 then 21 else 30 end) end;
+        -- Ozel silah efsunu: yalnizca Lv 10/30/50/75/100 silahlarda; ust sinir kademeye gore
+        if (it->>'slot') is distinct from 'weapon' or rl not in (10,30,50,75,100) then return 'esya efsun turu'; end if;
+        sc := case when at = 'ba' then (case rl when 10 then 20 when 30 then 35 when 50 then 50 when 75 then 65 else 80 end)
+                   else (case rl when 10 then 12 when 30 then 21 when 50 then 30 when 75 then 38 else 45 end) end;
         if public.kz_n(a,'v') < 0 or public.kz_n(a,'v') > sc then return 'esya efsun degeri'; end if;
       else
         return 'esya efsun turu';
@@ -102,21 +110,21 @@ declare
   blv int := 1; bxp numeric := 0; bgold numeric := 300; bk numeric := 0; be numeric := 0; btw numeric := 0;
   bch numeric := 0; bsc numeric := 0; bl numeric := 0; bmat numeric := 0; binv numeric := 0;
   tw numeric; m numeric; budget numeric; tn numeric; tb numeric;
-  gmax numeric[] := array[25,70,160,380,1500];
-  xmax numeric[] := array[220,1200,4800,22000,120000];
-  smax numeric[] := array[55,125,195,265,335];
+  gmax numeric[] := array[25,70,160,380,1500,2772,4452,7149,11479,18433,29600,50858];
+  xmax numeric[] := array[220,1200,4800,22000,120000,318570,682541,1462356,3133121,6712762,14382201,34357716];
+  smax numeric[] := array[55,125,195,265,335,380,430,520,567,660,706,800];
   it jsonb; e text; ngr int := 0; sumat numeric := 0; sumsr numeric := 0; kv record; st jsonb;
 begin
   if jsonb_typeof(ns) <> 'object' then return 'slot bozuk'; end if;
   st := case when jsonb_typeof(ns->'st') = 'object' then ns->'st' else '{}'::jsonb end;
   lv := public.kz_n(ns,'lv')::int; xp := public.kz_n(ns,'xp'); gold := public.kz_n(ns,'gold');
-  if lv < 1 or lv > 50 or public.kz_n(ns,'lv') <> lv then return 'seviye'; end if;
+  if lv < 1 or lv > 100 or public.kz_n(ns,'lv') <> lv then return 'seviye'; end if;
   if (ns->>'cls') is null or (ns->>'cls') not in ('tank','mage','archer','assassin','healer') then return 'sinif'; end if;
   if char_length(coalesce(ns->>'name','')) not between 1 and 20 then return 'karakter adi'; end if;
   if xp < 0 or gold < 0 or gold > 2000000000 then return 'altin veya xp'; end if;
   tw := public.kz_n(ns,'tw');
   if tw < 0 or tw > 500 then return 'kule'; end if;
-  r := least(4, (lv - 1) / 10);
+  r := public.kz_rg(lv);
 
   -- Karşılaştırma tabanı: aynı karakterse önceki değerleri, değilse yeni karakter başlangıcını kullan
   same := os is not null and jsonb_typeof(os) = 'object'

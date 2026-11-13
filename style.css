@@ -232,3 +232,5 @@ nav button span{display:flex}
 .lvfx b{font-family:var(--hd);font-size:34px;color:#f6d79a;text-shadow:0 0 20px #e8b04a,0 3px 6px #000;letter-spacing:3px}
 .lvr{position:absolute;width:260px;height:260px;border-radius:50%;border:3px solid #e8b04a;animation:sxr 1.2s ease-out forwards;box-shadow:0 0 30px #e8b04a}
 @keyframes lvf{0%{opacity:0}15%{opacity:1}80%{opacity:1}100%{opacity:0}}
+@keyframes wmp{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.5)}}
+.wm-pulse{transform-box:fill-box;transform-origin:center;animation:wmp 1.6s ease-out infinite}

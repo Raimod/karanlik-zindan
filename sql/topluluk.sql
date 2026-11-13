@@ -15,7 +15,7 @@ create table if not exists public.leaderboard (
   elites int not null default 0,
   kills int not null default 0,
   updated_at timestamptz not null default now(),
-  constraint lb_level check (level between 1 and 50),
+  constraint lb_level check (level between 1 and 100),
   constraint lb_tower check (tower between 0 and 500),
   constraint lb_elites check (elites between 0 and 100000),
   constraint lb_kills check (kills between 0 and 10000000),

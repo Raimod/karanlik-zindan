@@ -1,4 +1,4 @@
-const GAME_VERSION="2.5.1";
+const GAME_VERSION="2.6.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -720,21 +720,60 @@ async function bulkSalvage(){
 
 const open=r=>(r==0||P.boss[r-1])&&P.lv>=RG[r].req;
 let mapReg=-1;
-function setMapReg(ri){mapReg=ri;view()}
-function cMap(v){
-  if(mapReg<0){
-    let best=0;
-    for(let i=0;i<RG.length;i++)if(open(i))best=i;
-    mapReg=best;
+/* ---------- DÜNYA HARİTASI (v2.6.0): çizilmiş harita üzerinde dokunulan bölge noktaları ---------- */
+const WG=[
+'<path d="M12 3l5 8h-3l4 6H6l4-6H7z"/><path d="M12 17v4"/>',
+'<path d="M5 19L15 9"/><path d="M12 5c4-1 8 2 8 7-2-3-4-4-8-4z"/>',
+'<path d="M3 20L12 5l9 15z"/><path d="M8 20l4-7 4 7"/>',
+'<path d="M3 20l6-10 3 5 3-8 6 13z"/><path d="M8 12l2 2 2-3"/>',
+'<path d="M12 3c2 4 6 6 6 11a6 6 0 01-12 0c0-3 2-4 3-7 1 2 2 2 3-4z"/>',
+'<path d="M4 19c3-3 5 2 8-1s5 2 8-1"/><path d="M8 14V8M8 8c-3-1-3-4 0-4s3 3 0 4M16 15V9"/>',
+'<path d="M12 3a7 7 0 00-4 12.800V19h8v-3.200A7 7 0 0012 3z"/><circle cx="9.500" cy="11" r="1.500"/><circle cx="14.500" cy="11" r="1.500"/>',
+'<path d="M5 20V10l7-7 7 7v10z"/><path d="M10 20v-5h4v5"/>',
+'<path d="M7 14a4 4 0 010-8 5 5 0 019 1 3.500 3.500 0 010 7z"/><path d="M12 14l-2 4 4-2-2 5"/>',
+'<path d="M12 21l-5-6 2-4-3-3 6 1 2-6 2 6 6-1-3 3 2 4z"/>',
+'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>',
+'<path d="M4 18l1-9 4 4 3-7 3 7 4-4 1 9z"/><path d="M4 21h16"/>'];
+let wmY=null;
+const wmBest=()=>{let b=0;for(let i=0;i<RG.length;i++)if(open(i))b=i;return b};
+function setMapReg(ri){const e=document.getElementById("wmap");wmY=e?e.scrollTop:null;mapReg=ri;view()}
+function worldMapSVG(){
+  const W=360,H=590,n=RG.length,here=wmBest();
+  const segs=[],nodes=[],blobs=[],defs=[];
+  RG.forEach((r,i)=>{
+    defs.push(`<radialGradient id="wh${i}"><stop offset="0" stop-color="hsl(${r.h},55%,38%)" stop-opacity=".55"/><stop offset="1" stop-color="hsl(${r.h},55%,38%)" stop-opacity="0"/></radialGradient>`);
+    blobs.push(`<circle cx="${r.x}" cy="${r.y}" r="${i==n-1?80:64}" fill="url(#wh${i})"/>`);
+  });
+  for(let i=1;i<n;i++){
+    const a=RG[i-1],b=RG[i],mx=(a.x+b.x)/2+(i%2?16:-16),my=(a.y+b.y)/2-4,done=!!P.boss[i-1];
+    segs.push(`<path d="M${a.x} ${a.y} Q${mx} ${my} ${b.x} ${b.y}" fill="none" stroke="${done?"#e6b450":"#6b5a44"}" stroke-width="${done?3.2:2.4}" stroke-linecap="round" ${done?"":'stroke-dasharray="3 7"'} opacity="${done?.9:.7}"/>`);
   }
-  const regTabs=RG.map((r,ri)=>{
-    const o=open(ri),act=mapReg===ri;
-    return`<button class="sub-tab ${act?"act":""}" style="padding:5px 2px;font-size:10px;opacity:${o?1:.55}" onclick="setMapReg(${ri})">${o?"":"🔒"}B${ri+1} <span style="font-size:8.5px;opacity:.8">Lv.${r.req}</span></button>`;
-  }).join("");
-
-  const r=RG[mapReg],o=open(mapReg);
-  const why=P.lv<r.req?"🔒 Gerekli Seviye: Lv."+r.req:(!o?"🔒 Önce "+RG[mapReg-1].mobs[3].name+" yen":"✅ Bölge Açık");
-
+  RG.forEach((r,i)=>{
+    const o=open(i),cl=!!P.boss[i],sel=i===mapReg,x=r.x,y=r.y;
+    const col=o?`hsl(${r.h},70%,74%)`:"#6b5f55";
+    nodes.push(`<g onclick="setMapReg(${i})" style="cursor:pointer">
+      <circle cx="${x}" cy="${y}" r="28" fill="transparent"/>
+      ${i===here?`<circle class="wm-pulse" cx="${x}" cy="${y}" r="21" fill="none" stroke="#e6b450" stroke-width="2"/>`:""}
+      ${sel?`<circle cx="${x}" cy="${y}" r="23" fill="none" stroke="#e6b450" stroke-width="2.4" stroke-dasharray="5 4"/>`:""}
+      <circle cx="${x}" cy="${y}" r="17" fill="${o?`hsl(${r.h},42%,18%)`:"#1b1614"}" stroke="${o?`hsl(${r.h},60%,52%)`:"#4a3f38"}" stroke-width="${sel?3:2}"/>
+      <g transform="translate(${x-10} ${y-10}) scale(.84)" fill="none" stroke="${col}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${WG[i]||""}</g>
+      ${cl?`<circle cx="${x+14}" cy="${y-14}" r="7" fill="#1f6f3a" stroke="#0d0908"/><path d="M${x+10.500} ${y-14}l2.500 2.500 4-5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>`:""}
+      ${!o?`<circle cx="${x+14}" cy="${y-14}" r="7" fill="#2a2320" stroke="#0d0908"/><path d="M${x+11.500} ${y-13}h5v4h-5zM${x+12.500} ${y-13}v-2a1.500 1.500 0 013 0v2" fill="none" stroke="#a09080" stroke-width="1.300"/>`:""}
+      <text x="${x}" y="${y+31}" text-anchor="middle" font-size="9.500" font-weight="700" fill="${o?"#f0e4cc":"#7a6e62"}" stroke="#0d0908" stroke-width="2.500" paint-order="stroke">${r.n}</text>
+      <text x="${x}" y="${y+41}" text-anchor="middle" font-size="8" fill="${o?"#e6b450":"#6b5f55"}" stroke="#0d0908" stroke-width="2" paint-order="stroke">Lv.${r.req}–${RG[i+1]?RG[i+1].req-1:100}</text>
+      ${i===here?`<text x="${x}" y="${y-25}" text-anchor="middle" font-size="8" font-weight="800" fill="#e6b450" stroke="#0d0908" stroke-width="2" paint-order="stroke">▼ SEN BURADASIN</text>`:""}
+    </g>`);
+  });
+  return`<svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block"><defs><linearGradient id="wbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#17100d"/><stop offset="1" stop-color="#0d0908"/></linearGradient><pattern id="wgr" width="30" height="30" patternUnits="userSpaceOnUse"><path d="M30 0H0V30" fill="none" stroke="#e6b450" stroke-opacity=".05"/></pattern>${defs.join("")}</defs>
+    <rect width="${W}" height="${H}" fill="url(#wbg)"/><rect width="${W}" height="${H}" fill="url(#wgr)"/>${blobs.join("")}
+    <rect x="4" y="4" width="${W-8}" height="${H-8}" rx="10" fill="none" stroke="#e6b450" stroke-opacity=".35" stroke-width="1.500"/>
+    <g transform="translate(318 548)" stroke="#e6b450" stroke-opacity=".55" fill="none"><circle r="16"/><path d="M0 -22V22M-22 0H22" /><path d="M0 -22l4 8h-8z" fill="#e6b450" fill-opacity=".5"/></g>
+    ${segs.join("")}${nodes.join("")}</svg>`;
+}
+function cMap(v){
+  if(mapReg<0)mapReg=wmBest();
+  const r=RG[mapReg],o=open(mapReg),cl=!!P.boss[mapReg],last=r.mobs[r.mobs.length-1];
+  const why=P.lv<r.req?"🔒 Gerekli Seviye: Lv."+r.req:(!o?"🔒 Önce "+RG[mapReg-1].mobs[RG[mapReg-1].mobs.length-1].name+" yen":"✅ Bölge Açık");
   v.innerHTML=`
     <div class="cd" style="background:linear-gradient(135deg,#3b1d6e66,var(--pn));padding:9px 11px">
       <div class="r" style="gap:8px">
@@ -745,23 +784,27 @@ function cMap(v){
         <button class="btn v" style="width:auto;padding:8px 12px;font-size:11.5px;flex-shrink:0" onclick="startCombat(0,0,0,${P.tw+1})">Kat ${P.tw+1}’e Çık</button>
       </div>
     </div>
-    <div class="sub-tabs" style="margin-bottom:8px">${regTabs}</div>
+    <div class="cd" style="padding:6px"><div class="ct" style="margin:2px 4px 6px">🗺️ Valdrenn Haritası <span class="mu" style="font-size:10px;font-weight:400">Bir noktaya dokun</span></div>
+      <div id="wmap" style="height:250px;overflow-y:auto;border-radius:8px;-webkit-overflow-scrolling:touch">${worldMapSVG()}</div></div>
     <div class="rg ${o?"":"lk"}" style="margin-bottom:0">
       <div class="bn">${banner(r.h)}</div>
       <div class="ri" style="padding:11px">
         <div class="r">
           <div>
-            <div class="nm" style="font-size:16px">${r.n}</div>
+            <div class="nm" style="font-size:16px">${r.n} <span class="mu" style="font-size:10px;font-weight:400">${mapReg+1}/${RG.length}</span></div>
             <div style="font-size:10px;color:#cbd5e1">Maden & Set: <b class="g">${r.ore}</b> (Taban Güç ${r.pw})</div>
           </div>
-          <span style="font-size:10px;font-weight:800;color:${o?"#4ade80":"#f87171"}">${why}</span>
+          <span style="font-size:10px;font-weight:800;color:${o?"#4ade80":"#f87171"};text-align:right">${why}${cl?"<br>👑 Elit yenildi":""}</span>
         </div>
+        <div class="mu" style="font-size:10.5px;margin-top:6px;font-style:italic">${r.d||""}</div>
         <div class="mg" style="margin-top:10px;gap:7px">
           ${r.mobs.map(m=>`<button class="mb" style="padding:7px" ${o?"":"disabled"} onclick="startCombat(${mapReg},${m.mi})">${mobSVG(m)}<div><div style="font-size:11.5px;font-weight:700;color:${m.el?"var(--gold)":"#fff"}">${m.el?"👑 ":""}${m.name}</div><div style="font-size:9.5px;color:#cbd5e1">Lv.${m.lv} · ${m.hp.toLocaleString()} HP</div></div></button>`).join("")}
         </div>
       </div>
-    </div>
-  `;
+    </div>`;
+  const e=document.getElementById("wmap");
+  if(e){const sc=e.clientWidth/360;e.scrollTop=wmY!=null?wmY:Math.max(0,(r.y-110)*sc)}
+  wmY=null;
 }
 
 /* ---------- DEMİRCİ ---------- */
@@ -1498,7 +1541,7 @@ function cWiki(v){
         <div class="ct">1. Karakter Yuvaları ve Temel Sistemler</div>
         <ul class="wk-list">
           <li><b>Çoklu Karakter Yuvası (5 Yuva):</b> Giriş ekranında <b>5 ayrı karakter yuvası</b> bulunur. Sınıflara dokunulduğunda çizim üzerinde bilgi açılır; boş yuvalara dokunularak yeni kahraman oluşturulur.</li>
-          <li><b>Pratik Alt Sekme Arayüzü:</b> <i>Karakter</i> (Donanım, Gelişim, Unvan, Kayıt), <i>Harita</i> (Kule + B1–B5 Bölge Sekmeleri), <i>Şehir</i> (Tüccar / Pınar & Simyacı / Banka / Pazar / Takas) ve <i>Görev</i> (Günlük, Bölge, Meydan Okuma) ekranları aşağı kaydırma gerektirmeyen alt menülerle ayrılmıştır.</li>
+          <li><b>Pratik Alt Sekme Arayüzü:</b> <i>Karakter</i> (Donanım, Gelişim, Unvan, Kayıt), <i>Harita</i> (Kule + çizilmiş Valdrenn haritası ve 12 bölge noktası), <i>Şehir</i> (Tüccar / Pınar & Simyacı / Banka / Pazar / Takas) ve <i>Görev</i> (Günlük, Bölge, Meydan Okuma) ekranları aşağı kaydırma gerektirmeyen alt menülerle ayrılmıştır.</li>
           <li><b>5×5 Sırt Çantası, Yığınlama (Stack) ve Sıralama:</b> Çanta aynı anda <b>5×5 (25 yuva)</b> gösterir, fazlası aşağı kaydırılır. <i>İksirler, Hazine Sandıkları, Koruma Parşömenleri, Şifalı Ot/Özler ve Artı Basma Malzemeleri</i> tek yuvada yığınlanır ve 50 ekipman kapasitesini doldurmaz. Üstteki sıralama menüsüyle ekipmanlar <b>Nadirlik, Güç, Seviye, Yuva</b> veya <b>İsme</b> göre dizilebilir.</li>
           <li><b>🧹 Çöp Kuralları ve Otomatik Sat/Parçala:</b> Çanta → <i>⚙️ Çöp kuralları</i>. Kendi sınıfın ve başka sınıfların eşyaları için ayrı <b>kalite sınırı</b>, <b>en çok kaç efsun</b> ve <b>en çok kaç artı (+)</b> seçersin; şartların hepsine uyan eşya "çöp" sayılır ve <i>Toplu Sat / Toplu Parçala</i> yalnızca bunlara dokunur. <b>🧹 Otomatik işlem</b> açıksa savaşta düşen çöp eşya anında satılır ya da parçalanır (çanta dolmaz). Kadim Elit eşyalar hiçbir zaman çöp sayılmaz. Varsayılan kural: kendi sınıfın GR-II ve altı, başka sınıf GR-III ve altı, artısız.</li>
           <li><b>📘 Öğretici:</b> Yeni karakter açınca 6 kısa adımlık tur başlar (atlayabilirsin). Bu sayfanın en üstündeki düğmeyle istediğin zaman tekrar açabilirsin.</li>
@@ -1584,26 +1627,7 @@ function cWiki(v){
         <p class="mu" style="font-size:10px;margin-bottom:6px">Yeni bir bölgenin açılması için <b>gerekli seviyeye ulaşmak</b> ve <b>bir önceki bölgenin Elit Boss'unu yenmek</b> gerekir.</p>
         <table class="wk-tbl">
           <tr><th>Bölge (Lv / Set)</th><th>Canavarlar & 👑 Elit Boss</th></tr>
-          <tr>
-            <td><b>1. Çırak Ormanı</b><br><span class="mu">Lv.1 · Çırak (Güç 25)</span></td>
-            <td>Yaban Domuzu (Lv.2) · Goblin Çırağı (Lv.5)<br>Orman Kurdu (Lv.8) · <b class="g">👑 Haydut Reisi (Lv.10)</b></td>
-          </tr>
-          <tr>
-            <td><b>2. Zehirli Madenler</b><br><span class="mu">Lv.11 · Çelik (Güç 70)</span></td>
-            <td>Mağara Akrebi (Lv.12) · Maden Golemi (Lv.15)<br>Goblin Kazıcı Başı (Lv.18) · <b class="g">👑 Zehirli Kraliçe (Lv.20)</b></td>
-          </tr>
-          <tr>
-            <td><b>3. Batık Çöl Harabeleri</b><br><span class="mu">Lv.21 · Obsidyen (Güç 150)</span></td>
-            <td>Kum Yılanı (Lv.22) · Lanetli Mumya (Lv.25)<br>Antik Muhafız (Lv.28) · <b class="g">👑 Firavun Ruhu (Lv.30)</b></td>
-          </tr>
-          <tr>
-            <td><b>4. Donmuş Ruhlar Zirvesi</b><br><span class="mu">Lv.31 · Kristal (Güç 280)</span></td>
-            <td>Buzul Kurdu (Lv.32) · Donmuş Ruh (Lv.35)<br>Buzul Yetisi (Lv.38) · <b class="g">👑 Buz Devi (Lv.40)</b></td>
-          </tr>
-          <tr>
-            <td><b>5. Ejderha Yarığı</b><br><span class="mu">Lv.41 · Ejderha (Güç 550)</span></td>
-            <td>Lav Golemi (Lv.42) · Kıyamet İblisi (Lv.45)<br>Ejderha Muhafızı (Lv.48) · <b class="g">👑 Kadim Kara Ejderha (Lv.50)</b></td>
-          </tr>
+          ${RG.map((r,i)=>`<tr><td><b>${i+1}. ${r.n}</b><br><span class="mu">Lv.${r.req} · ${r.ore} (Güç ${r.pw})</span></td><td>${r.mobs.slice(0,-1).map(m=>m.name+" (Lv."+m.lv+")").join(" · ")}<br><b class="g">👑 ${r.mobs[r.mobs.length-1].name} (Lv.${r.mobs[r.mobs.length-1].lv})</b></td></tr>`).join("")}
         </table>
       </div>`;
   }else if(wikiSec===5){
@@ -1617,7 +1641,7 @@ function cWiki(v){
       </div>
       <div class="cd">
         <div class="ct">🛡️ Set Bonusları</div>
-        <p class="mu" style="font-size:10px;margin-bottom:4px">Aynı bölge madeninden (Çırak, Çelik, Obsidyen, Kristal, Ejderha) parçalar kuşanıldığında aktif olur:</p>
+        <p class="mu" style="font-size:10px;margin-bottom:4px">Aynı bölge madeninden (Çırak, Çelik, Obsidyen, Kristal, Ejderha, Zümrüt, Kemik, Gölge, Fırtına, Cehennem, Boşluk, Kadim) parçalar kuşanıldığında aktif olur:</p>
         <table class="wk-tbl">
           <tr><th>Parça Sayısı</th><th>Aktif Set Bonusu</th></tr>
           <tr><td><b>2 Parça</b></td><td><b>+%8</b> Saldırı ve Fiziksel Zırh</td></tr>
@@ -1630,7 +1654,7 @@ function cWiki(v){
         <ul class="wk-list">
           <li><b>Yükseltme (+15):</b> Her seviye taban gücü <b>+%12</b> artırır. <b>+6</b> üstünde başarısızlıkta 1 seviye düşebilir; <b>+10</b> üstünde kırılabilir. <b>📜 Koruma Parşömeni</b> düşmeyi ve kırılmayı engeller.</li>
           <li><b>Efsun Dönüştürücü:</b> Savaş ganimetlerinde 1–4 arası efsun çıkar. İstenen efsunlar <b>kilitlenerek</b> diğerleri 45 🪙 karşılığında yenilenebilir.</li>
-          <li><b>✨ Kilometre Taşı Silahları (Lv 10 / 30 / 50):</b> Bu seviyelerdeki silahlar iki özel efsunla düşer: <b>Düz Vuruş Ortalaması</b> (temel saldırı hasarını % artırır; en çok %20 / %35 / %50) ve <b>Beceri Vuruşu Ortalaması</b> (yetenek hasarını % artırır; en çok %12 / %21 / %30). Bu efsunlar yenilenebilir ama en üst değeri yakalamak <b>çok zordur</b>; değerler çoğunlukla alt-orta aralıkta çıkar. Çevirme ücreti her özel efsun için silahın seviyesiyle birlikte artar. Bu silahlar en çok bölge bosslarından (Haydut Reisi, Firavun Ruhu, Kadim Kara Ejderha) düşer; </li>
+          <li><b>✨ Kilometre Taşı Silahları (Lv 10 / 30 / 50 / 75 / 100):</b> Bu seviyelerdeki silahlar iki özel efsunla düşer: <b>Düz Vuruş Ortalaması</b> (temel saldırı hasarını % artırır; en çok %20 / %35 / %50) ve <b>Beceri Vuruşu Ortalaması</b> (yetenek hasarını % artırır; en çok %12 / %21 / %30). Bu efsunlar yenilenebilir ama en üst değeri yakalamak <b>çok zordur</b>; değerler çoğunlukla alt-orta aralıkta çıkar. Çevirme ücreti her özel efsun için silahın seviyesiyle birlikte artar. Bu silahlar en çok bölge bosslarından (Haydut Reisi, Firavun Ruhu, Kadim Kara Ejderha) düşer; </li>
           <li><b>📈 Eşya Kademeleri:</b> Eşyalar Lv 1, 5, 10, 15 … 50 olmak üzere <b>11 kademede</b> gelir. Canavarın seviyesi hangi kademenin düşeceğini belirler; üst kademe eşya her zaman bir öncekinden güçlüdür, yükseltilmiş (+) eski eşyan ise yeni kademeye yaklaşana kadar işe yarar.</li>
           <li><b>Eşya Parçalama:</b> İstenmeyen eşyalar parçalanarak <i>Demir Kırığı, Zehir Bezi, Zırh Parçası, Çevik Tüy, Yeşil Öz, Kan Kristali</i> ve <i>Elit Ruhu</i> elde edilir.</li>
         </ul>
@@ -1641,6 +1665,7 @@ function cWiki(v){
         <div class="ct">6. Şehir, Sonsuz Kule ve Sandıklar</div>
         <ul class="wk-list">
           <li><b>💥 Savaş Efektleri:</b> Her yetenek ve temel saldırı sınıfına göre kendi görsel efektini oynatır. Kritik vuruşlar büyük ve altın renkli sayıyla çıkar, canavar yenilince dağılır, ağır darbe hazırlığı yanıp söner, seviye atlayınca ekranda parlama olur. Telefonun destekliyorsa kritik, hasar alma ve zafer anlarında hafif <b>titreşim</b> gelir; Karakter → Kayıt sekmesinden kapatılabilir.</li>
+          <li><b>🗺️ 12 Bölge ve Seviye 100:</b> Dünya artık 12 bölgeden oluşuyor ve seviye sınırı <b>100</b>. Her bölgede 7 canavar ve 1 👑 Elit Boss var (toplam 96 canavar, hepsinin kendi çizimi var). Haritada bölge noktalarına dokunarak bölgeleri gezebilirsin; bir sonraki bölge için seviye gerekir ve önceki bölgenin Elit Boss'unu yenmelisin. 51-100 arası eşyalar yeni kademelerde (55, 60 … 100) düşer; Lv 75 ve Lv 100 silahları da kilometre taşı efsunlu gelir.</li>
           <li><b>🎨 Kor Teması ve Çizimler:</b> Oyunun görünümü kızıl-altın <i>Kor</i> temasına geçti. Emojilerin yerine özgün çizim ikonlar, 20 canavarın her biri için ise kendi çizimi geldi. Kule canavarları bağlı oldukları bölge canavarının çizimini kullanır.</li>
           <li><b>🏪 Tüccar Maren:</b> Tezgâhı <b>sabittir</b>, yenilenmez. Tüm sınıfların GR-I eşyalarını <b>kategori sekmeleriyle</b> (Silah, Sol El, Kask, Zırh, Pantolon, Çizme, Kolye, Yüzük) satar. Varsayılan olarak kendi sınıfının eşyaları görünür; <i>Tüm sınıflar</i> ile hepsini görebilirsin. Yalnızca <b>Lv 1</b> eşyalar satılır; üst seviye eşyalar savaşta düşer. Silahların hasar aralığı ve hızı satırında görünür.</li>
           <li><b>⛲ Yaşam Pınarı & 🧪 Simyacı (İksir Boyutları):</b> Pınar Can ve Manayı doldurur (seviyene göre altın ister: 20 + 8×seviye). İksirler 3 boyuttadır; boyut büyüdükçe etkisi ve fiyatı artar, yaratıklardan düşme şansı azalır (Düşme dağılımı: <b>%65 Küçük, %27 Orta, %8 Büyük</b>):<br>

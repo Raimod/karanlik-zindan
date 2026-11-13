@@ -47,7 +47,7 @@ begin
   values (uid,
           left(coalesce(best->>'name',''), 14),
           cl,
-          greatest(1, least(50, public.kz_n(best,'lv')::int)),
+          greatest(1, least(100, public.kz_n(best,'lv')::int)),
           greatest(0, least(500, mtw::int)),
           greatest(0, least(100000, se::int)),
           greatest(0, least(10000000, sk::bigint)),
