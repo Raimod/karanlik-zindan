@@ -11,20 +11,20 @@ function gErr(e){
     [/3-16/,"Lonca adı 3 ile 16 karakter arasında olmalı."],[/adi alinmis/,"Bu lonca adı alınmış."],[/once oyunda/,"Önce oyunda bir karakter oluştur ve oyna."],
     [/davetli/,"Bu lonca katılıma kapalı."],[/en az seviye (\d+)/,"Bu loncaya girmek için en az seviye $1 gerekir."],[/dolu/,"Lonca dolu (en çok 30 üye)."],
     [/bulunamadi/,"Lonca bulunamadı."],[/yetkin yok/,"Bunun için yetkin yok."],[/loncanda degil/,"Bu oyuncu artık loncanda değil."],[/loncan yok/,"Bir loncan yok."],
-    [/cok hizli/,"Çok hızlı yazıyorsun, 2 saniye bekle."],[/kendini atamazsin|kendine islem/,"Kendine bu işlemi yapamazsın."],[/1-200/,"Mesaj 1-200 karakter olmalı."]];
+    [/cok hizli/,"Çok hızlı yazıyorsun, 2 saniye bekle."],[/kendini atamazsin|kendine islem/,"Kendine bu işlemi yapamazsın."],[/1-200/,"Mesaj 1-200 karakter olmalı."],[/karakter: bu karakter/,"Karakterin henüz buluta kaydedilmedi, birkaç saniye sonra tekrar dene."]];
   for(const[r,t]of T){const x=m.match(r);if(x)return t.replace("$1",x[1]||"")}
   return"İşlem yapılamadı: "+(typeof cloudErr==="function"?cloudErr(e):m);
 }
 async function gLoad(){
   try{
     await comPushLb(false);
-    const r=await CLOUD.sb.rpc("kz_g_me");if(r.error)throw r.error;
+    const r=await CLOUD.sb.rpc("kz_g_me",{p_me:P.name});if(r.error)throw r.error;
     GD.me=r.data||null;GD.err="";
   }catch(e){GD.err=(e&&e.message)||"hata";if(GD.me===undefined)GD.me=null}
   if(tab==="community"&&COM.sub==="guild")view();
 }
 function gRefresh(){GD.me=undefined;GD.list=null;view()}
-function cGuild(v,sub){
+function cGuild(v,sub){socSync();
   if(GD.me===undefined){
     v.innerHTML=sub+'<div class="cd"><div class="ct">🏰 Lonca</div><p class="mu" style="font-size:11px">Yükleniyor...</p></div>';
     gLoad();return;
@@ -74,7 +74,7 @@ async function gLoadList(){
 }
 async function gDo(fn,okMsg){
   if(GD.busy)return false;GD.busy=true;
-  try{const r=await fn();if(r&&r.error)throw r.error;if(okMsg)toast(okMsg);GD.busy=false;return true}
+  try{const r=await socRetry(fn);if(r&&r.error)throw r.error;if(okMsg)toast(okMsg);GD.busy=false;return true}
   catch(e){GD.busy=false;toast(gErr(e));return false}
 }
 async function gCreate(){
@@ -82,15 +82,15 @@ async function gCreate(){
   if(n.length<3)return toast("Lonca adı en az 3 karakter olmalı");
   try{if(typeof cloudPush==="function")await cloudPush(true)}catch(e){}
   await comPushLb(true);
-  if(await gDo(()=>CLOUD.sb.rpc("kz_g_create",{p_name:n,p_descr:d,p_emblem:gEmbSel}),"Lonca kuruldu! 🏰")){GD.form=false;gRefresh()}
+  if(await gDo(()=>CLOUD.sb.rpc("kz_g_create",{p_me:P.name,p_name:n,p_descr:d,p_emblem:gEmbSel}),"Lonca kuruldu! 🏰")){GD.form=false;gRefresh()}
 }
-async function gJoin(id){await comPushLb(true);if(await gDo(()=>CLOUD.sb.rpc("kz_g_join",{p_id:id}),"Loncaya katıldın!"))gRefresh()}
+async function gJoin(id){await comPushLb(true);if(await gDo(()=>CLOUD.sb.rpc("kz_g_join",{p_me:P.name,p_id:id}),"Loncaya katıldın!"))gRefresh()}
 /* ---------- Loncası olan ---------- */
 function gMain(v,sub){
   const m=GD.me,lead=m.role==="lider";
   const mem=m.members.map(x=>{
-    const c=CL[x.cls]||CL.tank,me=CLOUD.user&&x.user_id===CLOUD.user.id,r=G_ROLE[x.role]||G_ROLE.uye;
-    return`<div class="q" onclick="gMember('${escH(x.user_id)}')" style="cursor:pointer;padding:6px 8px;margin-bottom:4px;${me?"border:1px solid var(--gold);":""}">
+    const c=CL[x.cls]||CL.tank,me=x.name===P.name,r=G_ROLE[x.role]||G_ROLE.uye;
+    return`<div class="q" onclick="gMember('${escH(x.ck)}')" style="cursor:pointer;padding:6px 8px;margin-bottom:4px;${me?"border:1px solid var(--gold);":""}">
       <div style="width:26px;text-align:center">${r[1]||c.e}</div>
       <div style="flex:1;min-width:0"><b style="${me?"color:var(--gold)":""}">${escH(x.name)}</b>${me?' <span class="mu" style="font-size:9px">(sen)</span>':""}<div class="mu" style="font-size:10px">${r[0]} · ${escH(c.n||x.cls)}</div></div>
       <b class="g" style="font-size:12px">Lv.${Number(x.level)}</b></div>`}).join("");
@@ -113,26 +113,26 @@ function gMain(v,sub){
 async function gLoadChat(scroll){
   const list=$("g-chat");if(!list)return;
   try{
-    const r=await CLOUD.sb.rpc("kz_g_chat");if(r.error)throw r.error;
+    const r=await CLOUD.sb.rpc("kz_g_chat",{p_me:P.name});if(r.error)throw r.error;
     const rows=r.data||[];
     const sig=rows.map(x=>x.id).join(",");
     if(!scroll&&sig===GD.sig)return;GD.sig=sig;
     const l=$("g-chat");if(!l)return;
     const near=l.scrollHeight-l.scrollTop-l.clientHeight<60;
     l.innerHTML=rows.map(x=>{
-      const mine=CLOUD.user&&x.user_id===CLOUD.user.id;
+      const mine=x.name===P.name;
       const t=new Date(x.created).toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"});
-      return`<div style="margin-bottom:6px"><b ${mine?"":`onclick="comProfile('${escH(x.user_id)}')" `}style="cursor:pointer;color:${mine?"var(--gold)":"#93c5fd"}">${escH(x.name||"Oyuncu")}</b> <span class="mu" style="font-size:9px">${t}</span><div style="word-break:break-word">${escH(x.body)}</div></div>`}).join("")||'<p class="mu">Henüz mesaj yok. İlk mesajı sen yaz!</p>';
+      return`<div style="margin-bottom:6px"><b ${mine?"":`onclick="comProfile('${escH(x.ck)}')" `}style="cursor:pointer;color:${mine?"var(--gold)":"#93c5fd"}">${escH(x.name||"Oyuncu")}</b> <span class="mu" style="font-size:9px">${t}</span><div style="word-break:break-word">${escH(x.body)}</div></div>`}).join("")||'<p class="mu">Henüz mesaj yok. İlk mesajı sen yaz!</p>';
     if(scroll||near)l.scrollTop=l.scrollHeight;
   }catch(e){const l=$("g-chat");if(l)l.innerHTML=`<p style="font-size:11px;color:#fbbf24">Sohbet yüklenemedi: ${escH(gErr(e))}</p>`}
 }
 async function gSay(){
   const inp=$("g-in");if(!inp)return;const t=(inp.value||"").trim();if(!t)return;
-  if(await gDo(()=>CLOUD.sb.rpc("kz_g_say",{p_body:t}))){inp.value="";gLoadChat(true)}
+  if(await gDo(()=>CLOUD.sb.rpc("kz_g_say",{p_me:P.name,p_body:t}))){inp.value="";gLoadChat(true)}
 }
 function gMember(uid){
-  const m=GD.me,x=m.members.find(a=>a.user_id===uid);if(!x)return;
-  const self=CLOUD.user&&uid===CLOUD.user.id,lead=m.role==="lider",off=m.role==="subay";
+  const m=GD.me,x=m.members.find(a=>a.ck===uid);if(!x)return;
+  const self=x.name===P.name,lead=m.role==="lider",off=m.role==="subay";
   const b=[];
   b.push(`<button class="btn s" onclick="closeM();comProfile('${escH(uid)}')">👤 Profili gör</button>`);
   if(!self&&lead){
@@ -149,14 +149,14 @@ function gAsk(txt,js){
 }
 async function gAct(kind,uid,role){
   closeM();
-  const ok=await gDo(()=>kind==="kick"?CLOUD.sb.rpc("kz_g_kick",{p_user:uid}):CLOUD.sb.rpc("kz_g_role",{p_user:uid,p_role:role}),kind==="kick"?"Oyuncu atıldı":"Rütbe güncellendi");
+  const ok=await gDo(()=>kind==="kick"?CLOUD.sb.rpc("kz_g_kick",{p_me:P.name,p_user:uid}):CLOUD.sb.rpc("kz_g_role",{p_me:P.name,p_user:uid,p_role:role}),kind==="kick"?"Oyuncu atıldı":"Rütbe güncellendi");
   if(ok)gRefresh();
 }
 function gLeaveAsk(){
   const m=GD.me,alone=m.count===1;
   gAsk(alone?"Loncadan ayrılırsan lonca silinir. Emin misin?":m.role==="lider"?"Liderlik en eski subaya (yoksa en eski üyeye) geçer. Ayrılmak istiyor musun?":"Loncadan ayrılmak istiyor musun?","gLeave()");
 }
-async function gLeave(){if(await gDo(()=>CLOUD.sb.rpc("kz_g_leave"),"Loncadan ayrıldın"))gRefresh()}
+async function gLeave(){if(await gDo(()=>CLOUD.sb.rpc("kz_g_leave",{p_me:P.name}),"Loncadan ayrıldın"))gRefresh()}
 function gSettings(){
   const m=GD.me;
   $("ic").innerHTML=`<div class="ct" style="margin-bottom:8px">⚙️ Lonca Ayarları</div>
@@ -172,6 +172,6 @@ function gSettings(){
 }
 async function gSave(){
   const d=($("g-desc")||{}).value||"",mn=Math.max(1,Math.min(100,parseInt(($("g-min")||{}).value)||1)),op=!!($("g-open")||{}).checked;
-  if(await gDo(()=>CLOUD.sb.rpc("kz_g_set",{p_descr:d,p_emblem:gEmbSel,p_min_lv:mn,p_open:op}),"Ayarlar kaydedildi")){closeM();gRefresh()}
+  if(await gDo(()=>CLOUD.sb.rpc("kz_g_set",{p_me:P.name,p_descr:d,p_emblem:gEmbSel,p_min_lv:mn,p_open:op}),"Ayarlar kaydedildi")){closeM();gRefresh()}
 }
-async function gDisband(){if(await gDo(()=>CLOUD.sb.rpc("kz_g_disband"),"Lonca dağıtıldı"))gRefresh()}
+async function gDisband(){if(await gDo(()=>CLOUD.sb.rpc("kz_g_disband",{p_me:P.name}),"Lonca dağıtıldı"))gRefresh()}

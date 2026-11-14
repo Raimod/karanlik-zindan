@@ -1,4 +1,4 @@
-const GAME_VERSION="2.10.0";
+const GAME_VERSION="2.11.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
@@ -786,6 +786,7 @@ function wmOpen(){
   let o=document.getElementById("wmfull");
   if(!o){o=document.createElement("div");o.id="wmfull";document.body.appendChild(o)}
   o.innerHTML=`<div class="wmf-bar"><span>🗺️ Valdrenn Haritası</span><button class="btn s" style="width:auto;padding:5px 12px" onclick="wmClose()">✕ Kapat</button></div><div class="wmf-body" id="wmbody" onclick="wmBg(event)"></div><div id="wmpop"></div>`;
+  const nvEl=document.getElementById("nv");o.style.bottom=(nvEl?nvEl.offsetHeight:58)+"px";
   o.style.display="flex";
   wmRender();
   const b=document.getElementById("wmbody"),sv=b.querySelector("svg"),sc=(sv?sv.clientWidth:b.clientWidth)/360,r=RG[wmBest()];
@@ -1696,6 +1697,7 @@ function cWiki(v){
           <li><b>🗺️ 12 Bölge ve Seviye 100:</b> Dünya artık 12 bölgeden oluşuyor ve seviye sınırı <b>100</b>. Her bölgede 7 canavar ve 1 👑 Elit Boss var (toplam 96 canavar, hepsinin kendi çizimi var). Haritada bölge noktalarına dokunarak bölgeleri gezebilirsin; bir sonraki bölge için seviye gerekir ve önceki bölgenin Elit Boss'unu yenmelisin. 51-100 arası eşyalar yeni kademelerde (55, 60 … 100) düşer; Lv 75 ve Lv 100 silahları da kilometre taşı efsunlu gelir.</li>
           <li><b>🏰 Lonca (v2.8.0):</b> Topluluk > Lonca sekmesinden 10. seviyeden itibaren lonca kurabilir ya da açık bir loncaya katılabilirsin (en çok 30 üye). Roller: <b>Lider</b> (ayarlar, rütbe, atma, devir, dağıtma), <b>Subay</b> (sıradan üyeleri atar), <b>Üye</b>. Lider ayrılırsa liderlik en eski subaya geçer. Loncanın gücü üyelerinin seviyeleri toplamıdır; lonca listesi güce göre sıralanır. Lonca sohbetini yalnızca üyeler görür.</li>
           <li><b>🗺️ Harita (v2.8.0):</b> Harita sekmesi doğrudan tam ekran haritayı açar. Bir bölgeye dokununca küçük bir pencerede bölgenin canavarları çıkar; haritanın boş yerine dokunarak pencereyi kapatırsın.</li>
+          <li><b>🧍 Karakterler birbirinden bağımsızdır (v2.11.0):</b> Aynı hesapta birden çok karakter açsan da her biri ayrı bir oyuncu sayılır: kendi sıralaması, arkadaşları, mesajları, engelleri ve loncası vardır. Ortak olan tek şey deponun (banka, pazar, takas) hesaba bağlı olmasıdır.</li>
           <li><b>👥 Arkadaşlar ve Mesajlar (v2.9.0):</b> Sıralamada, sohbette ya da loncada bir oyuncunun adına dokununca profilinin altında <i>Mesaj gönder</i>, <i>Arkadaş ekle</i> ve <i>Engelle</i> düğmeleri çıkar. Arkadaşlık iki taraflıdır (istek gönderilir, karşı taraf kabul eder; en çok 50 arkadaş). Arkadaşlarının çevrimiçi olup olmadığını Topluluk > Arkadaş sekmesinde görürsün (son 3 dakikada oyundaysa çevrimiçidir; bu bilgiyi yalnızca arkadaşların görür). Özel mesaj herkese gönderilebilir; rahatsız eden oyuncuyu engelleyebilirsin. Okunmamış mesaj ve istekler Topluluk sekmesinde kırmızı rozetle görünür. Mesajlar 14 gün saklanır.</li>
           <li><b>📖 Hikâye Günlüğü (v2.10.0):</b> Harita sekmesindeki günlükte Valdrenn'in hikâyesi (Kral Valdrenn, gölgenin on iki mührü ve senin gölgen) yer alır. Prolog ilk girişte kendiliğinden açılır; her bölgenin Elit Boss'unu yenince o bölgenin sayfası açılır ve bildirim gelir. Son sayfalar Valdrenn Tahtı'ndaki Elit Boss'u yenince açılır.</li>
           <li><b>🎨 Kor Teması ve Çizimler:</b> Oyunun görünümü kızıl-altın <i>Kor</i> temasına geçti. Emojilerin yerine özgün çizim ikonlar, 20 canavarın her biri için ise kendi çizimi geldi. Kule canavarları bağlı oldukları bölge canavarının çizimini kullanır.</li>

@@ -168,3 +168,9 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 ## 2.10.0
 - 📖 Hikâye Günlüğü (story.js): Prolog + 12 bölge + Epilog, Elit Boss yenilince açılır. Bildirim durumu yalnızca cihazda (localStorage) tutulur, kayıt formatı değişmedi.
 - Modal pencereleri tam ekran haritanın üstünde görünür.
+
+## 2.11.0
+- Her karakter artık ayrı bir oyuncudur: sıralama (her karakter kendi satırı), genel sohbet, arkadaşlık, özel mesaj, engel, çevrimiçi durumu ve lonca üyeliği karaktere bağlıdır. "(sen)" yalnızca o an oynadığın karakterde görünür.
+- Aynı hesabın karakterleri arasında ortak olan tek şey depo (banka/pazar/takas)dır.
+- Yeni dosya: sql/karakter.sql (EN SON çalıştırılır). Eski arkadaşlık/mesaj/engel verileri sıfırlanır; lonca üyelikleri hesabın en yüksek seviyeli karakterine taşınır.
+- Tam ekran harita alttaki sekmeleri artık kapatmaz.

@@ -25,7 +25,7 @@ function comBest(){
 async function comPushLb(force){
   if(!CLOUD.user||!CLOUD.sb)return;
   const b=comBest();
-  const key=JSON.stringify(b||"yok"); /* karakter kalmadıysa da sunucuya bildir: sıralamadan düşsün */
+  const key=JSON.stringify(SLOTS.filter(Boolean).map(x=>[x.name,x.cls,x.lv,x.tw,x.st&&x.st.e,x.st&&x.st.k,x.st&&x.st.mh]))+"|"+(b?1:0); /* karakter kalmadıysa da sunucuya bildir: sıralamadan düşsün */
   if(!force&&key===COM.lastLb)return;
   try{
     const r=await CLOUD.sb.rpc("kz_lb_refresh");
@@ -38,7 +38,21 @@ function comSub(s){COM.sub=s;view()}
 function comBy(k){COM.by=k;view()}
 function comStop(){if(COM.timer){clearInterval(COM.timer);COM.timer=null}}
 
-function cCommunity(v){
+/* Karakter değişince sosyal durumlar (arkadaş/lonca/sohbet) sıfırlanır: her karakter ayrı bir oyuncudur */
+let SOC_WHO=null;
+function socSync(){
+  const w=(typeof P!=="undefined"&&P&&P.name)||"";
+  if(SOC_WHO===w)return;
+  const first=SOC_WHO===null;SOC_WHO=w;if(first)return;
+  if(typeof FR!=="undefined"){FR.data=null;FR.inbox=null;FR.unread=0;FR.reqs=0;FR.lastPing=0;FR.dm=null;if(FR.dmTimer){clearInterval(FR.dmTimer);FR.dmTimer=null}}
+  if(typeof GD!=="undefined"){GD.me=undefined;GD.list=null;GD.form=false;GD.chat=[];GD.sig=""}
+  COM.sig="";COM.msgs=[];
+}
+async function socRetry(fn){ /* karakter henüz buluta yazılmadıysa: kaydet, bir kez daha dene */
+  try{const r=await fn();if(r&&r.error&&/karakter: bu karakter/.test(r.error.message||"")){try{await cloudPush(true);await comPushLb(true)}catch(e){}return await fn()}return r}
+  catch(e){if(/karakter: bu karakter/.test((e&&e.message)||"")){try{await cloudPush(true);await comPushLb(true)}catch(x){}return await fn()}throw e}
+}
+function cCommunity(v){socSync();
   comStop();
   const sub=`<div class="sub-tabs">
     <button class="sub-tab ${COM.sub=="rank"?"act":""}" onclick="comSub('rank')">🏆 Sıralama</button>
@@ -89,17 +103,17 @@ async function comLoadRank(){
   try{
     await comPushLb(true);
     const col=COM.by;
-    const r=await CLOUD.sb.from("leaderboard").select("user_id,char_name,cls,level,tower,elites,kills,maxhit").order(col,{ascending:false}).order("kills",{ascending:false}).limit(100);
+    const r=await CLOUD.sb.from("leaderboard").select("ck,char_name,cls,level,tower,elites,kills,maxhit").order(col,{ascending:false}).order("kills",{ascending:false}).limit(100);
     if(r.error)throw r.error;
     const rows=r.data||[];
     const box2=$("rank-box");if(!box2||tab!=="community"||COM.sub!=="rank")return;
     if(!rows.length){box2.innerHTML='<p class="mu" style="font-size:11px">Henüz kimse listede yok.</p>';return}
     const unit=RANKS[col][1];
     box2.innerHTML=rows.map((x,i)=>{
-      const mine=CLOUD.user&&x.user_id===CLOUD.user.id,c=CL[x.cls]||CL.tank;
+      const mine=CLOUD.user&&x.char_name===P.name,c=CL[x.cls]||CL.tank;
       const val=col==="elites"?(x[col]+" "+unit):col==="maxhit"?(unit+Number(x[col]||0).toLocaleString("tr-TR")):(unit+x[col]);
       const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":"#"+(i+1);
-      return`<div class="q" onclick="comProfile('${escH(x.user_id)}')" style="cursor:pointer;padding:6px 8px;margin-bottom:5px;${mine?"border:1px solid var(--gold);":""}">
+      return`<div class="q" onclick="comProfile('${escH(x.ck)}')" style="cursor:pointer;padding:6px 8px;margin-bottom:5px;${mine?"border:1px solid var(--gold);":""}">
         <div style="width:30px;text-align:center;font-weight:800">${medal}</div>
         <div style="flex:1;min-width:0"><b style="${mine?"color:var(--gold)":""}">${escH(x.char_name||"?")}</b>${mine?' <span class="mu" style="font-size:9px">(sen)</span>':""}
           <div class="mu" style="font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.e} ${escH(c.n||x.cls||"")}</div></div>
@@ -115,17 +129,9 @@ async function comLoadRank(){
 async function comLoadChat(scroll){
   const list=$("chat-list");if(!list)return;
   try{
-    const r=await CLOUD.sb.from("chat_messages").select("id,user_id,username,body,created_at").order("id",{ascending:false}).limit(50);
+    const r=await CLOUD.sb.from("chat_messages").select("id,user_id,char_name,char_key,body,created_at").order("id",{ascending:false}).limit(50);
     if(r.error)throw r.error;
     COM.msgs=(r.data||[]).slice().reverse();
-    const need=[...new Set(COM.msgs.map(m=>m.user_id))].filter(u=>!(u in COM.names)||COM.names[u]===null);
-    if(need.length){
-      try{
-        const n=await CLOUD.sb.from("leaderboard").select("user_id,char_name").in("user_id",need);
-        (n.data||[]).forEach(x=>{COM.names[x.user_id]=x.char_name||null});
-      }catch(e){}
-      need.forEach(u=>{if(!(u in COM.names))COM.names[u]=null});
-    }
     comRenderChat(scroll);
   }catch(e){
     const l=$("chat-list");
@@ -134,15 +140,15 @@ async function comLoadChat(scroll){
 }
 function comRenderChat(force){
   const list=$("chat-list");if(!list)return;
-  const sig=COM.msgs.map(m=>m.id+":"+(COM.names[m.user_id]||"")).join(",")+"|"+COM.muted.length;
+  const sig=COM.msgs.map(m=>m.id+":"+(m.char_name||"")).join(",")+"|"+COM.muted.length;
   if(!force&&sig===COM.sig)return;
   COM.sig=sig;
   const nearBottom=list.scrollHeight-list.scrollTop-list.clientHeight<60;
-  const rows=COM.msgs.filter(m=>!COM.muted.includes(m.user_id)).map(m=>{
-    const mine=CLOUD.user&&m.user_id===CLOUD.user.id;
+  const rows=COM.msgs.filter(m=>!COM.muted.includes(m.char_key||m.user_id)).map(m=>{
+    const mine=CLOUD.user&&m.user_id===CLOUD.user.id&&m.char_name===P.name;
     const t=new Date(m.created_at).toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"});
-    const act=mine?`<span style="cursor:pointer;margin-left:6px" onclick="comDel(${Number(m.id)})">🗑️</span>`:`<span style="cursor:pointer;margin-left:6px" onclick="comMute('${escH(m.user_id)}')">🔇</span>`;
-    return`<div style="margin-bottom:6px"><b ${mine?"":`onclick="comProfile('${escH(m.user_id)}')" `}style="cursor:pointer;color:${mine?"var(--gold)":"#93c5fd"}">${escH(COM.names[m.user_id]||"Oyuncu")}</b> <span class="mu" style="font-size:9px">${t}</span>${act}<div style="word-break:break-word">${escH(m.body)}</div></div>`;
+    const act=mine?`<span style="cursor:pointer;margin-left:6px" onclick="comDel(${Number(m.id)})">🗑️</span>`:`<span style="cursor:pointer;margin-left:6px" onclick="comMute('${escH(m.char_key||m.user_id)}')">🔇</span>`;
+    return`<div style="margin-bottom:6px"><b ${mine||!m.char_key?"":`onclick="comProfile('${escH(m.char_key)}')" `}style="cursor:pointer;color:${mine?"var(--gold)":"#93c5fd"}">${escH(m.char_name||"Oyuncu")}</b> <span class="mu" style="font-size:9px">${t}</span>${act}<div style="word-break:break-word">${escH(m.body)}</div></div>`;
   }).join("")||'<p class="mu">Henüz mesaj yok. İlk mesajı sen yaz!</p>';
   list.innerHTML=rows;
   if(force||nearBottom)list.scrollTop=list.scrollHeight;
@@ -155,7 +161,7 @@ async function comSend(){
   if(t.length>200)return toast("Mesaj en fazla 200 karakter olabilir");
   COM.sending=true;
   try{
-    const r=await CLOUD.sb.from("chat_messages").insert({user_id:CLOUD.user.id,body:t});
+    const r=await CLOUD.sb.from("chat_messages").insert({user_id:CLOUD.user.id,char_name:P.name,body:t});
     if(r.error)throw r.error;
     inp.value="";
     await comLoadChat(true);
@@ -199,14 +205,14 @@ async function comRankFind(){
     const col=COM.by,unit=RANKS[col][1];
     box.innerHTML='<div class="mu" style="font-size:10px;margin-bottom:4px">Arama sonuçları ('+RANKS[col][0]+' sırasına göre):</div>'+rows.map(x=>{
       const c=CL[x.cls]||CL.tank,val=col==="elites"?(x[col]+" "+unit):col==="maxhit"?(unit+Number(x[col]||0).toLocaleString("tr-TR")):(unit+x[col]);
-      return`<div class="q" onclick="comProfile('${escH(x.user_id)}')" style="cursor:pointer;padding:6px 8px;margin-bottom:5px;border:1px solid var(--gold)"><div style="width:42px;text-align:center;font-weight:800">#${Number(x.rk)}</div>
+      return`<div class="q" onclick="comProfile('${escH(x.ck)}')" style="cursor:pointer;padding:6px 8px;margin-bottom:5px;border:1px solid var(--gold)"><div style="width:42px;text-align:center;font-weight:800">#${Number(x.rk)}</div>
         <div style="flex:1;min-width:0"><b>${escH(x.char_name||"?")}</b><div class="mu" style="font-size:10px">${c.e} ${escH(c.n||x.cls||"")}</div></div><b class="g" style="font-size:12px">${escH(val)}</b></div>`}).join("")+'<hr style="border:0;border-top:1px solid var(--ln);margin:8px 0">';
   }catch(e){box.innerHTML=`<p style="font-size:11px;color:#fbbf24">Arama yapılamadı: ${escH(cloudErr(e))}<br><span class="mu">Supabase'te sql/liderlik.sql kodunun çalıştırıldığından emin ol.</span></p>`}
 }
 async function comProfile(uid){
   $("ic").innerHTML='<p class="mu" style="text-align:center;padding:20px">Profil yükleniyor...</p>';$("im").style.display="flex";
   try{
-    const r=await CLOUD.sb.rpc("kz_profile",{p_user:uid});
+    const r=await CLOUD.sb.rpc("kz_profile",{p_ck:uid});
     if(r.error)throw r.error;
     const p=r.data;
     if(!p){$("ic").innerHTML='<p class="mu" style="text-align:center;padding:16px">Profil bulunamadı.</p><button class="btn s" onclick="closeM()">Kapat</button>';return}
