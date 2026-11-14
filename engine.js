@@ -58,7 +58,9 @@ const TITLES=[
   {id:"t6",n:"Karanlığın Efendisi",desc:"Kadim Kara Ejderha'yı yen",bonus:"+%15 Tüm Güç & +%5 Kritik",b:{atk:15,arm:15,hp:15,cr:5},chk:p=>!!p.boss[4]},
   {id:"t7",n:"Gölgelerin Mirasçısı",desc:"Kadim Kral Valdrenn'i yen",bonus:"+%20 Tüm Güç & +%8 Kritik",b:{atk:20,arm:20,hp:20,cr:8},chk:p=>!!p.boss[11]},
   {id:"t8",n:"Boss Avcısı",desc:"Bir Dünya Boss'unun yenilişine katıl",bonus:"+%6 Saldırı & +%6 Can",b:{atk:6,hp:6},chk:p=>((p.st&&p.st.wbk)|0)>=1},
-  {id:"t9",n:"Dünya Yıkıcı",desc:"Bir Dünya Boss'unda hasarda ilk 3'e gir",bonus:"+%10 Saldırı & +%10 Can",b:{atk:10,hp:10},chk:p=>((p.st&&p.st.wbt)|0)>=1}
+  {id:"t9",n:"Dünya Yıkıcı",desc:"Bir Dünya Boss'unda hasarda ilk 3'e gir",bonus:"+%10 Saldırı & +%10 Can",b:{atk:10,hp:10},chk:p=>((p.st&&p.st.wbt)|0)>=1},
+  {id:"t10",n:"Koleksiyoncu",desc:"14 başarım kademesi al",bonus:"+%8 Saldırı & +%8 Can",b:{atk:8,hp:8},chk:p=>achDone(p)>=14},
+  {id:"t11",n:"Efsane Yolcu",desc:"Tüm başarım kademelerini al (28)",bonus:"+%12 Tüm Güç & +%5 Kritik",b:{atk:12,arm:12,hp:12,cr:5},chk:p=>achDone(p)>=28}
 ];
 
 const POT_DEF={
@@ -400,6 +402,7 @@ function forgeUpg(p,loc,rng,prot){
   const out=[];out.ok=false;const i=itemAt(p,loc);
   if(!i){out.push({toast:"Eşya bulunamadı"});return out}
   if(i.p>=15){out.push({toast:"Maksimum +15"});return out}
+  if(prot&&!(p.sc>0)){out.push({toast:"📜 Koruma Parşömenin kalmadı. Seçeneği kapatıp tekrar dene."});out.noscroll=true;return out}
   const cost=8+i.rl*6+i.p*14,nd=forgeNeed(i.p);
   if(!Object.keys(nd).every(k=>(p.mat[k]||0)>=nd[k])){out.push({toast:"Yetersiz malzeme"});return out}
   if(p.gold<cost){out.push({toast:"Yetersiz altın"});return out}
@@ -449,6 +452,18 @@ function chestOpen(p,n,rng){
 /* ===== EKONOMİ, GÖREV, GÜNLÜK (sunucuda işlenir; telefon yalnızca sonucu gösterir) ===== */
 const QS=[];RG.forEach((r,ri)=>[[0,8,40],[ri<5?5:4,6,70],[r.m.length-1,1,180]].forEach(([mi,n,g],k)=>QS.push({id:"q"+ri+[0,2,3][k],ri,mi,n,g:Math.floor(g*Math.pow(ri+1,1.6)),sc:k==2?1:0,t:r.m[mi][0]})));
 QS.push({id:"qa",ri:-1,mi:-1,n:60,g:400,sc:1,t:"herhangi bir canavar"});
+/* Başarımlar: yalnızca sunucunun kilitlediği sayaçlara dayanır (öldürme, elit, GR-V, en yüksek vuruş, kule, seviye, bölge boss'u). İlerleme p.q["a_<id>"].p = alınan kademe sayısı. */
+const ACH_T=["Bronz","Gümüş","Altın","Elmas"],ACH_R=[{g:250},{g:1200,sc:1,ch:1},{g:5000,sc:2,ch:2},{g:20000,sc:3,ch:4}];
+const ACH=[
+{id:"a1",ic:"⚔️",n:"Canavar Avcısı",u:"canavar öldür",t:[100,1000,5000,20000],f:p=>p.st.k|0,go:"kill"},
+{id:"a2",ic:"💀",n:"Elit Celladı",u:"elit canavar öldür",t:[10,100,500,2000],f:p=>p.st.e|0,go:"elite"},
+{id:"a3",ic:"🌟",n:"Efsane Avcısı",u:"GR-V eşya bul",t:[1,10,40,150],f:p=>p.st.l|0,go:"kill"},
+{id:"a4",ic:"💥",n:"Yıkıcı Darbe",u:"hasarlık tek vuruş",t:[500,3000,15000,60000],f:p=>p.st.mh|0,go:"kill"},
+{id:"a5",ic:"🗼",n:"Kule Fatihi",u:". kata ulaş",t:[10,30,60,100],f:p=>p.tw|0,go:"tower"},
+{id:"a6",ic:"📈",n:"Yolun Yolcusu",u:". seviyeye ulaş",t:[20,50,80,100],f:p=>p.lv|0,go:""},
+{id:"a7",ic:"👑",n:"Bölge Hâkimi",u:"bölge boss'unu yen",t:[3,6,9,12],f:p=>Object.keys(p.boss||{}).filter(k=>p.boss[k]).length,go:"elite"}];
+const achN=(p,a)=>{const s=p.q&&p.q["a_"+a.id];return Math.max(0,Math.min(4,(s&&s.p)|0))};
+const achDone=p=>ACH.reduce((s,a)=>s+achN(p,a),0);
 const QV=[
 {id:"v1",h:"Savaş",k:"crit",n:30,txt:"30 kritik vuruş yap",g:150,m:{kirik:5}},
 {id:"v2",h:"Savaş",k:"crit",n:150,txt:"150 kritik vuruş yap",g:600,ch:1},
@@ -592,6 +607,16 @@ function ecoDo(p,body,rng,t,now){
       q.c=1;p.gold+=q.g;if(q.ch)p.ch++;
       Object.entries(q.m||{}).forEach(([k,n])=>{p.mat[k]=(p.mat[k]||0)+n});
       out.push({snd:"lvl"});out.push({toast:"+"+q.g+" 🪙"+(q.ch?" +🎁":"")});out.ok=true;return out;
+    }
+    if(kd==="ach"){
+      const A=ACH.find(x=>x.id===body.id);
+      if(!A)return _bad(out,"Başarım bulunamadı");
+      if(!p.q||typeof p.q!=="object")p.q={};
+      const s=p.q["a_"+A.id]||(p.q["a_"+A.id]={p:0,c:0}),n=s.p|0;
+      if(n>=4)return _bad(out,"Tüm kademeler alındı");
+      if(A.f(p)<A.t[n])return _bad(out,"Henüz tamamlanmadı");
+      s.p=n+1;const R=ACH_R[n];_grantQ(p,R);
+      out.push({snd:"lvl"});out.push({toast:"🏅 "+A.n+" ("+ACH_T[n]+"): +"+R.g+" 🪙"+(R.sc?" +"+R.sc+"📜":"")+(R.ch?" +"+R.ch+"🎁":"")});out.ok=true;return out;
     }
     if(kd==="d"){
       const d=p.dl;if(!d||d.c)return _bad(out,"Bugünkü ödül alındı");
@@ -758,6 +783,6 @@ function wbSim(p0,wi,rng){
   return{dmg:Math.max(0,Math.floor(m.mx-m.hp)),rounds,fell:p.hp<=0};
 }
 
-const KZ={potAmt,WB,wbName,wbSim,RACES,raceMul,bHit,MAXLV,rgOf,reqXp,TIERS,TBP,tierOf,tierItem,mkName,SPC,SPN,isSpcW,rerollCost,wInfo,wLine,spdTxt,jrOf,autoJunk,mkDo,MK_MINLV,healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
+const KZ={ACH,ACH_T,ACH_R,achN,achDone,potAmt,WB,wbName,wbSim,RACES,raceMul,bHit,MAXLV,rgOf,reqXp,TIERS,TBP,tierOf,tierItem,mkName,SPC,SPN,isSpcW,rerollCost,wInfo,wLine,spdTxt,jrOf,autoJunk,mkDo,MK_MINLV,healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
 (typeof globalThis!=="undefined"?globalThis:window).KZ=KZ;
 if(typeof module!=="undefined"&&module.exports)module.exports=KZ;

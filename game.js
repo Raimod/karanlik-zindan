@@ -1,4 +1,4 @@
-const GAME_VERSION="2.13.1";
+const GAME_VERSION="2.14.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const SET={snd:1,vol:70,hap:1,shk:1,dmg:1};
@@ -849,7 +849,7 @@ if(SF){const i=SF,cost=8+i.rl*6+i.p*14,ch=i.p>=10?30-(i.p-10)*4:100-i.p*6;
 const aff=(i.af||[]).map((a,n)=>`<div class="q"><span>✨ ${a.n} (+%${a.v})</span><button class="btn ${a.l?"":"s"}" onclick="lockA(${n})">${a.l?"🔒 Kilitli":"Açık"}</button></div>`).join("");
 act=`<div style="border-top:1px solid var(--ln);margin-top:12px;padding-top:12px"><div class="r"><div><b style="color:${G[i.g].c}">${i.name} +${i.p}</b><div class="mu" style="font-size:10px">${G[i.g].n} · Gerekli Lv.${effLv(i)} · Başarı %${ch}</div></div><b class="g" style="font-size:11px">${cost} 🪙</b></div>
 <p class="mu" style="font-size:10px;margin:6px 0">+6 üstü başarısızlıkta eşya düşebilir (+10 üstü kırılabilir). Koruma parşömenin: <b class="g">${P.sc}</b></p>
-<label class="q" style="cursor:pointer;gap:8px"><input type="checkbox" ${SFprot?"checked":""} ${P.sc>0?"":"disabled"} onchange="SFprot=this.checked;view()" style="width:18px;height:18px"><span style="flex:1;font-size:11px">📜 Koruma parşömeni kullan <span class="mu">(yalnızca eşya zarar görecekse harcanır)</span></span></label>
+<label class="q" style="cursor:pointer;gap:8px"><input type="checkbox" ${SFprot&&P.sc>0?"checked":""} ${P.sc>0?"":"disabled"} onchange="SFprot=this.checked;view()" style="width:18px;height:18px"><span style="flex:1;font-size:11px">📜 Koruma parşömeni kullan <span class="mu">(yalnızca eşya zarar görecekse harcanır)</span></span></label>
 ${needHTML(i.p)}<button class="btn" onclick="upg()">Ocakta yükselt (+${i.p+1})</button>
 ${aff?`<div class="ct" style="margin-top:12px;font-size:12px;color:#c084fc">Efsun dönüştürücü</div>${aff}<button class="btn v" onclick="reroll()">Efsunları çevir (${rerollCost(i)} 🪙)</button>`:""}</div>`}
 v.innerHTML=`<div class="cd"><div class="ct">Demirci ocağı <span class="g" style="font-size:11px">+15 sınırı</span></div><div class="mu" style="font-size:10px;margin-bottom:8px">${matLine()}</div>
@@ -862,7 +862,8 @@ function rm(i){SL.forEach(k=>{if(P.eq[k]===i)P.eq[k]=null});const n=P.inv.indexO
 async function upg(){
   const i=SF;if(!i||!SFloc)return;
   if(i.p>=15)return toast("Maksimum +15");
-  const loc=SFloc,r=await ecoCall({op:"forge",a:"upg",loc,prot:SFprot&&P.sc>0});
+  if(SFprot&&!(P.sc>0)){SFprot=false;toast("📜 Koruma Parşömenin bitti! Seçenek kapatıldı, parşömensiz basmak için tekrar bas.");view();return}
+  const loc=SFloc,r=await ecoCall({op:"forge",a:"upg",loc,prot:!!SFprot});
   if(!r)return;
   if(r.removed){SF=null;SFloc=null}else sfReselect();
   view();
@@ -1525,6 +1526,17 @@ function ev(){} /* görev ilerlemesi artık sunucuda işlenir */
 function qRow(q,fn,head){const s=qp(q),d=s.p>=q.n,gk=(d||s.c)?"":(q.k||"kill"),rw=q.g+"🪙"+(q.sc?" +📜"+(q.sc>1?q.sc:""):"")+(q.ch?" +🎁"+(q.ch>1?q.ch:""):"")+Object.entries(q.m||{}).map(([k,n])=>" +"+MT[k][0]+n).join("");
 return`<div class="q" style="cursor:pointer" onclick="goQ('${gk}')"><div style="flex:1"><b>${head}</b><div class="mu">${q.txt||q.n+"× "+q.t} · ${rw}</div><div class="pg"><i style="width:${Math.min(100,s.p/q.n*100)}%"></i></div></div>${s.c?'<span class="mu">Alındı</span>':`<button class="btn" ${d?"":"disabled"} onclick="event.stopPropagation();${fn}('${q.id}')">${d?"Al":s.p+"/"+q.n}</button>`}</div>`}
 async function claimV(id){const r=await ecoCall({op:"eco",a:"claim",kind:"v",id});if(r){hud();view()}}
+function achHTML(){
+  const tot=achDone(P),all=ACH.length*4;
+  const rows=ACH.map(a=>{
+    const n=achN(P,a),v=a.f(P),done=n>=4,tg=a.t[Math.min(n,3)],ok=!done&&v>=tg,R=ACH_R[Math.min(n,3)];
+    const rw=R.g.toLocaleString()+"🪙"+(R.sc?" +"+R.sc+"📜":"")+(R.ch?" +"+R.ch+"🎁":"");
+    const dots=[0,1,2,3].map(i=>`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:3px;background:${i<n?["#c98a4b","#cbd5e1","#f6d365","#7dd3fc"][i]:"#ffffff22"}"></span>`).join("");
+    const unit=a.u.startsWith(".")?"":" ";
+    return`<div class="q" style="align-items:center"><div style="font-size:24px;width:34px;text-align:center">${a.ic}</div><div style="flex:1"><b>${a.n}</b> <span class="mu" style="font-size:9.5px">${done?"Tamamlandı":ACH_T[n]}</span><div class="mu">${tg.toLocaleString()}${unit}${a.u} · ${rw}</div><div class="pg"><i style="width:${done?100:Math.min(100,v/tg*100)}%"></i></div><div style="margin-top:3px;font-size:9.5px" class="mu">${dots} ${Math.min(v,done?v:tg).toLocaleString()}${done?"":" / "+tg.toLocaleString()}</div></div>${done?'<span class="mu">✔</span>':`<button class="btn ${ok?"v":"s"}" ${ok?"":"disabled"} style="width:auto;padding:6px 10px;font-size:11px;margin:0" onclick="claimA('${a.id}')">${ok?"Al":"Devam"}</button>`}</div>`}).join("");
+  return`<div class="cd"><div class="ct">🏅 Başarımlar <span class="mu" style="font-size:10px;font-weight:400">${tot}/${all} kademe</span></div><div class="pg" style="margin-bottom:8px"><i style="width:${tot/all*100}%"></i></div><p class="mu" style="font-size:10px;margin-bottom:6px">14 kademede <b>Koleksiyoncu</b>, 28 kademede <b>Efsane Yolcu</b> ünvanı açılır (Karakter → Ünvan).</p>${rows}</div>`;
+}
+async function claimA(id){const r=await ecoCall({op:"eco",a:"claim",kind:"ach",id});if(r){hud();view()}}
 let questSub="daily"; // "daily" | "reg" | "chal"
 function setQuestSub(s){questSub=s;view()}
 function cQuests(v){ev("lvl",P.lv);ev("tower",P.tw);
@@ -1532,11 +1544,13 @@ const availQs=QS.filter(q=>q.ri<0||P.lv>=RG[q.ri].req);
 const dReady=P.dl.q.filter(q=>!q.c&&q.p>=q.n).length+(!P.dl.c?1:0)+(P.ch>0?1:0);
 const rReady=availQs.filter(q=>{const s=qp(q);return!s.c&&s.p>=q.n}).length;
 const cReady=QV.filter(q=>{const s=qp(q);return!s.c&&s.p>=q.n}).length;
+const aReady=ACH.filter(a=>{const n=achN(P,a);return n<4&&a.f(P)>=a.t[n]}).length;
 
 const subNav=`<div class="sub-tabs">
   <button class="sub-tab ${questSub=="daily"?"act":""}" onclick="setQuestSub('daily')">📅 Günlük${dReady?`<span class="bdg">${dReady}</span>`:""}</button>
   <button class="sub-tab ${questSub=="reg"?"act":""}" onclick="setQuestSub('reg')">🗺️ Bölge${rReady?`<span class="bdg">${rReady}</span>`:""}</button>
   <button class="sub-tab ${questSub=="chal"?"act":""}" onclick="setQuestSub('chal')">🏆 Meydan Okuma${cReady?`<span class="bdg">${cReady}</span>`:""}</button>
+  <button class="sub-tab ${questSub=="ach"?"act":""}" onclick="setQuestSub('ach')">🏅 Başarım${aReady?`<span class="bdg">${aReady}</span>`:""}</button>
 </div>`;
 
 let body="";
@@ -1545,6 +1559,8 @@ if(questSub=="daily"){
 }else if(questSub=="reg"){
   const qs=availQs.map(q=>qRow(q,"claim",q.ri<0?"Gezgin":RG[q.ri].n)).join("");
   body=`<div class="cd"><div class="ct">🗺️ Bölge Görevleri</div>${qs||'<p class="mu" style="font-size:11px">Aktif görev yok.</p>'}</div>`;
+}else if(questSub=="ach"){
+  body=achHTML();
 }else{
   body=`<div class="cd"><div class="ct">🏆 Meydan Okumalar</div>${QV.map(q=>qRow(q,"claimV",q.h)).join("")}</div>`;
 }
@@ -1705,6 +1721,7 @@ function cWiki(v){
           <li><b>🗺️ 12 Bölge ve Seviye 100:</b> Dünya artık 12 bölgeden oluşuyor ve seviye sınırı <b>100</b>. Her bölgede 7 canavar ve 1 👑 Elit Boss var (toplam 96 canavar, hepsinin kendi çizimi var). Haritada bölge noktalarına dokunarak bölgeleri gezebilirsin; bir sonraki bölge için seviye gerekir ve önceki bölgenin Elit Boss'unu yenmelisin. 51-100 arası eşyalar yeni kademelerde (55, 60 … 100) düşer; Lv 75 ve Lv 100 silahları da kilometre taşı efsunlu gelir.</li>
           <li><b>🏰 Lonca (v2.8.0):</b> Topluluk > Lonca sekmesinden 10. seviyeden itibaren lonca kurabilir ya da açık bir loncaya katılabilirsin (en çok 30 üye). Roller: <b>Lider</b> (ayarlar, rütbe, atma, devir, dağıtma), <b>Subay</b> (sıradan üyeleri atar), <b>Üye</b>. Lider ayrılırsa liderlik en eski subaya geçer. Loncanın gücü üyelerinin seviyeleri toplamıdır; lonca listesi güce göre sıralanır. Lonca sohbetini yalnızca üyeler görür.</li>
           <li><b>🗺️ Harita (v2.8.0):</b> Harita sekmesi doğrudan tam ekran haritayı açar. Bir bölgeye dokununca küçük bir pencerede bölgenin canavarları çıkar; haritanın boş yerine dokunarak pencereyi kapatırsın.</li>
+          <li><b>🏅 Başarımlar (v2.14.0):</b> Görevler > Başarım sekmesinde 7 başarım, her biri Bronz/Gümüş/Altın/Elmas 4 kademe. Hedefe ulaşınca "Al" ile altın, parşömen ve sandık kazanırsın. 14 kademede <i>Koleksiyoncu</i>, 28 kademede <i>Efsane Yolcu</i> ünvanı açılır. Sayaçlar sunucuda kilitli olduğu için hile yapılamaz.</li>
           <li><b>🐉 Dünya Boss'u (v2.13.0):</b> Topluluk > Boss sekmesinde herkesin ortak vurduğu boss durur (10. seviyeden itibaren). Karakter başına günde 3 saldırı hakkın var (her gün 03:00'te yenilenir); bir saldırı en çok 30 tur sürer ve boss seviyene göre ayarlanır. Saldırıda canın, manan ve iksirlerin harcanmaz. Boss 3 gün yaşar; canı %75, %50, %25'e inince herkese sandık, ölürse katılanlara sandık çıkar. Hasarda ilk 3'e <i>Dünya Yıkıcı</i>, katılanlara <i>Boss Avcısı</i> ünvanı verilir; en çok hasar veren 3 loncanın üyelerine ek sandık vardır. Boss ölünce ya da kaçınca 12 saat sonra sıradaki bölgenin bossu gelir.</li>
           <li><b>🧍 Karakterler birbirinden bağımsızdır (v2.11.0):</b> Aynı hesapta birden çok karakter açsan da her biri ayrı bir oyuncu sayılır: kendi sıralaması, arkadaşları, mesajları, engelleri ve loncası vardır. Ortak olan tek şey deponun (banka, pazar, takas) hesaba bağlı olmasıdır.</li>
           <li><b>👥 Arkadaşlar ve Mesajlar (v2.9.0):</b> Sıralamada, sohbette ya da loncada bir oyuncunun adına dokununca profilinin altında <i>Mesaj gönder</i>, <i>Arkadaş ekle</i> ve <i>Engelle</i> düğmeleri çıkar. Arkadaşlık iki taraflıdır (istek gönderilir, karşı taraf kabul eder; en çok 50 arkadaş). Arkadaşlarının çevrimiçi olup olmadığını Topluluk > Arkadaş sekmesinde görürsün (son 3 dakikada oyundaysa çevrimiçidir; bu bilgiyi yalnızca arkadaşların görür). Özel mesaj herkese gönderilebilir; rahatsız eden oyuncuyu engelleyebilirsin. Okunmamış mesaj ve istekler Topluluk sekmesinde kırmızı rozetle görünür. Mesajlar 14 gün saklanır.</li>
