@@ -88,7 +88,26 @@ for(let t=55;t<=100;t+=5)TBP[t]=650+(t-50)*18;
 const tierOf=lv=>{let t=1;for(const x of TIERS)if(x<=lv)t=x;return t};
 const oreIx=rl=>rgOf(Math.max(1,rl));
 const tierSuf=t=>{const o=oreIx(t),f=TIERS.filter(x=>oreIx(x)==o),k=f.indexOf(t);return k>0?" "+["","II","III"][k]:""};
-const mkName=(rc,si,t)=>RG[oreIx(t)].ore+" "+CL[rc].it[si]+tierSuf(t);
+/* Eşya adları (v2.12.0): silah her kademede özgün; diğer parçalar kademenin temasını taşır */
+const ITW={
+tank:["Yosun Tutmuş Pala","Kök Kesen Kılıç","Meşe Bekçisinin Yemini","Paslı Maden Baltası","Zehir Kırıcı","Kumtaşı Pala","Firavunun Cellat Kılıcı","Kırağı Dişi","Buzul Yarıcı","Ejderha Pulu Baltası","Yarık Bekçisi","Bataklık Ezici","Kemik Kırıcı Çekiç","Vitray Yarıcı","Çan Susturan","Yıldırım Hükmü","Zincir Kıran","Cehennem Dişi Pala","Boşluk Yarığı","Taht Muhafızının Hükmü","Valdrenn'in Son Yemini"],
+mage:["Kurumuş Dal Asa","Ruh Meşesi Asası","Orman Ruhu Asası","Zehir Kristali Asa","Maden Fısıltısı","Kum Fırtınası Asası","Mumya Sarmalı Asa","Kırağı Düğümü","Ruh Dondurucu Asa","Kül Alevi Asası","Kıyamet Alevi","Sis Dokuyucu","Hortlak Rahibin Asası","Vitray Gözü","Çan Kulesi Asası","Bulut Yarıcı Asa","Kor Büyüsü Asası","Cehennem Kâhini","Yıldızsız Asa","Danışmanın Lanetli Asası","Mirasın Son Kıvılcımı"],
+archer:["Çıtır Avcı Yayı","Tilki Kuyruğu Yayı","Haydut Avcısı","Mağara Yarasası Yayı","Zehirli Kiriş","Akbaba Gözü Yayı","Kum Yılanı Yayı","Kar Baykuşu Yayı","Buzul Kirişi","Magma Çıtası","Ejderha Kemiği Yayı","Sarmaşık Kirişi","Mezar Okçusu","Katedral Avcısı","Gece Gezgini Yayı","Rüzgâr Kartalı Yayı","Kül Okçusunun Yayı","Zincir Kirişli Yay","Yıldız Avcısı","Taht Avcısı","Son Ok"],
+assassin:["Pas Tutmuş Bıçak","Orman Gölgesi","Kıl Payı","Zehirli Diş","Akrep Kuyruğu","Mezar Soyguncusunun Bıçağı","Kum Fısıltısı","Buz Dişi Hançer","Kırağı Kesiği","Kül Hançeri","Ejderha Pençesi","Sülük Bıçağı","Kemik Hançer","Karanlık Vitray","Sessiz Çan","Şimşek Dişi","Kor Hançer","Zincir Kesen","Zaman Hırsızı","Gölge Cellat","Gölgenin Son Fısıltısı"],
+healer:["Rahip Çırağı Topuzu","Orman Duası Topuzu","Meşe Lütfu","Maden Şifacısı Topuzu","Arınma Topuzu","Güneş Mühürlü Topuz","Kutsal Mumya Asası","Kar Duası","Ruh Dindirici","Kutsal Kül Topuzu","Yarık Rahibinin Topuzu","Bataklık Şifacısı","Mezar Duası","Katedral Çanı Topuzu","Vitray Lütfu","Fırtına Duası","Kor Şifası","Cehennem Dindirici","Boşluk Işığı","Taht Rahibinin Topuzu","Valdrenn'in Son Duası"]};
+const ITH={
+tank:["Yosun Tutmuş","Kök Sarmış","Meşe Bekçisi","Paslı Maden","Zehir Kırıcı","Kumtaşı","Firavun Cellatı","Kırağı Dişli","Buzul Yarıcı","Ejderha Pullu","Yarık Bekçisi","Bataklık Ezici","Kemik Kırıcı","Vitray Yarıcı","Çan Susturan","Yıldırım Hükümlü","Zincir Kıran","Cehennem Dişli","Boşluk Yarığı","Taht Muhafızı","Son Yemin"],
+mage:["Kurumuş Dal","Ruh Meşesi","Orman Ruhu","Zehir Kristali","Maden Fısıltılı","Kum Fırtınalı","Mumya Sarmalı","Kırağı Düğümlü","Ruh Dondurucu","Kül Alevli","Kıyamet Alevli","Sis Dokuyan","Hortlak Rahip","Vitray Gözlü","Çan Kuleli","Bulut Yaran","Kor Büyülü","Cehennem Kâhini","Yıldızsız","Lanetli Danışman","Mirasın Kıvılcımı"],
+archer:["Çıtır Avcı","Tilki Kuyruklu","Haydut Avcısı","Yarasa Kanatlı","Zehirli Kirişli","Akbaba Gözlü","Kum Yılanı","Kar Baykuşu","Buzul Kirişli","Magma Çıtalı","Ejderha Kemiği","Sarmaşık Kirişli","Mezar Okçusu","Katedral Avcısı","Gece Gezgini","Rüzgâr Kartalı","Kül Okçusu","Zincir Kirişli","Yıldız Avcısı","Taht Avcısı","Son Ok"],
+assassin:["Pas Tutmuş","Orman Gölgesi","Kıl Payı","Zehirli Diş","Akrep Kuyruklu","Mezar Soyguncusu","Kum Fısıltılı","Buz Dişli","Kırağı Kesikli","Kül Gölgesi","Ejderha Pençeli","Sülük","Kemik Gölgesi","Karanlık Vitray","Sessiz Çan","Şimşek Dişli","Kor Gölgesi","Zincir Kesen","Zaman Hırsızı","Gölge Cellat","Gölgenin Fısıltısı"],
+healer:["Rahip Çırağı","Orman Duası","Meşe Lütuflu","Maden Şifacısı","Arınma","Güneş Mühürlü","Kutsal Mumya","Kar Duası","Ruh Dindirici","Kutsal Kül","Yarık Rahibi","Bataklık Şifacısı","Mezar Duası","Katedral Çanı","Vitray Lütuflu","Fırtına Duası","Kor Şifası","Cehennem Dindirici","Boşluk Işığı","Taht Rahibi","Son Dua"]};
+const ITN={
+tank:["Muhafız Kılıcı","Kule Kalkanı","Savaş Miğferi","Plaka Zırh","Dizlik","Demir Çizme","Yeminli Gerdanlık","Mühür Yüzüğü"],
+mage:["Kadim Asa","Odak Küresi","Büyücü Tacı","Efsun Cübbesi","Rün Pantolonu","Astral Sandalet","Mana Kolyesi","Yıldız Yüzüğü"],
+archer:["Av Yayı","Sadak & Bıçak","Avcı Kapüşonu","Deri Yelek","Pusu Pantolonu","İzci Çizmesi","Şahin Gözü Kolyesi","Nişancı Yüzüğü"],
+assassin:["Gölge Hançeri","Bilek Bıçağı","Sessiz Maske","Gece Zırhı","Esnek Pantolon","Gölge Çizmesi","Engerek Gerdanlığı","Ölüm Yüzüğü"],
+healer:["Kutsal Topuz","Dua Kitabı","Işık Tacı","Ruhban Cübbesi","Arınma Pantolonu","Kutsal Sandalet","Hayat Madalyonu","Lütuf Yüzüğü"]};
+const mkName=(rc,si,t)=>{const k=TIERS.indexOf(t);if(k<0||!ITW[rc])return RG[oreIx(t)].ore+" "+CL[rc].it[si]+tierSuf(t);return si==0?ITW[rc][k]:ITH[rc][k]+" "+ITN[rc][si]};
 const tierItem=(rc,si,t,g,af)=>({name:mkName(rc,si,t),setOre:RG[oreIx(t)].ore,slot:SL[si],rc,rl:t,g:g||1,p:0,bp:TBP[t],af:af||[]});
 /* Milestone silahlar (Lv 10/30/50): düz vuruş (ba) ve beceri vuruşu (sk) ortalamasını artıran özel efsunlar */
 const SPC={10:{ba:20,sk:12},30:{ba:35,sk:21},50:{ba:50,sk:30},75:{ba:65,sk:38},100:{ba:80,sk:45}};

@@ -174,3 +174,7 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 - Aynı hesabın karakterleri arasında ortak olan tek şey depo (banka/pazar/takas)dır.
 - Yeni dosya: sql/karakter.sql (EN SON çalıştırılır). Eski arkadaşlık/mesaj/engel verileri sıfırlanır; lonca üyelikleri hesabın en yüksek seviyeli karakterine taşınır.
 - Tam ekran harita alttaki sekmeleri artık kapatmaz.
+
+## 2.12.0
+- Eşya isimleri yeniden yazıldı (hikâyeye uygun): her sınıfın silahı her kademede özgün adlı; diğer parçalar kademenin silah temasını taşır. Eski "II/III" ekleri kalktı.
+- Daha önce düşmüş eşyalar eski adını korur; bundan sonra düşenler yeni adı alır. Sunucu fonksiyonu (battle) yeniden kuruldu: edge/battle/index.ts → battle-index.ts.
