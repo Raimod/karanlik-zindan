@@ -1,4 +1,4 @@
-const GAME_VERSION="2.16.0";
+const GAME_VERSION="2.17.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const SET={snd:1,vol:70,hap:1,shk:1,dmg:1};
@@ -535,7 +535,7 @@ function petHTML(){
   const s0=(P.q&&P.q.pet)||{},s={e:Array.isArray(s0.e)?s0.e:[],l:Array.isArray(s0.l)?s0.l:[],a:Number.isInteger(s0.a)?s0.a:-1},act=s.a>=0?s.l[s.a]:null;
   const hdr=act?`<div class="cd" style="text-align:center"><div style="font-size:44px">${PET_SP[act.s].e}</div><b style="color:${PET_RC[act.rr]}">${PET_RN[act.rr]} ${PET_SP[act.s].n}</b> <span class="mu">Sv.${act.lv}/${PET_MAXL}</span><div class="g" style="font-size:12px;margin:3px 0">${petBonTxt(act)}</div>${act.lv<PET_MAXL?`<div class="pg"><i style="width:${Math.min(100,(act.x|0)/petLvNeed(act.lv)*100)}%"></i></div><div class="mu" style="font-size:9.5px">Her kesilen canavar +1 tecrübe (${act.x|0}/${petLvNeed(act.lv)})</div>`:'<div class="mu" style="font-size:10px">En üst seviye</div>'}<button class="btn s" style="margin-top:6px;padding:6px;font-size:11px" onclick="petAct('act',-1)">Geri çağır</button></div>`
     :`<div class="cd" style="text-align:center"><div style="font-size:30px;opacity:.5">🐾</div><div class="mu" style="font-size:11px">Aktif evcil hayvanın yok. Aşağıdan birini seç.</div></div>`;
-  const eggs=s.e.length?s.e.map((eg,i)=>{const need=petNeed(eg.r),n=Math.min(need,eg.n|0),full=n>=need;return`<div class="q" style="align-items:center"><div style="font-size:24px;width:34px;text-align:center">🥚</div><div style="flex:1"><b>${PET_SP[eg.r].e} ${PET_SP[eg.r].n} yumurtası</b> <span class="mu" style="font-size:9.5px">${i==0?(full?"Çatlamayı bekliyor (evcil alanı dolu)":"Isınıyor"):"Sırada"}</span><div class="pg"><i style="width:${n/need*100}%"></i></div><div class="mu" style="font-size:9.5px">${n}/${need} canavar</div></div>${i>0?`<button class="btn s" style="width:auto;padding:5px 9px;font-size:10px;margin:0" onclick="petAct('egg',${i})">Önce ısıt</button>`:""}</div>`}).join(""):'<p class="mu" style="font-size:11px">Yumurtan yok. Canavarlardan düşer (elitlerden daha sık). Yumurta, bulunduğun bölgenin hayvanıdır.</p>';
+  const eggs=s.e.length?s.e.map((eg,i)=>{const need=petNeed(eg.r),n=Math.min(need,eg.n|0),full=n>=need;return`<div class="q" style="align-items:center"><div style="font-size:24px;width:34px;text-align:center">🥚</div><div style="flex:1"><b>${PET_SP[eg.r].e} ${PET_SP[eg.r].n} yumurtası</b> <span class="mu" style="font-size:9.5px">${i==0?(full?"Çatlamayı bekliyor (evcil alanı dolu)":"Isınıyor"):"Sırada"}</span><div class="pg"><i style="width:${n/need*100}%"></i></div><div class="mu" style="font-size:9.5px">${n}/${need} canavar · ${RG[eg.r].n} ve üstü bölgelerde, seviyene uygun canavarlarla ısınır</div></div>${i>0?`<button class="btn s" style="width:auto;padding:5px 9px;font-size:10px;margin:0" onclick="petAct('egg',${i})">Önce ısıt</button>`:""}</div>`}).join(""):'<p class="mu" style="font-size:11px">Yumurtan yok. Canavarlardan düşer (elitlerden daha sık). Yumurta, bulunduğun bölgenin hayvanıdır.</p>';
   const list=s.l.length?s.l.map((pt,i)=>`<div class="q" style="align-items:center;border:1px solid ${s.a===i?"var(--gold)":"transparent"}"><div style="font-size:26px;width:34px;text-align:center">${PET_SP[pt.s].e}</div><div style="flex:1"><b style="color:${PET_RC[pt.rr]}">${PET_RN[pt.rr]} ${PET_SP[pt.s].n}</b> <span class="mu" style="font-size:9.5px">Sv.${pt.lv}</span><div class="g" style="font-size:10px">${petBonTxt(pt)}</div></div><div style="display:flex;flex-direction:column;gap:4px"><button class="btn ${s.a===i?"s":""}" style="padding:5px 9px;font-size:10px;margin:0" onclick="petAct('act',${s.a===i?-1:i})">${s.a===i?"Aktif":"Seç"}</button><button class="btn s" style="padding:4px 9px;font-size:9.5px;margin:0" onclick="petRel(${i})">${armed==="pr"+i?"Emin misin? +"+(100*(pt.rr+1)*pt.lv)+"🪙":"Salıver"}</button></div></div>`).join(""):'<p class="mu" style="font-size:11px">Henüz hayvanın yok.</p>';
   return hdr+`<div class="cd"><div class="ct">🥚 Yumurtalar <span class="mu" style="font-size:10px">${s.e.length}/${PET_MAXE}</span></div>${eggs}</div><div class="cd"><div class="ct">🐾 Hayvanlarım <span class="mu" style="font-size:10px">${s.l.length}/${PET_MAXP}</span></div>${list}</div>`;
 }
@@ -829,7 +829,7 @@ function wmPanel(){
     <button class="btn s" style="width:auto;padding:4px 10px;margin:0;flex-shrink:0" onclick="wmPop=false;wmRender()">✕</button></div>
     <div style="font-size:10px;font-weight:800;color:${o?"#4ade80":"#f87171"};margin-top:4px">${why}${cl?" · 👑 Elit yenildi":""}</div>
     <div class="mu" style="font-size:10.5px;margin:6px 0;font-style:italic">${r.d||""}</div>
-    <div class="mg" style="gap:7px">${r.mobs.map(m=>`<button class="mb" style="padding:7px" ${o?"":"disabled"} onclick="wmFight(${mapReg},${m.mi})">${mobSVG(m)}<div><div style="font-size:11.5px;font-weight:700;color:${m.el?"var(--gold)":"#fff"}">${m.el?"👑 ":""}${m.name}</div><div style="font-size:9.5px;color:#cbd5e1">Lv.${m.lv} · ${m.hp.toLocaleString()} HP</div></div></button>`).join("")}</div></div>`;
+    <div class="mg" style="gap:7px">${r.mobs.map(m=>`<div style="position:relative"><button class="mb" style="padding:7px;width:100%" ${o?"":"disabled"} onclick="wmFight(${mapReg},${m.mi})">${mobSVG(m)}<div><div style="font-size:11.5px;font-weight:700;color:${m.el?"var(--gold)":"#fff"}">${m.el?"👑 ":""}${m.name}</div><div style="font-size:9.5px;color:#cbd5e1">Lv.${m.lv} · ${m.hp.toLocaleString()} HP</div></div></button><span onclick="event.stopPropagation();mobInfo(${r.id},${m.mi})" style="position:absolute;top:3px;right:4px;width:22px;height:22px;line-height:22px;text-align:center;font-size:12px;background:#000a;border:1px solid var(--ln);border-radius:50%;cursor:pointer">ℹ️</span></div>`).join("")}</div></div>`;
 }
 function wmClose(){wmPop=false;const o=document.getElementById("wmfull");if(o)o.style.display="none"}
 function wmPick(i){mapReg=i;wmPop=true;wmRender();const b=document.getElementById("wmbody");if(b){const sv=b.querySelector("svg"),sc=(sv?sv.clientWidth:b.clientWidth)/360,y=RG[i].y*sc,vis=b.clientHeight*.5;if(y>b.scrollTop+vis-30||y<b.scrollTop+20)b.scrollTop=Math.max(0,y-vis/2+20)}}
@@ -1063,15 +1063,18 @@ function bShowWin(m){
   if(o)o.innerHTML=`<div class="pr" style="margin-top:8px"><button class="btn" style="color:#000" onclick="${CB.tw?`startCombat(0,0,1,${CB.tw+1})`:`startCombat(${m.ri},${m.mi},1)`}">${CB.tw?"🗼 Sonraki kat":"⚔️ Tekrar savaş"}</button><button class="btn s" onclick="endC()">Harita</button>${P.ch?`<button class="btn s" onclick="chestUI()">🎁 ${P.ch}</button>`:""}</div>`}
 /* Sunucudan gelen adımları sırayla ekranda oynat. Sunucu işi çoktan bitirdi; oynatma kesilse bile son durum uygulanır. */
 async function bReplay(r,ctx){
-  let first=true,lost=false;
+  let first=true,lost=false,skip=null;
   const d=()=>CB.fast?230:520;
   try{
     for(const st of r.steps){
       if(!CB.on||P!==ctx.P)break;
-      if(!first)await bSleep((ctx.auto&&!CB.auto)?70:d());first=false;   /* oto savaş durdurulsa da kalan savaşlar anında yutulmaz: her adım görünür (hızlı) oynar */
+      /* Oto savaş durdurulduysa: sunucu bu grubu çoktan bitirdi. Kalan adımlar animasyonsuz hemen işlenir, sonda özet gösterilir. */
+      if(ctx.auto&&!CB.auto&&!skip)skip={g:P.gold,k:P.st.k,i:P.inv.length,lv:P.lv,w:0};
+      if(!first&&!skip)await bSleep(d());first=false;
       if(!CB.on||P!==ctx.P)break;
       if(st.start){CB={...CB,on:true,over:false,...st.start,log:CB.log||[],acts:[],fin:false};if(!(CB.nav&&tab!=="map"))view()}
-      applySnap(st.s);applyEv(st.out);
+      applySnap(st.s);applyEv(skip?st.out.filter(e=>!(e.snd||e.fx||e.shake||e.vig)):st.out);
+      if(skip&&st.win)skip.w++;
       if(st.win){bShowWin(CB.mob);hud();saveAll(true)}
       if(st.lose!==undefined){
         stopAuto();CB.on=false;CB.over=true;lost=true;
@@ -1080,6 +1083,7 @@ async function bReplay(r,ctx){
     }
   }finally{
     if(P===ctx.P){
+      if(skip&&skip.w>0){const dg=P.gold-skip.g,di=P.inv.length-skip.i,pt=[];if(dg>0)pt.push("+"+dg.toLocaleString("tr-TR")+" 🪙");if(di>0)pt.push(di+" eşya");if(P.lv>skip.lv)pt.push("Sv."+P.lv);toast("⏹ Oto savaş durdu: "+skip.w+" savaş daha sonuçlandı"+(pt.length?" ("+pt.join(", ")+")":""))}
       for(const k in r.ps)P[k]=r.ps[k];
       if(r.over)CB.over=true;
       sync();CLOUD.sig=bSig();
@@ -1098,6 +1102,31 @@ function adoptPre(ri,mi,tw){
   if(!(pr&&CB.on&&CB.over&&pr.ri===ri&&pr.mi===mi&&(pr.tw||0)===(tw||0)&&CLOUD.sig===bSig()))return false;
   CB={...CB,on:true,over:false,busy:false,...pr.nb,pre:null,acts:[],fin:false};
   CB.rng=seeded(CB.seed,CB.k||0);CB.t0=Date.now();view();lg("⚔️ <b>"+CB.mob.name+"</b> ile dövüş başladı!");upd();return true;
+}
+function mobInfo(ri,mi){
+  const r=RG[ri],m=r.mobs[mi];if(!m)return;
+  const tr=m.el?"boss":["poison","armor","swift","regen","drain"][(ri+mi)%5],tm=TM[tr];
+  const f=n=>Math.floor(n).toLocaleString("tr-TR"),pc=(a,b)=>Math.round((b-a)*10)/10+"%";
+  const gr=m.el?[[5,.5],[4,3.5],[3,18],[2,38],[1,40]]:[[5,.4],[4,4.6],[3,13],[2,27],[1,55]];
+  const row=(l,v)=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid #ffffff10"><span class="mu">${l}</span><b style="text-align:right">${v}</b></div>`;
+  const sp=PET_SP[Math.min(11,ri)];
+  $("ic").innerHTML=`<div class="ct" style="font-size:15px">${m.el?"👑 ":""}${escH(m.name)} <span class="mu" style="font-size:11px">Lv.${m.lv}</span></div>
+  <div class="mu" style="font-size:10px;margin-bottom:6px">${r.n}${TN[tr]?" · "+TN[tr]:""}</div>
+  ${row("Can / Saldırı / Savunma",f(m.hp)+" / "+f(m.atk)+" / "+f(m.def))}
+  <div class="ct" style="font-size:12px;margin:10px 0 2px">💰 Her zaferde</div>
+  ${row("Altın",f(m.g[0]*2.8)+" – "+f(m.g[1]*2.8))}
+  ${row("Tecrübe (seviye farkına göre azalır)","en çok "+f(m.xp))}
+  <div class="ct" style="font-size:12px;margin:10px 0 2px">📦 Ekipman (%${m.el?15:12} şans)</div>
+  ${gr.map(([k,w])=>row(`<span style="color:${G[k].c}">${G[k].t} ${G[k].n}</span>`,"%"+w)).join("")}
+  <div class="mu" style="font-size:9.5px;margin-top:3px">Yüzdeler, ekipman düştüğünde derece olasılığıdır. Seviyen bu bölgeyi aştıysa düşen eşya türü yine bölge seviyesindedir.</div>
+  <div class="ct" style="font-size:12px;margin:10px 0 2px">🔹 Malzeme ve diğer</div>
+  ${row("⚙️ Demir Kırığı","%65 (1-2 adet)")}
+  ${tm?row(MT[tm][0]+" "+MT[tm][1],"%40 (1 adet)"):""}
+  ${m.el?row("👻 Elit Ruhu","her zaferde (1-2)")+row("🩸 Kan Kristali","%50"):""}
+  ${row("🧪 İksir","%16")}
+  ${row(sp.e+" "+sp.n+" yumurtası",(m.el?"%1":"%0,1")+" (günde en çok 2)")}
+  <button class="btn s" style="margin-top:10px" onclick="$('im').style.display='none'">Kapat</button>`;
+  $("im").style.display="flex";
 }
 async function startCombat(ri,mi,keep,tw){
   if(battleBusy||bStarting)return;
@@ -1151,20 +1180,21 @@ function updMini(make){
   b.innerHTML=`<div style="display:flex;justify-content:space-between;gap:6px"><span>${CB.auto?"🤖 <b>Oto savaş sürüyor</b>":"⏸ <b>Oto durdu</b>"}${m?" · "+(m.el?"👑 ":"")+m.name+" %"+pc:""}</span><span class="g">☠️ ${SS.k} · 🪙 +${SS.g.toLocaleString("tr-TR")}</span></div><div class="mu" style="font-size:9.5px">Savaşa dönmek için dokun · Bu sırada yalnızca bakabilirsin</div>`;
 }
 /* Savaş oturumu kazanımları (savaş ekranının "Kazanımlar" bölümü) */
-const newSS=()=>({t0:Date.now(),k:0,e:0,g:0,x:0,dmg:0,max:0,hits:0,crit:0,items:{},mats:{},pots:{},lvl:0});
+const newSS=()=>({t0:Date.now(),k:0,e:0,g:0,x:0,dmg:0,max:0,hits:0,crit:0,items:{},mats:{},pots:{},lvl:0,eggs:{},pets:{}});
 let SS=newSS();
 function ssEv(n,v){if(n==="dmg"){SS.dmg+=v;SS.hits++;if(v>SS.max)SS.max=v}else if(n==="crit")SS.crit++}
 function ssWin(w){SS.k++;if(w.el)SS.e++;SS.g+=w.g;SS.x+=w.x;if(CB.lt==="gain")renderLG()}
 function ssJunk(j){SS.jn=(SS.jn||0)+j.n;SS.jg=(SS.jg||0)+j.g;if(CB.lt==="gain")renderLG()}
 function ssLoot(l){
-  const to=l.k==="item"?SS.items:l.k==="mat"?SS.mats:SS.pots;
+  if(!SS.eggs)SS.eggs={};if(!SS.pets)SS.pets={};
+  const to=l.k==="item"?SS.items:l.k==="mat"?SS.mats:l.k==="egg"?SS.eggs:l.k==="pet"?SS.pets:SS.pots;
   const o=to[l.t]||(to[l.t]={n:0,c:l.c||"#fff",g:l.g||0});o.n+=l.n||1;
   if(CB.lt==="gain")renderLG();
 }
 function gainHtml(){
   const s=SS,mins=Math.max(1,(Date.now()-s.t0)/6e4),f=n=>Math.floor(n).toLocaleString("tr-TR");
   const list=(o,ic)=>Object.entries(o).sort((a,b)=>(b[1].g||0)-(a[1].g||0)||b[1].n-a[1].n).map(([t,v])=>`<div style="color:${v.c}">${ic} ${t} <b>×${v.n}</b></div>`).join("");
-  const loot=list(s.items,"📦")+list(s.pots,"🧪")+list(s.mats,"🔹");
+  const loot=list(s.pets||{},"🐾")+list(s.eggs||{},"🥚")+list(s.items,"📦")+list(s.pots,"🧪")+list(s.mats,"🔹");
   return`<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;margin-bottom:5px">
     <div>☠️ Öldürülen: <b>${s.k}</b>${s.e?" (👑"+s.e+")":""}</div><div>🪙 Altın: <b class="g">+${f(s.g)}</b></div>
     <div>✨ XP: <b>+${f(s.x)}</b></div><div>⏱️ Süre: <b>${Math.floor(mins)} dk</b></div>
@@ -1383,7 +1413,7 @@ function startAutoWithCfg(){
   upd();
   toast("🤖 Otomatik savaş aktif!");
 }
-function stopAuto(){CB.auto=false;if(battleBusy&&CB.on&&!CB.over&&typeof toast==="function"&&autoRun)toast("⏹ Oto savaş duruyor: sunucuda başlamış savaşlar bitiriliyor")}
+function stopAuto(){CB.auto=false;if(battleBusy&&CB.on&&!CB.over&&typeof toast==="function"&&autoRun)toast("⏹ Oto savaş duruyor...")}
 /* Oto savaş: her istekte sunucu birkaç savaşı birden oynar, burada sırayla izlenir */
 async function autoLoop(){
   if(autoRun)return;autoRun=true;

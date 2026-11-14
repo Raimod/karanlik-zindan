@@ -362,8 +362,8 @@ const PET_SP=[
 {n:"Kar Kurdu",e:"🐺",b:"hp",bn:"Can"},{n:"Yavru Ejderha",e:"🐲",b:"atk",bn:"Saldırı"},{n:"Bataklık Kurbağası",e:"🐸",b:"xp",bn:"Tecrübe"},
 {n:"Kemik Köpeği",e:"🐕",b:"arm",bn:"Zırh"},{n:"Gölge Kedisi",e:"🐈‍⬛",b:"cr",bn:"Kritik Şansı"},{n:"Fırtına Kartalı",e:"🦅",b:"atk",bn:"Saldırı"},
 {n:"Cehennem Av Köpeği",e:"🔥",b:"hp",bn:"Can"},{n:"Boşluk Gözü",e:"👁️",b:"xp",bn:"Tecrübe"},{n:"Gölge Ejderi",e:"🐉",b:"gold",bn:"Altın"}];
-const PET_RN=["Sıradan","Nadir","Destansı","Efsanevi"],PET_RC=["#9ca3af","#60a5fa","#c084fc","#fbbf24"],PET_MAXL=20,PET_MAXP=12,PET_MAXE=5;
-const petNeed=r=>60+r*15,petLvNeed=lv=>25*lv;
+const PET_RN=["Sıradan","Nadir","Destansı","Efsanevi"],PET_RC=["#9ca3af","#60a5fa","#c084fc","#fbbf24"],PET_MAXL=20,PET_MAXP=12,PET_MAXE=5,PET_DAYMAX=2;
+const petNeed=r=>100+r*20,petLvNeed=lv=>25*lv;
 function petOf(p){
   if(!p.q||typeof p.q!=="object")p.q={};
   const s=p.q.pet&&typeof p.q.pet==="object"?p.q.pet:(p.q.pet={});
@@ -380,14 +380,16 @@ function petOnKill(p,B,rng,out){
   const s=petOf(p),lvl=B.tw?-1:(B.mob&&Number.isInteger(B.mob.ri)?B.mob.ri:-1);
   if(s.a>=0&&s.l[s.a]){const pt=s.l[s.a];
     if(pt.lv<PET_MAXL){pt.x=(pt.x|0)+1;if(pt.x>=petLvNeed(pt.lv)){pt.x=0;pt.lv++;out.push({toast:"🐾 "+PET_SP[pt.s].n+" seviye atladı! (Sv."+pt.lv+")"});syncP(p)}}}
+  const valid=!!(B.mob&&killXp(B.mob.xp,B.mob.lv,p.lv)>0);   /* seviye farkı 7+ ise (sıfır tecrübe) yumurta ne ısınır ne düşer */
   if(s.e.length){const eg=s.e[0],need=petNeed(eg.r);
-    if((eg.n|0)<need){eg.n=(eg.n|0)+1}
+    if((eg.n|0)<need&&valid&&lvl>=eg.r){eg.n=(eg.n|0)+1}
     if(eg.n>=need&&s.l.length<PET_MAXP){
-      const r=rng.R(100),rr=r<70?0:r<92?1:r<99?2:3;
+      const r=rng.R(100),rr=r<65?0:r<90?1:r<98?2:3;
       s.e.shift();s.l.push({s:eg.r,rr,lv:1,x:0});
-      out.push({toast:"🥚 Yumurta çatladı: "+PET_SP[eg.r].e+" "+PET_RN[rr]+" "+PET_SP[eg.r].n+"!"});_lg(out,"🥚 Yumurta çatladı: <b style=color:"+PET_RC[rr]+">"+PET_RN[rr]+" "+PET_SP[eg.r].n+"</b>");out.push({snd:"lvl"});
+      out.push({toast:"🥚 Yumurta çatladı: "+PET_SP[eg.r].e+" "+PET_RN[rr]+" "+PET_SP[eg.r].n+"!"});out.push({loot:{k:"pet",t:PET_SP[eg.r].e+" "+PET_RN[rr]+" "+PET_SP[eg.r].n,c:PET_RC[rr],g:6+rr}});_lg(out,"🥚 Yumurta çatladı: <b style=color:"+PET_RC[rr]+">"+PET_RN[rr]+" "+PET_SP[eg.r].n+"</b>");out.push({snd:"lvl"});
     }}
-  if(lvl>=0&&s.e.length<PET_MAXE&&rng.R(100)<(B.mob.el?6:1)){s.e.push({r:Math.min(11,lvl),n:0});out.push({toast:"🥚 Bir yumurta buldun! ("+PET_SP[Math.min(11,lvl)].n+")"});_lg(out,"🥚 Yumurta düştü: "+PET_SP[Math.min(11,lvl)].e+" "+PET_SP[Math.min(11,lvl)].n)}
+  const dayK=p.dl&&p.dl.d?p.dl.d:"";if(s.dd!==dayK){s.dd=dayK;s.dc=0}
+  if(valid&&lvl>=0&&s.e.length<PET_MAXE&&(s.dc|0)<PET_DAYMAX&&rng.R(1000)<(B.mob.el?10:1)){s.dc=(s.dc|0)+1;s.e.push({r:Math.min(11,lvl),n:0});out.push({toast:"🥚 Bir yumurta buldun! ("+PET_SP[Math.min(11,lvl)].n+")"});out.push({loot:{k:"egg",t:PET_SP[Math.min(11,lvl)].e+" "+PET_SP[Math.min(11,lvl)].n+" yumurtası",c:"#fbbf24",g:6}});_lg(out,"🥚 Yumurta düştü: "+PET_SP[Math.min(11,lvl)].e+" "+PET_SP[Math.min(11,lvl)].n)}
 }
 /* Zafer: ödülleri verir. {kill:..} olayı görev ilerlemesi için telefona bildirilir. */
 function bWin(B,p,rng){
