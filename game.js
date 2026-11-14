@@ -1,4 +1,4 @@
-const GAME_VERSION="2.17.0";
+const GAME_VERSION="2.17.1";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const SET={snd:1,vol:70,hap:1,shk:1,dmg:1};
@@ -576,6 +576,7 @@ if(charSub=="eq"){
   return`<div class="sl g${i.g} ${effLv(i)>P.lv?"off":""}" onclick="inspEq('${k}')"><span class="pl">+${i.p}</span>${ico(k)}<span style="color:${G[i.g].c};font-weight:700">${i.name}</span></div>`}).join("");
   const setHtml=sets.length?sets.map(st=>`<div class="set-badge" style="margin-bottom:4px;padding:6px 8px">
     <b style="color:#34d399;font-size:11px">🛡️ ${st.ore} Seti (${st.cnt} Parça)</b>
+    <div class="mu" style="font-size:9.5px">${SL.map(k=>P.eq[k]).filter(i=>i&&effLv(i)<=P.lv&&(i.setOre||i.name.split(" ")[0])===st.ore).map(i=>escH(i.name)).join(" · ")}</div>
     <div class="mu" style="font-size:9.5px;margin-top:2px">
       ${st.cnt>=2?"✓ 2P: +%8 Saldırı & Zırh ":""}${st.cnt>=4?"· ✓ 4P: +%15 HP/MP, +%5 Kritik ":""}${st.cnt>=6?"· ✓ 6P: +%25 Güç, %3 HP Yenileme":""}
     </div>
@@ -721,6 +722,12 @@ v.innerHTML=`<div class="cd" style="padding:9px">
 <p class="mu" style="font-size:9px;margin-top:5px">İksir, sandık, ot ve artı basma malzemeleri tek yuvada toplanır (50 ekipman sınırından yer kaplamaz).</p></div>`}
 
 const junk=i=>junkOf(P,i);
+function junkWhy(i){const r=jrOf(P),w=[],own=i.rc==P.cls,lim=own?r.g:r.og,af=Array.isArray(i.af)?i.af.length:0;
+  if(i.g>4)w.push("Kadim Elit eşya hiçbir zaman çöp sayılmaz");
+  if(i.g>lim)w.push((own?"Kendi sınıfım":"Başka sınıf")+" kuralı: en çok "+(lim?"GR-"+["","I","II","III","IV"][lim]:"hiçbiri")+", bu eşya GR-"+["","I","II","III","IV","V"][i.g]);
+  if(af>r.af)w.push("Efsun sayısı "+af+" > kural "+r.af+(af>0?" (özel silah efsunları da sayılır)":""));
+  if((i.p|0)>r.p)w.push("Artı seviyesi +"+(i.p|0)+" > kural +"+r.p);
+  return w}
 let JRopen=false;
 function setJR(k,v){P.jr={...jrOf(P),[k]:Number(v)};save();view()}
 function jrPanel(cnt){
@@ -941,7 +948,7 @@ function upSk(i){if(P.sp<=0)return;P.sp--;P.sr[i]=(P.sr[i]||0)+1;A.lvl();save();
 /* ---------- EŞYA İNCELEME ---------- */
 function insp(n){const i=P.inv[n];if(!i)return;const ok=i.rc==P.cls,el=effLv(i),cur=P.eq[i.slot],sy=salvageYield(i);
 const syTxt=Object.entries(sy).map(([k,v])=>MT[k][0]+"+"+v).join(" ");
-$("ic").innerHTML=`<div style="text-align:center;margin-bottom:10px"><b style="color:${G[i.g].c};font-size:15px">${i.name} +${i.p}</b><div class="mu" style="font-size:11px">${G[i.g].n} ${G[i.g].t} · ${SN[i.slot]} (${i.setOre||i.name.split(" ")[0]} Seti)</div></div>
+$("ic").innerHTML=`<div style="text-align:center;margin-bottom:10px"><b style="color:${G[i.g].c};font-size:15px">${i.name} +${i.p}</b><div class="mu" style="font-size:11px">${G[i.g].n} ${G[i.g].t} · ${SN[i.slot]} (${i.setOre||i.name.split(" ")[0]} Seti)</div></div>${(()=>{if(!i.slot||P.inv.indexOf(i)<0)return"";const w=junkWhy(i);return w.length?`<div class="mu" style="font-size:9.5px;text-align:center;margin-top:3px">🧹 Çöp değil: ${w.join("; ")}</div>`:`<div style="font-size:9.5px;text-align:center;margin-top:3px;color:#4ade80">🧹 Bu eşya çöp kuralına uyuyor</div>`})()}
 <div class="q" style="display:block;line-height:1.6">Sınıf: <b style="color:${ok?"#4ade80":"#f87171"}">${CL[i.rc].n}</b><br>Seviye: <b style="color:${P.lv>=el?"#4ade80":"#f87171"}">Lv.${el}</b> (sen: ${P.lv})<br>Güç: <b class="g">${pw(i)}</b>${cur?` <span class="mu">(kuşanılan: ${pw(cur)})</span>`:""}${i.slot=="weapon"?`<br>⚔️ <b style="color:#fbbf24">${wLine(i)}</b>${cur&&cur.slot=="weapon"?`<br><span class="mu" style="font-size:10px">Kuşanılan: ${wLine(cur)}</span>`:""}`:""}${(i.af||[]).map(a=>`<br><span style="color:#c084fc">✨ ${a.n} +%${a.v}</span>`).join("")}</div>
 <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px">
   <button class="btn" ${ok&&P.lv>=el?"":"disabled"} onclick="equip(${n})">${!ok?"Uyumsuz":P.lv<el?"Lv."+el:"Kuşan"}</button>
