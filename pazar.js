@@ -4,7 +4,7 @@
    burada yalnızca listeleri okur ve istekleri gönderir.
    ============================================================ */
 const MK={bank:null,list:[],mine:null,tr:null,q:"",slot:"",off:0,more:false,tab:"buy",
-  bsel:new Set(),csel:new Set(),tsel:new Set(),asel:new Set(),tWn:"",tWs:"",gAmt:"",sellI:"",sellP:"",tTo:"",tG:"",tW:"",err:"",loading:false};
+  bsel:new Set(),csel:new Set(),tsel:new Set(),asel:new Set(),tWn:"",tWs:"",gAmt:"",sellI:"",sellP:"",sellC:"",tTo:"",tG:"",tW:"",err:"",loading:false};
 const MK_SUBS=["bank","market","trade"];
 const MK_FEE=5;
 
@@ -15,6 +15,9 @@ function mkLeft(iso){
 }
 const mkN=n=>Number(n||0).toLocaleString("tr-TR");
 function mkItem(i,right,onclick){
+  if(i&&i.stk){return`<div class="q" style="align-items:flex-start;${onclick?"cursor:pointer;":""}" ${onclick?`onclick="${onclick}"`:""}>
+    <div style="flex:1;min-width:0"><b style="color:#c084fc;font-size:11.5px">${escH(i.name||"?")}</b>
+    <div class="mu" style="font-size:9.5px">Yığın · ${Number(i.n)||0} adet</div></div>${right||""}</div>`}
   const g=G[i.g]||G[1],c=CL[i.rc]||CL.tank,af=(i.af||[]).map(a=>`<div style="font-size:9px;color:#c084fc">✨ ${escH(a.n||"")} +%${Number(a.v)||0}</div>`).join("");
   return`<div class="q" style="align-items:flex-start;${onclick?"cursor:pointer;":""}" ${onclick?`onclick="${onclick}"`:""}>
     <div style="flex:1;min-width:0"><b style="color:${g.c};font-size:11.5px">${escH(i.name||"?")} +${Number(i.p)||0}</b>
@@ -50,7 +53,7 @@ async function mkRun(body){
   const r=await mkCall(body);
   if(!r)return null;
   MK.bsel.clear();MK.csel.clear();MK.tsel.clear();MK.asel.clear();
-  if(r.done){MK.gAmt="";MK.sellI="";MK.sellP="";MK.tTo="";MK.tG="";MK.tW="";MK.tWn="";MK.tWs=""}
+  if(r.done){MK.gAmt="";MK.sellI="";MK.sellP="";MK.sellC="";MK.tTo="";MK.tG="";MK.tW="";MK.tWn="";MK.tWs=""}
   if(r.bank)MK.bank=r.bank;
   await mkLoad(citySub);
   view();
@@ -85,6 +88,7 @@ function mkPickRows(items,set,fn){
   if(!items.length)return'<p class="mu" style="font-size:11px;text-align:center;padding:8px">Eşya yok</p>';
   return items.map((it,k)=>mkItem(it,`<input type="checkbox" ${set.has(k)?"checked":""} onclick="event.stopPropagation()" onchange="${fn}(${k},this.checked)" style="width:20px;height:20px;flex:none">`,`${fn}(${k},${set.has(k)?"false":"true"})`)).join("");
 }
+const mkStacks=()=>{const o=[];if((P.sc|0)>0)o.push(["scroll",P.sc]);["hp","mp"].forEach(t=>["S","M","L"].forEach(z=>{const n=(P.pot[t]&&P.pot[t][z])|0;if(n>0)o.push(["pot_"+t+"_"+z,n])}));Object.keys(MT).forEach(k=>{const n=(P.mat[k])|0;if(n>0)o.push(["mat_"+k,n])});return o};
 const mkEq=()=>P.inv.map((i,k)=>({i,k})).filter(x=>x.i&&x.i.slot);
 
 /* ================= BANKA ================= */
@@ -125,7 +129,7 @@ async function mkBankItems(dir){
 }
 
 /* ================= PAZAR ================= */
-const MK_SLOTS=()=>'<option value="">Tüm bölmeler</option>'+SL.map(k=>`<option value="${k}" ${MK.slot===k?"selected":""}>${SN[k]}</option>`).join("");
+const MK_SLOTS=()=>'<option value="">Tüm bölmeler</option>'+SL.map(k=>`<option value="${k}" ${MK.slot===k?"selected":""}>${SN[k]}</option>`).join("")+`<option value="stk" ${MK.slot==="stk"?"selected":""}>İksir / Malzeme</option>`;
 function mkMarketHtml(){
   const tabs=`<div class="sub-tabs" style="margin-bottom:8px">
     <button class="sub-tab ${MK.tab==="buy"?"act":""}" onclick="MK.tab='buy';mkRender('market')">🛒 Pazar</button>
@@ -158,12 +162,14 @@ function mkBuyHtml(){
 function mkMineHtml(){
   const m=MK.mine||[],open=m.filter(x=>x.state==="open"),sold=m.filter(x=>x.state==="sold"),exp=m.filter(x=>x.state==="expired");
   const eq=mkEq();
-  const opts='<option value="">— Eşya seç —</option>'+eq.map(x=>`<option value="${x.k}" ${String(MK.sellI)===String(x.k)?"selected":""}>${escH(x.i.name)} +${x.i.p} (Güç ${pw(x.i)})</option>`).join("");
+  const stks=mkStacks();
+  const opts='<option value="">— Eşya seç —</option>'+(stks.length?'<optgroup label="İksir / Parşömen / Malzeme">'+stks.map(([k,n])=>`<option value="s:${k}" ${String(MK.sellI)==="s:"+k?"selected":""}>${escH(stkName(k))} (elinde ${n})</option>`).join("")+'</optgroup><optgroup label="Ekipman">':"")+eq.map(x=>`<option value="${x.k}" ${String(MK.sellI)===String(x.k)?"selected":""}>${escH(x.i.name)} +${x.i.p} (Güç ${pw(x.i)})</option>`).join("")+(stks.length?"</optgroup>":"");
   const price=Math.floor(Number(MK.sellP))||0,net=Math.floor(price*(100-MK_FEE)/100);
   return`<div class="cd">
     <div class="ct">➕ Tezgâha eşya koy <span class="mu" style="font-size:10px">${m.length}/10 tezgâh</span></div>
     ${P.lv<MK_MINLV?`<p style="font-size:11px;color:#fbbf24">Satış için seviye ${MK_MINLV} gerekir.</p>`:""}
-    <select class="sort-sel" style="width:100%;margin-bottom:6px" onchange="MK.sellI=this.value">${opts}</select>
+    <select class="sort-sel" style="width:100%;margin-bottom:6px" onchange="MK.sellI=this.value;mkRender('market')">${opts}</select>
+    ${String(MK.sellI).startsWith("s:")?`<input type="number" inputmode="numeric" min="1" max="9999" placeholder="Adet" value="${escH(MK.sellC||"")}" oninput="MK.sellC=this.value" style="width:100%;box-sizing:border-box;padding:8px;background:#000;border:1px solid var(--ln);border-radius:8px;color:#fff;margin-bottom:6px"><div class="mu" style="font-size:9.5px;margin:-2px 0 6px">Fiyat, girdiğin adedin <b>toplamı</b> içindir.</div>`:""}
     <input type="number" inputmode="numeric" min="1" max="100000000" placeholder="Fiyat (🪙)" value="${escH(MK.sellP)}" oninput="MK.sellP=this.value;mkNetUpd()" style="width:100%;box-sizing:border-box;padding:8px;background:#000;border:1px solid var(--ln);border-radius:8px;color:#fff;margin-bottom:4px;-webkit-user-select:text;user-select:text">
     <div class="mu" id="mk-net" style="font-size:10px;margin-bottom:6px">Satılırsa eline geçecek: ${mkN(net)} 🪙 (%${MK_FEE} vergi)</div>
     <button class="btn" style="padding:8px;font-size:12px" onclick="mkSell()">🏪 Tezgâha koy (24 saat)</button>
@@ -184,6 +190,12 @@ async function mkBuy(id){await mkRun({a:"mbuy",id,k:"m"})}
 async function mkCancel(id){await mkRun({a:"mcancel",id,k:"m"})}
 async function mkClaim(id){await mkRun({a:"mclaim",id,k:"m"})}
 async function mkSell(){
+  if(String(MK.sellI).startsWith("s:")){
+    const c=Math.floor(Number(MK.sellC)),pr=Math.floor(Number(MK.sellP));
+    if(!(c>=1&&c<=9999))return toast("Adet 1 ile 9999 arasında olmalı");
+    if(!(pr>=1&&pr<=1e8))return toast("Fiyat 1 ile 100.000.000 arasında olmalı");
+    return mkRun({a:"msell",sk:MK.sellI.slice(2),c,price:pr});
+  }
   const i=Number(MK.sellI),price=Math.floor(Number(MK.sellP));
   if(MK.sellI===""||!Number.isInteger(i))return toast("Önce bir eşya seç");
   if(!(price>=1&&price<=1e8))return toast("Fiyat 1 ile 100.000.000 arasında olmalı");

@@ -649,6 +649,10 @@ function normPotOf(p){
 
 /* ---- Paket D: banka, pazar, takas. Saf mantık: d = {bank,row,mcnt,tcnt,to_uid,uid}; dönüş {ok,msg,act} ya da {ok:false,msg} ---- */
 const MK_MINLV=5,MK_MAXP=1e8,MK_INV=50,MK_BANKN=100;
+/* Yığın ilanı: iksir, parşömen, malzeme. item={stk:"pot_hp_S",n:5,name,slot:"stk"} */
+const STK_OK=k=>typeof k==="string"&&(k==="scroll"||/^pot_(hp|mp)_[SML]$/.test(k)||(k.startsWith("mat_")&&MT[k.slice(4)]!==undefined));
+const stkName=k=>k==="scroll"?"📜 Koruma Parşömeni":k.startsWith("pot_")?(()=>{const d=POT_DEF[k.slice(4,6)][k.slice(7)];return d.e+" "+d.n})():MT[k.slice(4)][0]+" "+MT[k.slice(4)][1];
+const isStkIt=i=>i&&typeof i==="object"&&typeof i.stk==="string"&&STK_OK(i.stk)&&Number.isInteger(i.n)&&i.n>=1;
 function mkDo(p,body,d,now){
   const a=body.a,bad=m=>({ok:false,msg:m});
   const I=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
@@ -660,6 +664,8 @@ function mkDo(p,body,d,now){
   };
   const isEq=i=>i&&typeof i==="object"&&typeof i.slot==="string"&&typeof i.name==="string";
   const room=n=>p.inv.length+n<=MK_INV;
+  const give=it=>{if(isStkIt(it))_stkSet(p,it.stk,_stkGet(p,it.stk)+it.n);else p.inv.push(it)};
+  const needRoom=it=>isStkIt(it)||room(1);
   const takeInv=ix=>{const out=ix.map(k=>p.inv[k]);[...ix].sort((x,y)=>y-x).forEach(k=>p.inv.splice(k,1));return out};
   const bank=d.bank||{gold:0,items:[],ver:0},row=d.row||null;
   const mine=row&&(row.seller===d.uid||row.from_uid===d.uid);
@@ -682,6 +688,14 @@ function mkDo(p,body,d,now){
     return{ok:true,msg:"🏦 Bankadan alındı"+(out.length?": "+out.length+" eşya":"")+(g?" "+g+" 🪙":""),act:{t:"bank",ver:bank.ver,gold:bank.gold-g,items:rest}};
   }
   if(["msell","mbuy","tsend","tacc"].includes(a)&&p.lv<MK_MINLV)return bad("Pazar ve takas için seviye "+MK_MINLV+" gerekir");
+  if(a==="msell"&&body.sk!==undefined){
+    if(!STK_OK(body.sk)||!I(body.c,1,9999)||!I(body.price,1,MK_MAXP))return bad("Geçersiz istek");
+    if(_stkGet(p,body.sk)<body.c)return bad("Yeterli adedin yok");
+    if((d.mcnt|0)>=10)return bad("En çok 10 tezgâh (süresi dolanları ya da satılanları topla)");
+    _stkSet(p,body.sk,_stkGet(p,body.sk)-body.c);
+    const nm=stkName(body.sk)+" ×"+body.c;
+    return{ok:true,msg:"🏪 Tezgâha kondu: "+nm+" ("+body.price+" 🪙, 24 saat açık)",act:{t:"msell",item:{stk:body.sk,n:body.c,name:nm,slot:"stk",g:1},price:body.price,name:p.name}};
+  }
   if(a==="msell"){
     if(!I(body.i,0,p.inv.length-1)||!I(body.price,1,MK_MAXP))return bad("Geçersiz istek");
     const it=p.inv[body.i];if(!isEq(it))return bad("Yalnızca ekipman satılır");
@@ -692,22 +706,22 @@ function mkDo(p,body,d,now){
   if(a==="mbuy"){
     if(!row||body.k!=="m"||!row.live||row.seller===d.uid)return bad("Bu ilan artık yok ya da satıldı");
     if(p.gold<row.price)return bad("Yetersiz altın");
-    if(!room(1))return bad("Çanta dolu");
-    p.gold-=row.price;p.inv.push(row.item);
+    if(!needRoom(row.item))return bad("Çanta dolu");
+    p.gold-=row.price;give(row.item);
     return{ok:true,msg:"🛒 Satın alındı: "+row.item.name,act:{t:"mbuy",id:String(row.id),price:row.price,name:p.name}};
   }
   if(a==="mcancel"){
     if(!row||body.k!=="m"||!mine||!row.live)return bad("İlan bulunamadı");
-    if(!room(1))return bad("Çanta dolu");
-    p.inv.push(row.item);
+    if(!needRoom(row.item))return bad("Çanta dolu");
+    give(row.item);
     return{ok:true,msg:"Tezgâh kapatıldı, eşya çantana döndü",act:{t:"mcancel",id:String(row.id)}};
   }
   if(a==="mclaim"){
     if(!row||body.k!=="m"||!mine)return bad("İlan bulunamadı");
     if(row.status==="sold"){p.gold+=row.proceeds;return{ok:true,msg:"💰 Satış geliri alındı: "+row.proceeds+" 🪙 (%5 vergi kesildi)",act:{t:"mclaim",id:String(row.id),st:"sold"}}}
     if(row.status==="open"&&!row.live){
-      if(!room(1))return bad("Çanta dolu");
-      p.inv.push(row.item);
+      if(!needRoom(row.item))return bad("Çanta dolu");
+      give(row.item);
       return{ok:true,msg:"Süresi dolan eşya çantana alındı",act:{t:"mclaim",id:String(row.id),st:"expired"}};
     }
     return bad("Bu ilan hâlâ tezgâhta");
@@ -783,6 +797,6 @@ function wbSim(p0,wi,rng){
   return{dmg:Math.max(0,Math.floor(m.mx-m.hp)),rounds,fell:p.hp<=0};
 }
 
-const KZ={ACH,ACH_T,ACH_R,achN,achDone,potAmt,WB,wbName,wbSim,RACES,raceMul,bHit,MAXLV,rgOf,reqXp,TIERS,TBP,tierOf,tierItem,mkName,SPC,SPN,isSpcW,rerollCost,wInfo,wLine,spdTxt,jrOf,autoJunk,mkDo,MK_MINLV,healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
+const KZ={STK_OK,stkName,ACH,ACH_T,ACH_R,achN,achDone,potAmt,WB,wbName,wbSim,RACES,raceMul,bHit,MAXLV,rgOf,reqXp,TIERS,TBP,tierOf,tierItem,mkName,SPC,SPN,isSpcW,rerollCost,wInfo,wLine,spdTxt,jrOf,autoJunk,mkDo,MK_MINLV,healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
 (typeof globalThis!=="undefined"?globalThis:window).KZ=KZ;
 if(typeof module!=="undefined"&&module.exports)module.exports=KZ;
