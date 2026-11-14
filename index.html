@@ -86,8 +86,10 @@
 function p(v){if(b)b.style.width=v+"%"}
 setTimeout(function(){p(35)},200);setTimeout(function(){p(60)},700);
 function end(){if(done)return;done=true;p(100);var w=Math.max(0,1500-(Date.now()-t0));setTimeout(function(){if(!s)return;s.style.opacity="0";setTimeout(function(){if(s&&s.parentNode)s.parentNode.removeChild(s)},650)},w)}
-window.addEventListener("load",function(){setTimeout(end,400)});
-setTimeout(end,8000);
+function ready(){try{return typeof CLOUD==="undefined"||CLOUD.state!=="loading"}catch(e){return true}}
+function poll(){if(ready())setTimeout(end,250);else setTimeout(poll,150)}
+window.addEventListener("load",function(){setTimeout(poll,400)});
+setTimeout(end,9000);
 })();
 </script>
 </body>
