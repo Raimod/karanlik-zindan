@@ -1,4 +1,4 @@
-const GAME_VERSION="2.13.0";
+const GAME_VERSION="2.13.1";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const SET={snd:1,vol:70,hap:1,shk:1,dmg:1};
@@ -1821,13 +1821,10 @@ for(let i=0;i<30;i++)ps.push({x:R(cv.width),y:R(cv.height),r:R(2)+1,v:R(.4)+.1})
   $("spt").innerText="İpucu: "+TP[RI(0,TP.length-1)];
   function cl(){
     if(d)return;d=1;
-    sp.classList.add("out");
-    setTimeout(()=>{
-      sp.remove();
-      openCharSelect();
-    },600);
+    sp.remove();
+    openCharSelect();
   }
-  setTimeout(cl,2400);sp.onclick=cl;
+  sp.style.display="none";setTimeout(cl,0);
 })();
 
 /* ---------- SAVAŞ DIŞI PASİF CAN & MANA YENİLENMESİ ---------- */
