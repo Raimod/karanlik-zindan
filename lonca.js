@@ -66,10 +66,12 @@ async function gLoadList(){
     GD.list=r.data||[];
     const b=$("g-list");if(!b)return;
     if(!GD.list.length){b.innerHTML='<p class="mu" style="font-size:11px">'+(GD.q?"Bu adla lonca bulunamadı.":"Henüz lonca yok. İlk loncayı sen kur!")+"</p>";return}
-    b.innerHTML=GD.list.map(g=>`<div class="q" style="padding:7px 8px;margin-bottom:5px;align-items:center">
+    const mine=GD.me&&GD.me.id;
+    b.innerHTML=GD.list.map((g,ix)=>`<div class="q" style="padding:7px 8px;margin-bottom:5px;align-items:center;${mine&&Number(g.id)===Number(mine)?"border:1px solid var(--gold);":""}">
+      ${mine?`<div style="width:20px;text-align:center;font-size:11px" class="mu">${GD.q?"":ix+1}</div>`:""}
       <div style="width:34px;text-align:center;font-size:22px">${G_EMB[g.emblem]||"⚔️"}</div>
       <div style="flex:1;min-width:0"><b>${escH(g.name)}</b><div class="mu" style="font-size:10px">${Number(g.cnt)}/30 üye · Güç ${Number(g.power)} · ${g.open?"Açık":"Davetli"}${g.min_lv>1?" · Lv."+g.min_lv+"+":""}</div>${g.descr?`<div class="mu" style="font-size:10px;word-break:break-word">${escH(g.descr)}</div>`:""}</div>
-      ${g.open?`<button class="btn s" style="width:auto;padding:6px 12px;margin:0" onclick="gJoin(${Number(g.id)})">Katıl</button>`:'<span class="mu" style="font-size:10px">🔒</span>'}</div>`).join("");
+      ${mine?(Number(g.id)===Number(mine)?'<span class="mu" style="font-size:10px;color:var(--gold)">Loncan</span>':""):g.open?`<button class="btn s" style="width:auto;padding:6px 12px;margin:0" onclick="gJoin(${Number(g.id)})">Katıl</button>`:'<span class="mu" style="font-size:10px">🔒</span>'}</div>`).join("");
   }catch(e){const b=$("g-list");if(b)b.innerHTML=`<p style="font-size:11px;color:#fbbf24">Liste yüklenemedi: ${escH(gErr(e))}<br><span class="mu">Supabase'te sql/lonca.sql kodunun çalıştırıldığından emin ol.</span></p>`}
 }
 async function gDo(fn,okMsg){
@@ -102,8 +104,12 @@ function gMain(v,sub){
     <div class="cd"><div class="ct">💬 Lonca Sohbeti</div>
       <div id="g-chat" style="height:240px;overflow-y:auto;background:#0006;border-radius:8px;padding:8px;font-size:11px;line-height:1.4"><p class="mu">Yükleniyor...</p></div>
       <div style="display:flex;gap:6px;margin-top:8px"><input id="g-in" maxlength="200" placeholder="Loncaya yaz..." autocomplete="off" onkeydown="if(event.key==='Enter')gSay()" style="${GI};flex:1;min-width:0"><button class="btn" style="width:auto;padding:0 16px" onclick="gSay()">Gönder</button></div>
-      <p class="mu" style="font-size:9.5px;margin-top:6px">Yalnızca lonca üyeleri görür. Mesajlar 7 gün saklanır.</p></div>`;
-  GD.sig="";gLoadChat(true);
+      <p class="mu" style="font-size:9.5px;margin-top:6px">Yalnızca lonca üyeleri görür. Mesajlar 7 gün saklanır.</p></div>
+    <div class="cd"><div class="ct">🏆 Tüm Loncalar</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px"><input id="g-q" maxlength="16" placeholder="Lonca adı ara..." value="${escH(GD.q)}" autocomplete="off" onkeydown="if(event.key==='Enter')gSearch()" style="${GI};flex:1;min-width:0"><button class="btn s" style="width:auto;padding:0 14px;margin:0" onclick="gSearch()">Ara</button></div>
+      <div id="g-list"><p class="mu" style="font-size:11px">Yükleniyor...</p></div>
+      <p class="mu" style="font-size:9.5px;margin-top:4px">Güce göre ilk 30 lonca. Başka loncaya katılmak için önce mevcut loncandan ayrılmalısın.</p></div>`;
+  GD.sig="";gLoadChat(true);gLoadList();
   COM.timer=setInterval(()=>{
     if(tab!=="community"||COM.sub!=="guild"){comStop();return}
     if(document.hidden||!CLOUD.user||CB.on)return;

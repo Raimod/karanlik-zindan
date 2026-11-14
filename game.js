@@ -1,4 +1,4 @@
-const GAME_VERSION="2.15.0";
+const GAME_VERSION="2.16.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
 const SET={snd:1,vol:70,hap:1,shk:1,dmg:1};
@@ -530,6 +530,17 @@ const ico=s=>`<svg viewBox="0 0 24 24"><path d="${IC[s]}"/></svg>`;
 
 /* ---------- SEKMELER ---------- */
 let charSub="eq"; // "eq" | "build" | "titles" | "logs"
+function petBonTxt(pt){const sp=PET_SP[pt.s],v=petPct(pt),k=sp.b,x=k==="cr"?v*.6:k==="gold"||k==="xp"?v*2:v;return"+%"+(Math.round(x*10)/10)+" "+sp.bn}
+function petHTML(){
+  const s0=(P.q&&P.q.pet)||{},s={e:Array.isArray(s0.e)?s0.e:[],l:Array.isArray(s0.l)?s0.l:[],a:Number.isInteger(s0.a)?s0.a:-1},act=s.a>=0?s.l[s.a]:null;
+  const hdr=act?`<div class="cd" style="text-align:center"><div style="font-size:44px">${PET_SP[act.s].e}</div><b style="color:${PET_RC[act.rr]}">${PET_RN[act.rr]} ${PET_SP[act.s].n}</b> <span class="mu">Sv.${act.lv}/${PET_MAXL}</span><div class="g" style="font-size:12px;margin:3px 0">${petBonTxt(act)}</div>${act.lv<PET_MAXL?`<div class="pg"><i style="width:${Math.min(100,(act.x|0)/petLvNeed(act.lv)*100)}%"></i></div><div class="mu" style="font-size:9.5px">Her kesilen canavar +1 tecrübe (${act.x|0}/${petLvNeed(act.lv)})</div>`:'<div class="mu" style="font-size:10px">En üst seviye</div>'}<button class="btn s" style="margin-top:6px;padding:6px;font-size:11px" onclick="petAct('act',-1)">Geri çağır</button></div>`
+    :`<div class="cd" style="text-align:center"><div style="font-size:30px;opacity:.5">🐾</div><div class="mu" style="font-size:11px">Aktif evcil hayvanın yok. Aşağıdan birini seç.</div></div>`;
+  const eggs=s.e.length?s.e.map((eg,i)=>{const need=petNeed(eg.r),n=Math.min(need,eg.n|0),full=n>=need;return`<div class="q" style="align-items:center"><div style="font-size:24px;width:34px;text-align:center">🥚</div><div style="flex:1"><b>${PET_SP[eg.r].e} ${PET_SP[eg.r].n} yumurtası</b> <span class="mu" style="font-size:9.5px">${i==0?(full?"Çatlamayı bekliyor (evcil alanı dolu)":"Isınıyor"):"Sırada"}</span><div class="pg"><i style="width:${n/need*100}%"></i></div><div class="mu" style="font-size:9.5px">${n}/${need} canavar</div></div>${i>0?`<button class="btn s" style="width:auto;padding:5px 9px;font-size:10px;margin:0" onclick="petAct('egg',${i})">Önce ısıt</button>`:""}</div>`}).join(""):'<p class="mu" style="font-size:11px">Yumurtan yok. Canavarlardan düşer (elitlerden daha sık). Yumurta, bulunduğun bölgenin hayvanıdır.</p>';
+  const list=s.l.length?s.l.map((pt,i)=>`<div class="q" style="align-items:center;border:1px solid ${s.a===i?"var(--gold)":"transparent"}"><div style="font-size:26px;width:34px;text-align:center">${PET_SP[pt.s].e}</div><div style="flex:1"><b style="color:${PET_RC[pt.rr]}">${PET_RN[pt.rr]} ${PET_SP[pt.s].n}</b> <span class="mu" style="font-size:9.5px">Sv.${pt.lv}</span><div class="g" style="font-size:10px">${petBonTxt(pt)}</div></div><div style="display:flex;flex-direction:column;gap:4px"><button class="btn ${s.a===i?"s":""}" style="padding:5px 9px;font-size:10px;margin:0" onclick="petAct('act',${s.a===i?-1:i})">${s.a===i?"Aktif":"Seç"}</button><button class="btn s" style="padding:4px 9px;font-size:9.5px;margin:0" onclick="petRel(${i})">${armed==="pr"+i?"Emin misin? +"+(100*(pt.rr+1)*pt.lv)+"🪙":"Salıver"}</button></div></div>`).join(""):'<p class="mu" style="font-size:11px">Henüz hayvanın yok.</p>';
+  return hdr+`<div class="cd"><div class="ct">🥚 Yumurtalar <span class="mu" style="font-size:10px">${s.e.length}/${PET_MAXE}</span></div>${eggs}</div><div class="cd"><div class="ct">🐾 Hayvanlarım <span class="mu" style="font-size:10px">${s.l.length}/${PET_MAXP}</span></div>${list}</div>`;
+}
+async function petAct(sub,i){const r=await ecoCall({op:"eco",a:"pet",sub,i});if(r){hud();view()}}
+function petRel(i){if(armed!=="pr"+i){armed="pr"+i;view();return}armed="";petAct("rel",i)}
 function setCharSub(s){charSub=s;armed="";view()}
 
 function cChar(v){
@@ -541,6 +552,7 @@ const subNav=`<div class="sub-tabs">
   <button class="sub-tab ${charSub=="eq"?"act":""}" onclick="setCharSub('eq')">🛡️ Donanım</button>
   <button class="sub-tab ${charSub=="build"?"act":""}" onclick="setCharSub('build')">⚡ Gelişim${ptsBdg}</button>
   <button class="sub-tab ${charSub=="titles"?"act":""}" onclick="setCharSub('titles')">🏅 Unvan</button>
+  <button class="sub-tab ${charSub=="pets"?"act":""}" onclick="setCharSub('pets')">🐾 Evcil</button>
   <button class="sub-tab ${charSub=="logs"?"act":""}" onclick="setCharSub('logs')">📊 Kayıt</button>
 </div>`;
 
@@ -572,6 +584,8 @@ if(charSub=="eq"){
   <div class="cd"><div class="ct">Aktif Set Bonusları</div>${setHtml}</div>`;
 }else if(charSub=="build"){
   content=`${statsHTML()}${skillsHTML()}`;
+}else if(charSub=="pets"){
+  content=petHTML();
 }else if(charSub=="titles"){
   const titleHtml=TITLES.map(t=>{
     const unl=t.chk(P),isEq=P.title==t.id;

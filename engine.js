@@ -176,6 +176,7 @@ getActiveSetsOf(pl).forEach(st=>{pa+=st.atkPct;pd+=st.armPct;php+=st.hpPct;pmp+=
 // Unvan Bonusları
 const tb=getTitleBonusOf(pl);const rcm=(RACES[pl.race]||{}).m;if(rcm){pa+=rcm.atk||0;pd+=rcm.arm||0;php+=rcm.hp||0;pmp+=rcm.mp||0;cr+=rcm.cr||0;sk+=rcm.sk||0}
 if(tb.atk)pa+=tb.atk;if(tb.arm)pd+=tb.arm;if(tb.hp)php+=tb.hp;if(tb.cr)cr+=tb.cr;
+const pb=petBonusOf(pl);if(pb.atk)pa+=pb.atk;if(pb.arm)pd+=pb.arm;if(pb.hp)php+=pb.hp;if(pb.cr)cr+=pb.cr;
 
 const fAtk=Math.floor(atk*(1+pa/100)),wp=pl.eq.weapon&&effLv(pl.eq.weapon)<=pl.lv?wInfo(pl.eq.weapon):null,wsp=wp?wp.sp:.15;
 return{atk:fAtk,ba,sk,wsp,wspd:wp?wp.spd:1,minAtk:Math.max(1,Math.floor(fAtk*(1-wsp))),maxAtk:Math.max(1,Math.ceil(fAtk*(1+wsp))),arm:Math.floor(arm*(1+pd/100)),hp:Math.floor(hp*(1+php/100)),mp:Math.floor(mp*(1+pmp/100)),cr:Math.min(75,Math.floor(cr))}}
@@ -355,11 +356,45 @@ function matDropOf(p,m,rng,out){
   if(m.el){_gmat(p,"ruh",rng.RI(1,2),out);if(rng.R(100)<50)_gmat(p,"kan",1,out)}
 }
 
+/* ---- Evcil hayvanlar (v2.16.0). Durum p.q.pet içinde (sunucu kilitli): e=yumurtalar [{r,n}], l=hayvanlar [{s,rr,lv,x}], a=aktif indeks ---- */
+const PET_SP=[
+{n:"Orman Tilkisi",e:"🦊",b:"atk",bn:"Saldırı"},{n:"Maden Yarasası",e:"🦇",b:"gold",bn:"Altın"},{n:"Çöl Akrebi",e:"🦂",b:"cr",bn:"Kritik Şansı"},
+{n:"Kar Kurdu",e:"🐺",b:"hp",bn:"Can"},{n:"Yavru Ejderha",e:"🐲",b:"atk",bn:"Saldırı"},{n:"Bataklık Kurbağası",e:"🐸",b:"xp",bn:"Tecrübe"},
+{n:"Kemik Köpeği",e:"🐕",b:"arm",bn:"Zırh"},{n:"Gölge Kedisi",e:"🐈‍⬛",b:"cr",bn:"Kritik Şansı"},{n:"Fırtına Kartalı",e:"🦅",b:"atk",bn:"Saldırı"},
+{n:"Cehennem Av Köpeği",e:"🔥",b:"hp",bn:"Can"},{n:"Boşluk Gözü",e:"👁️",b:"xp",bn:"Tecrübe"},{n:"Gölge Ejderi",e:"🐉",b:"gold",bn:"Altın"}];
+const PET_RN=["Sıradan","Nadir","Destansı","Efsanevi"],PET_RC=["#9ca3af","#60a5fa","#c084fc","#fbbf24"],PET_MAXL=20,PET_MAXP=12,PET_MAXE=5;
+const petNeed=r=>60+r*15,petLvNeed=lv=>25*lv;
+function petOf(p){
+  if(!p.q||typeof p.q!=="object")p.q={};
+  const s=p.q.pet&&typeof p.q.pet==="object"?p.q.pet:(p.q.pet={});
+  if(!Array.isArray(s.e))s.e=[];if(!Array.isArray(s.l))s.l=[];if(!Number.isInteger(s.a)||s.a>=s.l.length)s.a=-1;
+  return s;
+}
+const petPct=pt=>(0.6+0.5*pt.rr)*(1+0.15*(pt.lv-1));
+function petBonusOf(p){
+  const s=p&&p.q&&p.q.pet;if(!s||!Array.isArray(s.l)||!Number.isInteger(s.a)||s.a<0||!s.l[s.a])return{};
+  const pt=s.l[s.a],sp=PET_SP[pt.s];if(!sp)return{};
+  const v=petPct(pt);return{[sp.b]:sp.b==="cr"?v*.6:sp.b==="gold"||sp.b==="xp"?v*2:v};
+}
+function petOnKill(p,B,rng,out){
+  const s=petOf(p),lvl=B.tw?-1:(B.mob&&Number.isInteger(B.mob.ri)?B.mob.ri:-1);
+  if(s.a>=0&&s.l[s.a]){const pt=s.l[s.a];
+    if(pt.lv<PET_MAXL){pt.x=(pt.x|0)+1;if(pt.x>=petLvNeed(pt.lv)){pt.x=0;pt.lv++;out.push({toast:"🐾 "+PET_SP[pt.s].n+" seviye atladı! (Sv."+pt.lv+")"});syncP(p)}}}
+  if(s.e.length){const eg=s.e[0],need=petNeed(eg.r);
+    if((eg.n|0)<need){eg.n=(eg.n|0)+1}
+    if(eg.n>=need&&s.l.length<PET_MAXP){
+      const r=rng.R(100),rr=r<70?0:r<92?1:r<99?2:3;
+      s.e.shift();s.l.push({s:eg.r,rr,lv:1,x:0});
+      out.push({toast:"🥚 Yumurta çatladı: "+PET_SP[eg.r].e+" "+PET_RN[rr]+" "+PET_SP[eg.r].n+"!"});_lg(out,"🥚 Yumurta çatladı: <b style=color:"+PET_RC[rr]+">"+PET_RN[rr]+" "+PET_SP[eg.r].n+"</b>");out.push({snd:"lvl"});
+    }}
+  if(lvl>=0&&s.e.length<PET_MAXE&&rng.R(100)<(B.mob.el?6:1)){s.e.push({r:Math.min(11,lvl),n:0});out.push({toast:"🥚 Bir yumurta buldun! ("+PET_SP[Math.min(11,lvl)].n+")"});_lg(out,"🥚 Yumurta düştü: "+PET_SP[Math.min(11,lvl)].e+" "+PET_SP[Math.min(11,lvl)].n)}
+}
 /* Zafer: ödülleri verir. {kill:..} olayı görev ilerlemesi için telefona bildirilir. */
 function bWin(B,p,rng){
   const out=[];B.over=true;
-  const m=B.mob,g=Math.round(rng.RI(m.g[0],m.g[1])*2.8),x=killXp(m.xp,m.lv,p.lv);
+  const m=B.mob,pbw=petBonusOf(p),g=Math.round(rng.RI(m.g[0],m.g[1])*2.8*(1+(pbw.gold||0)/100)),x=Math.floor(killXp(m.xp,m.lv,p.lv)*(1+(pbw.xp||0)/100));
   p.gold+=g;p.xp+=x;p.st.k++;p.stk++;
+  petOnKill(p,B,rng,out);
   out.push({kill:{el:!!m.el,tw:B.tw,ri:m.ri,mi:m.mi}});
   if(m.el){p.st.e++;if(!B.tw)p.boss[m.ri]=true}
   out.push({win:{g,x,el:!!m.el}});
@@ -590,6 +625,24 @@ function ecoDo(p,body,rng,t,now){
     if(tt==="sc")p.sc+=n;else p.pot[tt][body.sz]=(p.pot[tt][body.sz]||0)+n;
     out.push({snd:"pot"});out.push({toast:"Satın alındı: "+n+" adet (-"+(cost*n)+" 🪙)"});out.ok=true;return out;
   }
+  if(a==="pet"){
+    const s=petOf(p),sub=body.sub,i=body.i;
+    if(sub==="act"){
+      if(!Number.isInteger(i)||i<-1||i>=s.l.length)return _bad(out,"Hayvan bulunamadı");
+      s.a=i;syncP(p);out.push({toast:i<0?"Evcil hayvan geri çağrıldı":"🐾 "+PET_SP[s.l[i].s].n+" seni takip ediyor"});out.ok=true;return out;
+    }
+    if(sub==="rel"){
+      if(!Number.isInteger(i)||i<0||i>=s.l.length)return _bad(out,"Hayvan bulunamadı");
+      const pt=s.l[i],g=100*(pt.rr+1)*pt.lv;
+      s.l.splice(i,1);if(s.a===i)s.a=-1;else if(s.a>i)s.a--;
+      p.gold+=g;syncP(p);out.push({toast:"Salıverildi: +"+g+" 🪙"});out.ok=true;return out;
+    }
+    if(sub==="egg"){
+      if(!Number.isInteger(i)||i<1||i>=s.e.length)return _bad(out,"Yumurta bulunamadı");
+      const eg=s.e.splice(i,1)[0];s.e.unshift(eg);out.push({toast:"🥚 Yumurta ısıtmaya alındı"});out.ok=true;return out;
+    }
+    return _bad(out,"Geçersiz istek");
+  }
   if(a==="claim"){
     const kd=body.kind;
     if(kd==="q"||kd==="v"){
@@ -797,6 +850,6 @@ function wbSim(p0,wi,rng){
   return{dmg:Math.max(0,Math.floor(m.mx-m.hp)),rounds,fell:p.hp<=0};
 }
 
-const KZ={STK_OK,stkName,ACH,ACH_T,ACH_R,achN,achDone,potAmt,WB,wbName,wbSim,RACES,raceMul,bHit,MAXLV,rgOf,reqXp,TIERS,TBP,tierOf,tierItem,mkName,SPC,SPN,isSpcW,rerollCost,wInfo,wLine,spdTxt,jrOf,autoJunk,mkDo,MK_MINLV,healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
+const KZ={petOnKill,PET_SP,PET_RN,PET_RC,PET_MAXL,PET_MAXP,PET_MAXE,petNeed,petLvNeed,petOf,petPct,petBonusOf,STK_OK,stkName,ACH,ACH_T,ACH_R,achN,achDone,potAmt,WB,wbName,wbSim,RACES,raceMul,bHit,MAXLV,rgOf,reqXp,TIERS,TBP,tierOf,tierItem,mkName,SPC,SPN,isSpcW,rerollCost,wInfo,wLine,spdTxt,jrOf,autoJunk,mkDo,MK_MINLV,healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
 (typeof globalThis!=="undefined"?globalThis:window).KZ=KZ;
 if(typeof module!=="undefined"&&module.exports)module.exports=KZ;
