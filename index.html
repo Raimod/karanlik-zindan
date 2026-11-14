@@ -11,10 +11,16 @@
 <link rel="manifest" href="manifest.json">
 <title>Valdrenn: Gölgelerin Mirası</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=2.12.0">
+<link rel="stylesheet" href="style.css?v=2.13.0">
 
 </head>
 <body>
+<div id="splash" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(180deg,#3d4145 0,#3d4145 150px,#3d414500 330px) top/100% 330px no-repeat,url(img/yukleme.webp?v=2.13.0) center bottom/contain no-repeat,linear-gradient(180deg,#3d4145,#1f1c1b);display:flex;flex-direction:column;justify-content:flex-end;align-items:center;transition:opacity .6s ease">
+  <div style="width:56%;max-width:260px;margin-bottom:calc(8% + env(safe-area-inset-bottom,0px));text-align:center">
+    <div style="height:5px;background:#0009;border:1px solid #6b4a2a;border-radius:4px;overflow:hidden"><i id="splash-bar" style="display:block;height:100%;width:8%;background:linear-gradient(90deg,#9a6a2a,#e6b450);transition:width .4s ease"></i></div>
+    <div style="margin-top:7px;font:700 11px system-ui,sans-serif;color:#d9c9a5;letter-spacing:.12em;text-shadow:0 1px 4px #000">YÜKLENİYOR...</div>
+  </div>
+</div>
 <canvas id="bg"></canvas>
 <div id="sp"><svg viewBox="0 0 100 100" width="104" height="104"><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3cf7a"/><stop offset="1" stop-color="#a8741a"/></linearGradient></defs><path d="M50 6L14 18v30c0 24 16 38 36 46 20-8 36-22 36-46V18z" fill="#15111f" stroke="url(#sg)" stroke-width="3"/><path d="M30 68L70 28M70 68L30 28" stroke="url(#sg)" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="48" r="7" fill="#15111f" stroke="url(#sg)" stroke-width="3"/></svg>
 <h1>VALDRENN</h1><div class="sb2">Gölgelerin Mirası</div><div class="spb"><i></i></div><div id="spt"></div><div class="sk2">Geçmek için dokun</div></div>
@@ -48,7 +54,7 @@
         <div id="htitle" style="font-size:9px;color:var(--gold);font-weight:700"></div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700"><span class="g">🪙 <span id="hg"></span></span><span style="color:#a5b4fc">🎒 <span id="hb"></span>/50</span><button class="btn s" style="width:auto;padding:4px 7px;font-size:10px;border:1px solid rgba(230,180,80,.4)" onclick="openCharSelect()" title="Karakter Seçim Ekranına Dön">👥 Yuvalar</button><button class="btn s" id="fsb" style="width:auto;padding:4px 7px;font-size:11px;border:1px solid rgba(230,180,80,.4)" onclick="toggleFS()" title="Tam ekran">⛶</button></div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700"><span class="g">🪙 <span id="hg"></span></span><span style="color:#a5b4fc">🎒 <span id="hb"></span>/50</span><button class="btn s" style="width:auto;padding:4px 7px;font-size:10px;border:1px solid rgba(230,180,80,.4)" onclick="openCharSelect()" title="Karakter Seçim Ekranına Dön">👥 Yuvalar</button><button class="btn s" id="fsb" style="width:auto;padding:4px 7px;font-size:11px;border:1px solid rgba(230,180,80,.4)" onclick="toggleFS()" title="Tam ekran">⛶</button><button class="btn s" style="width:auto;padding:4px 7px;font-size:11px;border:1px solid rgba(230,180,80,.4)" onclick="openSettings()" title="Ayarlar">⚙️</button></div>
   </div>
   <div class="bar"><i class="hpf" id="hh"></i><b id="ht"></b></div>
   <div class="bar"><i class="mpf" id="hm"></i><b id="hmt"></b></div>
@@ -62,16 +68,27 @@
 <div id="class-lore-modal" onclick="if(event.target===this)closeClassLore()"></div>
 
 
-<script src="engine.js?v=2.12.0"></script>
-<script src="gorsel.js?v=2.12.0"></script>
-<script src="canavar.js?v=2.12.0"></script>
-<script src="game.js?v=2.12.0"></script>
-<script src="cloud.js?v=2.12.0"></script>
-<script src="community.js?v=2.12.0"></script>
-<script src="lonca.js?v=2.12.0"></script>
-<script src="arkadas.js?v=2.12.0"></script>
-<script src="story.js?v=2.12.0"></script>
-<script src="pazar.js?v=2.12.0"></script>
-<script src="ogretici.js?v=2.12.0"></script>
+<script src="engine.js?v=2.13.0"></script>
+<script src="gorsel.js?v=2.13.0"></script>
+<script src="canavar.js?v=2.13.0"></script>
+<script src="game.js?v=2.13.0"></script>
+<script src="cloud.js?v=2.13.0"></script>
+<script src="community.js?v=2.13.0"></script>
+<script src="lonca.js?v=2.13.0"></script>
+<script src="arkadas.js?v=2.13.0"></script>
+<script src="story.js?v=2.13.0"></script>
+<script src="worldboss.js?v=2.13.0"></script>
+<script src="ayarlar.js?v=2.13.0"></script>
+<script src="pazar.js?v=2.13.0"></script>
+<script src="ogretici.js?v=2.13.0"></script>
+<script>
+(function(){var s=document.getElementById("splash"),b=document.getElementById("splash-bar"),t0=Date.now(),done=false;
+function p(v){if(b)b.style.width=v+"%"}
+setTimeout(function(){p(35)},200);setTimeout(function(){p(60)},700);
+function end(){if(done)return;done=true;p(100);var w=Math.max(0,1500-(Date.now()-t0));setTimeout(function(){if(!s)return;s.style.opacity="0";setTimeout(function(){if(s&&s.parentNode)s.parentNode.removeChild(s)},650)},w)}
+window.addEventListener("load",function(){setTimeout(end,400)});
+setTimeout(end,8000);
+})();
+</script>
 </body>
 </html>

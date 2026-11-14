@@ -178,3 +178,12 @@ Bilinen maliyet: internetsiz oynama biter, her savaş bir sunucu çağrısı (ü
 ## 2.12.0
 - Eşya isimleri yeniden yazıldı (hikâyeye uygun): her sınıfın silahı her kademede özgün adlı; diğer parçalar kademenin silah temasını taşır. Eski "II/III" ekleri kalktı.
 - Daha önce düşmüş eşyalar eski adını korur; bundan sonra düşenler yeni adı alır. Sunucu fonksiyonu (battle) yeniden kuruldu: edge/battle/index.ts → battle-index.ts.
+
+## 2.13.0
+- 🐉 Dünya Boss'u: ortak can havuzu, günde 3 hak (karakter başına), 3 gün süre, %75/%50/%25 ortak ödül, ölünce sandık + ünvan (Boss Avcısı, Dünya Yıkıcı), lonca sıralaması. Yeni dosyalar: worldboss.js, sql/dunyaboss.sql; battle fonksiyonu güncellendi ("wb" işlemi).
+- Harita tam ekranken alttaki sekmeye geçince harita kendiliğinden kapanır.
+- Karakter seçim ekranında büyük "OYNA" düğmesi kalktı; her karakter satırında küçük ▶ Oyna düğmesi var.
+- 🖼️ Yükleme ekranı: img/yukleme.webp arka planıyla açılış ekranı + yükleme çubuğu (en az 1,5 sn görünür, sonra solar).
+- ⚙️ Ayarlar (ayarlar.js): üst çubukta ⚙️ düğmesi. Ses aç/kapa + ses seviyesi, titreşim, ekran sarsıntısı, hasar sayıları, tam ekran, karakter değiştir, çıkış. Ayarlar cihazda (localStorage) saklanır.
+
+- 2.13.0 (iksir ekonomisi): iksir fiyatları ~%40 düştü (S 6, M 15, L 36 altın), savaş altını x2.8, otomatik savaş ayarına 'Altın rezervi' (0/200/1000/5000/20000; altın bunun altına inerse otomatik iksir almaz). Sunucu handler'ı keep değerini cfg'den okur.

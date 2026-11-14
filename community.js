@@ -58,6 +58,7 @@ function cCommunity(v){socSync();
     <button class="sub-tab ${COM.sub=="rank"?"act":""}" onclick="comSub('rank')">🏆 Sıralama</button>
     <button class="sub-tab ${COM.sub=="chat"?"act":""}" onclick="comSub('chat')">💬 Sohbet</button>
     ${typeof cGuild==="function"?`<button class="sub-tab ${COM.sub=="guild"?"act":""}" onclick="comSub('guild')">🏰 Lonca</button>`:""}
+    ${typeof cBoss==="function"?`<button class="sub-tab ${COM.sub=="boss"?"act":""}" onclick="comSub('boss')">🐉 Boss</button>`:""}
     ${typeof cFriends==="function"?`<button class="sub-tab ${COM.sub=="friends"?"act":""}" onclick="comSub('friends')">👥 Arkadaş${frBadge()>0?` <span class="nbd2">${frBadge()}</span>`:""}</button>`:""}
   </div>`;
   if(typeof CLOUD==="undefined"||CLOUD.state!=="in"){
@@ -69,6 +70,7 @@ function cCommunity(v){socSync();
   }
   if(COM.sub==="guild"&&typeof cGuild==="function"){cGuild(v,sub);return}
   if(COM.sub==="friends"&&typeof cFriends==="function"){cFriends(v,sub);return}
+  if(COM.sub==="boss"&&typeof cBoss==="function"){cBoss(v,sub);return}
   if(COM.sub==="rank"){
     v.innerHTML=sub+`<div class="cd"><div class="ct">🏆 Sıralama</div>
       <div class="sub-tabs" style="margin-bottom:8px">${Object.keys(RANKS).map(k=>`<button class="sub-tab ${COM.by==k?"act":""}" onclick="comBy('${k}')">${RANKS[k][0]}</button>`).join("")}</div>

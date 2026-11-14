@@ -56,19 +56,21 @@ const TITLES=[
   {id:"t4",n:"Demir Ustası",desc:"20 başarılı yükseltme yap",bonus:"+%10 Fiziksel Zırh",b:{arm:10},chk:p=>(p.st.fok||0)>=20},
   {id:"t5",n:"Efsanevi Kahraman",desc:"40. seviyeye ulaş",bonus:"+%12 Saldırı & Zırh",b:{atk:12,arm:12},chk:p=>p.lv>=40},
   {id:"t6",n:"Karanlığın Efendisi",desc:"Kadim Kara Ejderha'yı yen",bonus:"+%15 Tüm Güç & +%5 Kritik",b:{atk:15,arm:15,hp:15,cr:5},chk:p=>!!p.boss[4]},
-  {id:"t7",n:"Gölgelerin Mirasçısı",desc:"Kadim Kral Valdrenn'i yen",bonus:"+%20 Tüm Güç & +%8 Kritik",b:{atk:20,arm:20,hp:20,cr:8},chk:p=>!!p.boss[11]}
+  {id:"t7",n:"Gölgelerin Mirasçısı",desc:"Kadim Kral Valdrenn'i yen",bonus:"+%20 Tüm Güç & +%8 Kritik",b:{atk:20,arm:20,hp:20,cr:8},chk:p=>!!p.boss[11]},
+  {id:"t8",n:"Boss Avcısı",desc:"Bir Dünya Boss'unun yenilişine katıl",bonus:"+%6 Saldırı & +%6 Can",b:{atk:6,hp:6},chk:p=>((p.st&&p.st.wbk)|0)>=1},
+  {id:"t9",n:"Dünya Yıkıcı",desc:"Bir Dünya Boss'unda hasarda ilk 3'e gir",bonus:"+%10 Saldırı & +%10 Can",b:{atk:10,hp:10},chk:p=>((p.st&&p.st.wbt)|0)>=1}
 ];
 
 const POT_DEF={
   hp:{
-    S:{id:"S",sz:"Küçük",e:"🧪",n:"Küçük Can İksiri",amt:150,cost:10,sell:3,g:1,dropW:65},
-    M:{id:"M",sz:"Orta",e:"🧪",n:"Orta Can İksiri",amt:400,cost:25,sell:8,g:2,dropW:27},
-    L:{id:"L",sz:"Büyük",e:"🧪",n:"Büyük Can İksiri",amt:900,cost:60,sell:20,g:4,dropW:8}
+    S:{id:"S",sz:"Küçük",e:"🧪",n:"Küçük Can İksiri",amt:150,pc:.15,cost:6,sell:2,g:1,dropW:65},
+    M:{id:"M",sz:"Orta",e:"🧪",n:"Orta Can İksiri",amt:400,pc:.35,cost:15,sell:5,g:2,dropW:27},
+    L:{id:"L",sz:"Büyük",e:"🧪",n:"Büyük Can İksiri",amt:900,pc:.65,cost:36,sell:12,g:4,dropW:8}
   },
   mp:{
-    S:{id:"S",sz:"Küçük",e:"💧",n:"Küçük Mana İksiri",amt:60,cost:8,sell:2,g:1,dropW:65},
-    M:{id:"M",sz:"Orta",e:"💧",n:"Orta Mana İksiri",amt:180,cost:20,sell:6,g:3,dropW:27},
-    L:{id:"L",sz:"Büyük",e:"💧",n:"Büyük Mana İksiri",amt:400,cost:50,sell:16,g:4,dropW:8}
+    S:{id:"S",sz:"Küçük",e:"💧",n:"Küçük Mana İksiri",amt:60,pc:.15,cost:5,sell:1,g:1,dropW:65},
+    M:{id:"M",sz:"Orta",e:"💧",n:"Orta Mana İksiri",amt:180,pc:.35,cost:12,sell:4,g:3,dropW:27},
+    L:{id:"L",sz:"Büyük",e:"💧",n:"Büyük Mana İksiri",amt:400,pc:.65,cost:30,sell:10,g:4,dropW:8}
   }
 };
 
@@ -275,6 +277,8 @@ function bMobTurn(B,p,rng){
 }
 
 /* Savaşta iksir içme. quiet=true ise uyarı yazısı üretmez (oto savaş). out.ok = içildi mi. */
+/* İksir etkisi: sabit değer ile (en yüksek can/mana yüzdesi) büyük olanı. Yüksek seviyede iksirler boşa gitmesin diye. */
+const potAmt=(p,t,sz)=>{const d=POT_DEF[t][sz];return Math.max(d.amt,Math.floor((t=="hp"?p.maxHp:p.maxMp)*d.pc))};
 function bPot(p,t,sz,quiet){
   const out=[];out.ok=false;
   const d=POT_DEF[t][sz];
@@ -282,19 +286,19 @@ function bPot(p,t,sz,quiet){
   if(t=="hp"&&p.hp>=p.maxHp){if(!quiet)out.push({toast:"Canın zaten tamamen dolu!"});return out}
   if(t=="mp"&&p.mp>=p.maxMp){if(!quiet)out.push({toast:"Manan zaten tamamen dolu!"});return out}
   p.pot[t][sz]--;out.push({snd:"pot"});out.push({ev:["pot",1]});
-  if(t=="hp"){const r=Math.min(d.amt,p.maxHp-p.hp);p.hp=Math.min(p.maxHp,p.hp+r);out.push({fx:["+"+r,"#22c55e"]});_lg(out,`🧪 ${d.n}: <b style=color:#4ade80>+${r} HP</b> (Kalan: ${p.pot.hp[sz]})`)}
-  else{const r=Math.min(d.amt,p.maxMp-p.mp);p.mp=Math.min(p.maxMp,p.mp+r);out.push({fx:["+"+r,"#38bdf8"]});_lg(out,`💧 ${d.n}: <b style=color:#38bdf8>+${r} MP</b> (Kalan: ${p.pot.mp[sz]})`)}
+  if(t=="hp"){const r=Math.min(potAmt(p,"hp",sz),p.maxHp-p.hp);p.hp=Math.min(p.maxHp,p.hp+r);out.push({fx:["+"+r,"#22c55e"]});_lg(out,`🧪 ${d.n}: <b style=color:#4ade80>+${r} HP</b> (Kalan: ${p.pot.hp[sz]})`)}
+  else{const r=Math.min(potAmt(p,"mp",sz),p.maxMp-p.mp);p.mp=Math.min(p.maxMp,p.mp+r);out.push({fx:["+"+r,"#38bdf8"]});_lg(out,`💧 ${d.n}: <b style=color:#38bdf8>+${r} MP</b> (Kalan: ${p.pot.mp[sz]})`)}
   out.ok=true;return out;
 }
 
 /* Oto savaşın bir adımı. kind: "pot" (iksir içti), "stop" (oto savaş durmalı), "act" (k numaralı hamle yap, -1 temel saldırı) */
 /* Oto savaş: seçili boy bittiyse ve altın yetiyorsa 10 adede kadar satın al (yalnızca iksir gerektiğinde) */
-function autoBuyOf(p,t,sz,thr,out){
+function autoBuyOf(p,t,sz,thr,out,keep){
   if(!["S","M","L"].includes(sz))return;
   if((p.pot[t][sz]||0)>0)return;
   const need=t==="hp"?p.hp<p.maxHp*(thr/100):p.mp<p.maxMp*(thr/100);
   if(!need)return;
-  const d=POT_DEF[t][sz],n=Math.min(10,Math.floor(p.gold/d.cost));
+  const d=POT_DEF[t][sz],n=Math.min(10,Math.floor(Math.max(0,p.gold-(keep|0))/d.cost));
   if(n<1)return;
   p.gold-=d.cost*n;p.pot[t][sz]=(p.pot[t][sz]||0)+n;
   _lg(out,`🛒 Otomatik satın alma: ${n}× ${d.n} (-${d.cost*n} 🪙)`);
@@ -303,7 +307,7 @@ function bAutoStep(B,p,rng){
   const out=[];
   const cfg=p.autoCfg||{hp:"S",mp:"S",hpThr:40,mpThr:25,skills:[1,1,1,1]};
   const skOn=Array.isArray(cfg.skills)?cfg.skills:[1,1,1,1];
-  if(cfg.buy){autoBuyOf(p,"hp",cfg.hp,cfg.hpThr,out);autoBuyOf(p,"mp",cfg.mp,cfg.mpThr,out)}
+  if(cfg.buy){autoBuyOf(p,"hp",cfg.hp,cfg.hpThr,out,cfg.keep);autoBuyOf(p,"mp",cfg.mp,cfg.mpThr,out,cfg.keep)}
   if(p.hp<p.maxHp*(cfg.hpThr/100)){
     const hSz=pickBestAvailPotOf(p,"hp",cfg.hp);
     if(hSz){const o=bPot(p,"hp",hSz,true);out.push(...o);if(o.ok)return{out,kind:"pot"}}
@@ -352,7 +356,7 @@ function matDropOf(p,m,rng,out){
 /* Zafer: ödülleri verir. {kill:..} olayı görev ilerlemesi için telefona bildirilir. */
 function bWin(B,p,rng){
   const out=[];B.over=true;
-  const m=B.mob,g=rng.RI(m.g[0],m.g[1]),x=killXp(m.xp,m.lv,p.lv);
+  const m=B.mob,g=Math.round(rng.RI(m.g[0],m.g[1])*2.8),x=killXp(m.xp,m.lv,p.lv);
   p.gold+=g;p.xp+=x;p.st.k++;p.stk++;
   out.push({kill:{el:!!m.el,tw:B.tw,ri:m.ri,mi:m.mi}});
   if(m.el){p.st.e++;if(!B.tw)p.boss[m.ri]=true}
@@ -727,6 +731,33 @@ function mkDo(p,body,d,now){
   }
   return bad("Geçersiz istek");
 }
-const KZ={RACES,raceMul,bHit,MAXLV,rgOf,reqXp,TIERS,TBP,tierOf,tierItem,mkName,SPC,SPN,isSpcW,rerollCost,wInfo,wLine,spdTxt,jrOf,autoJunk,mkDo,MK_MINLV,healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
+
+/* ---------- DÜNYA BOSS'U (v2.13.0): herkesin ortak vurduğu boss. Savaş sunucuda, oyuncunun bir KOPYASIYLA simüle edilir. ---------- */
+const WB={HITS:3,DAYS:3,ROUNDS:30,MINLV:10};
+const wbName=wi=>{const r=RG[((wi%RG.length)+RG.length)%RG.length];return r.m[r.m.length-1][0]};
+/* Boss oyuncunun seviyesine göre ayarlanır: oyuncunun canının ~%9'sı kadar vurur (zırhtan sonra). Boss ölmez; 30 tur ya da oyuncu düşene kadar sürer. dönüş: {dmg,rounds,fell} */
+function wbSim(p0,wi,rng){
+  const p=JSON.parse(JSON.stringify(p0));
+  syncP(p);p.hp=p.maxHp;p.mp=p.maxMp;
+  const base=p.autoCfg||{};
+  p.autoCfg={hp:base.hp||"S",mp:base.mp||"S",hpThr:typeof base.hpThr==="number"?base.hpThr:40,mpThr:typeof base.mpThr==="number"?base.mpThr:25,skills:Array.isArray(base.skills)&&base.skills.length==4?base.skills:[1,1,1,1],buy:false};
+  const ri=((wi%RG.length)+RG.length)%RG.length,B=newBattle(p,ri,RG[ri].mobs.length-1,0),m=B.mob,ar=statsOf(p).arm;
+  m.lv=p.lv;m.el=true;m.tr="boss";B.armor=false;m.def=70;m.hp=m.mx=4e12;
+  m.atk=Math.max(10,Math.floor(p.maxHp*.09/(1-ar/(ar+180))));
+  let rounds=0;
+  for(let n=0;n<400&&rounds<WB.ROUNDS;n++){
+    const r=bAutoStep(B,p,rng);
+    if(r.kind==="pot")continue;
+    if(r.kind==="stop")break;
+    const o=bAct(B,p,r.k,rng);
+    if(!o.acted)break;
+    rounds++;
+    bMobTurn(B,p,rng);
+    if(p.hp<=0)break;
+  }
+  return{dmg:Math.max(0,Math.floor(m.mx-m.hp)),rounds,fell:p.hp<=0};
+}
+
+const KZ={potAmt,WB,wbName,wbSim,RACES,raceMul,bHit,MAXLV,rgOf,reqXp,TIERS,TBP,tierOf,tierItem,mkName,SPC,SPN,isSpcW,rerollCost,wInfo,wLine,spdTxt,jrOf,autoJunk,mkDo,MK_MINLV,healAmt,QS,QV,qpOf,evQ,killQ,questOut,rollDaily,sellV,junkOf,salvageYield,STK_SELL,ecoDo,SL,SN,CL,G,RG,TITLES,POT_DEF,CW,MT,TM,NT,reqXp,killXp,effLv,pw,getActiveSetsOf,getTitleBonusOf,statsOf,mkRng,seeded,forgeNeed,itemAt,forgeUpg,forgeReroll,chestOpen,syncP,towerMobOf,newBattle,bHit,bAct,bMobTurn,bPot,bAutoStep,dropItem,matDropOf,bWin,bLose};
 (typeof globalThis!=="undefined"?globalThis:window).KZ=KZ;
 if(typeof module!=="undefined"&&module.exports)module.exports=KZ;

@@ -1,7 +1,10 @@
-const GAME_VERSION="2.12.0";
+const GAME_VERSION="2.13.0";
 const $=id=>document.getElementById(id),R=n=>Math.random()*n,RI=(a,b)=>Math.floor(a+R(b-a+1));
 /* ---------- SES ---------- */
-const A={c:null,t(f,ty,d,v=.15,dl=0){try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
+const SET={snd:1,vol:70,hap:1,shk:1,dmg:1};
+try{const _s=JSON.parse(localStorage.getItem("kz_set")||"{}");for(const k in SET)if(typeof _s[k]==="number")SET[k]=_s[k]}catch(e){}
+try{if(localStorage.getItem("kz_nohap")==="1"&&!(JSON.parse(localStorage.getItem("kz_set")||"{}").hap===1))SET.hap=0}catch(e){}
+const A={c:null,t(f,ty,d,v=.15,dl=0){if(!SET.snd)return;v=v*(SET.vol/70);try{if(!this.c)this.c=new(window.AudioContext||window.webkitAudioContext)();setTimeout(()=>{const o=this.c.createOscillator(),g=this.c.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,this.c.currentTime);g.gain.exponentialRampToValueAtTime(1e-4,this.c.currentTime+d);o.connect(g);g.connect(this.c.destination);o.start();o.stop(this.c.currentTime+d)},dl)}catch(e){}},
 hit(){this.t(130,"sawtooth",.12,.2)},crit(){this.t(420,"triangle",.1,.25);this.t(660,"square",.25,.25,60)},
 int(){this.t(880,"sine",.08,.3);this.t(1100,"square",.2,.25,80)},pot(){this.t(330,"sine",.15,.2);this.t(520,"sine",.25,.2,90)},
 lvl(){[261,329,392,523,659].forEach((f,i)=>this.t(f,"triangle",.25,.25,i*80))},elite(){[392,523,659,1046].forEach((f,i)=>this.t(f,"square",.35,.25,i*110))}};
@@ -386,11 +389,14 @@ function renderCharSelect(){
           <div class="title-pill">🏅 ${tObj.n}</div>
           <div style="font-size:9.5px;color:#e2e8f0;margin-top:3px">${c.e} ${c.n} · 🪙 ${s.gold.toLocaleString()} · 🗼 Kat ${s.tw||0}</div>
         </div>
-        <button class="btn d" style="width:auto;padding:6px 8px;font-size:10.5px" onclick="event.stopPropagation();deleteSlot(${idx})">${armed=="del"+idx?"Sil?":"🗑️"}</button>
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:stretch">
+          <button class="btn" style="width:auto;padding:6px 12px;font-size:11px;margin:0" onclick="event.stopPropagation();selectAndPlaySlot(${idx})">▶ Oyna</button>
+          <button class="btn d" style="width:auto;padding:5px 8px;font-size:10.5px;margin:0" onclick="event.stopPropagation();deleteSlot(${idx})">${armed=="del"+idx?"Sil?":"🗑️"}</button>
+        </div>
       </div>`;
     }).join("");
 
-    const playBtnHtml=previewChar?`<button class="btn" style="padding:11px;font-size:13.5px;box-shadow:0 4px 20px rgba(230,180,80,.35)" onclick="selectAndPlaySlot(${csPreviewSlot})">⚔️ ${previewChar.name.toUpperCase()} İLE OYNA</button>`:``;
+    const playBtnHtml="";
 
     bottom.innerHTML=`
       ${getShowcaseOverlayControlsHTML(csShowcaseCls)}
@@ -508,7 +514,7 @@ $("ht").innerText=P.hp+" / "+P.maxHp+" HP";$("hmt").innerText=P.mp+" / "+P.maxMp
 const TABS=[["character","🧙","Karakter"],["inventory","🎒","Çanta"],["map","🗺️","Harita"],["forge","🔨","Demirci"],["city","🏰","Şehir"],["quests","📜","Görev"],["community","🌐","Topluluk"],["wiki","📖","Wiki"]];
 function nav(){const bd=typeof frBadge==="function"?frBadge():0;$("nv").innerHTML=TABS.map(t=>`<button class="${tab==t[0]?"a":""}" onclick="go('${t[0]}')"><span>${t[1]}</span>${t[2]}${t[0]==="community"&&bd>0?`<i class="nbd">${bd>9?"9+":bd}</i>`:""}</button>`).join("")}
 let wmAuto=false;
-function go(t){if(t==="map")wmAuto=true;tab=t;armed="";CB.nav=!!(CB.on&&t!=="map"&&(CB.auto||CB.nav));nav();view()}
+function go(t){if(t==="map")wmAuto=true;else if(typeof wmClose==="function")wmClose();tab=t;armed="";CB.nav=!!(CB.on&&t!=="map"&&(CB.auto||CB.nav));nav();view()}
 function view(){const v=$("mv");if(CB.on&&!(CB.nav&&tab!=="map")){combatUI(v);return}({character:cChar,inventory:cBag,map:cMap,forge:cForge,city:cCity,skills:cSkills,quests:cQuests,community:(typeof cCommunity==="function"?cCommunity:cCity),wiki:cWiki})[tab](v);if(CB.on)updMini(true)}
 function toast(m){const e=document.createElement("div");e.className="t";e.innerText=m;$("tt").appendChild(e);setTimeout(()=>e.remove(),2400)}
 
@@ -594,12 +600,12 @@ function setBagSort(s){bagSort=s;view()}
 
 /* Stacklenen eşyalar (İksirler, Parşömenler, Sandıklar, Artı Basma & Ot/Öz Malzemeleri) */
 const STACK_DEFS=[
-  {key:"pot_hp_S",cat:"İksir (Küçük)",g:1,e:"🧪",n:"Küçük Can İksiri",desc:"Savaşta 150 can yeniler.",get:()=>P.pot.hp.S||0,set:v=>P.pot.hp.S=v,sell:3,act:"usePot('hp','S')",actLbl:"İç (+150 HP)"},
-  {key:"pot_hp_M",cat:"İksir (Orta)",g:2,e:"🧪",n:"Orta Can İksiri",desc:"Savaşta 400 can yeniler.",get:()=>P.pot.hp.M||0,set:v=>P.pot.hp.M=v,sell:8,act:"usePot('hp','M')",actLbl:"İç (+400 HP)"},
-  {key:"pot_hp_L",cat:"İksir (Büyük)",g:4,e:"🧪",n:"Büyük Can İksiri",desc:"Savaşta 900 can yeniler.",get:()=>P.pot.hp.L||0,set:v=>P.pot.hp.L=v,sell:20,act:"usePot('hp','L')",actLbl:"İç (+900 HP)"},
-  {key:"pot_mp_S",cat:"İksir (Küçük)",g:1,e:"💧",n:"Küçük Mana İksiri",desc:"Savaşta 60 mana yeniler.",get:()=>P.pot.mp.S||0,set:v=>P.pot.mp.S=v,sell:2,act:"usePot('mp','S')",actLbl:"İç (+60 MP)"},
-  {key:"pot_mp_M",cat:"İksir (Orta)",g:3,e:"💧",n:"Orta Mana İksiri",desc:"Savaşta 180 mana yeniler.",get:()=>P.pot.mp.M||0,set:v=>P.pot.mp.M=v,sell:6,act:"usePot('mp','M')",actLbl:"İç (+180 MP)"},
-  {key:"pot_mp_L",cat:"İksir (Büyük)",g:4,e:"💧",n:"Büyük Mana İksiri",desc:"Savaşta 400 mana yeniler.",get:()=>P.pot.mp.L||0,set:v=>P.pot.mp.L=v,sell:16,act:"usePot('mp','L')",actLbl:"İç (+400 MP)"},
+  {key:"pot_hp_S",cat:"İksir (Küçük)",g:1,e:"🧪",n:"Küçük Can İksiri",desc:"Savaşta en az 150 can (ya da maksimumun %15'i) yeniler.",get:()=>P.pot.hp.S||0,set:v=>P.pot.hp.S=v,sell:3,act:"usePot('hp','S')",actLbl:"İç (+150 HP)"},
+  {key:"pot_hp_M",cat:"İksir (Orta)",g:2,e:"🧪",n:"Orta Can İksiri",desc:"Savaşta en az 400 can (ya da maksimumun %35'i) yeniler.",get:()=>P.pot.hp.M||0,set:v=>P.pot.hp.M=v,sell:8,act:"usePot('hp','M')",actLbl:"İç (+400 HP)"},
+  {key:"pot_hp_L",cat:"İksir (Büyük)",g:4,e:"🧪",n:"Büyük Can İksiri",desc:"Savaşta en az 900 can (ya da maksimumun %65'i) yeniler.",get:()=>P.pot.hp.L||0,set:v=>P.pot.hp.L=v,sell:20,act:"usePot('hp','L')",actLbl:"İç (+900 HP)"},
+  {key:"pot_mp_S",cat:"İksir (Küçük)",g:1,e:"💧",n:"Küçük Mana İksiri",desc:"Savaşta en az 60 mana (ya da maksimumun %15'i) yeniler.",get:()=>P.pot.mp.S||0,set:v=>P.pot.mp.S=v,sell:2,act:"usePot('mp','S')",actLbl:"İç (+60 MP)"},
+  {key:"pot_mp_M",cat:"İksir (Orta)",g:3,e:"💧",n:"Orta Mana İksiri",desc:"Savaşta en az 180 mana (ya da maksimumun %35'i) yeniler.",get:()=>P.pot.mp.M||0,set:v=>P.pot.mp.M=v,sell:6,act:"usePot('mp','M')",actLbl:"İç (+180 MP)"},
+  {key:"pot_mp_L",cat:"İksir (Büyük)",g:4,e:"💧",n:"Büyük Mana İksiri",desc:"Savaşta en az 400 mana (ya da maksimumun %65'i) yeniler.",get:()=>P.pot.mp.L||0,set:v=>P.pot.mp.L=v,sell:16,act:"usePot('mp','L')",actLbl:"İç (+400 MP)"},
   {key:"scroll",cat:"Artı Basma",g:4,e:"📜",n:"Koruma Parşömeni",desc:"Demircide +6 ve üzeri yükseltmelerde eşyanın düşmesini ve kırılmasını önler.",get:()=>P.sc||0,set:v=>P.sc=v,sell:50,act:"go('forge')",actLbl:"Demirciye Git"},
   {key:"chest",cat:"Sandık",g:5,e:"🎁",n:"Hazine Sandığı",desc:"İçerisinden altın, iksir, Koruma Parşömeni veya en az GR-III ekipman çıkar.",get:()=>P.ch||0,set:v=>P.ch=v,sell:0,act:"chestUI()",actLbl:"Sandıkları Aç"},
   {key:"mat_kirik",cat:"Artı Basma",g:1,e:"⚙️",n:"Demir Kırığı",desc:"Demirci ocağında tüm +1 ile +15 yükseltmelerde kullanılan temel maden.",get:()=>P.mat.kirik||0,set:v=>P.mat.kirik=v,sell:2,act:"go('forge')",actLbl:"Ocakta Kullan"},
@@ -893,11 +899,11 @@ const alchHtml=`
     <div style="display:flex;gap:6px"><input type="number" inputmode="numeric" min="1" max="999" value="${BUYQ}" onchange="setBuyQ(this.value)" style="flex:1;min-width:0;padding:8px;background:#000;border:1px solid var(--ln);border-radius:8px;color:#fff;-webkit-user-select:text;user-select:text"><span class="mu" style="align-self:center;font-size:10px">adet (1-999)</span></div></div>
     <div class="ct">🧪 Simyacı — Can İksirleri <span class="mu" style="font-size:10px">Çanta: ${P.pot.hp.S}K · ${P.pot.hp.M}O · ${P.pot.hp.L}B</span></div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;margin-bottom:9px">
-      ${["S","M","L"].map(sz=>{const d=POT_DEF.hp[sz];return`<div class="q" style="display:block;margin:0;padding:7px 4px;border:1px solid ${G[d.g].c}44"><b style="color:${G[d.g].c};font-size:10.5px">${d.sz} Can</b><div class="mu" style="font-size:9.5px">+${d.amt} HP · <span style="color:#fff">×${P.pot.hp[sz]||0}</span></div><button class="btn" style="margin-top:5px;padding:6px;font-size:11px" ${P.gold>=d.cost*BUYQ?"":"disabled"} onclick="buy('hp',${d.cost},'${sz}')">${d.cost*BUYQ} 🪙</button></div>`}).join("")}
+      ${["S","M","L"].map(sz=>{const d=POT_DEF.hp[sz];return`<div class="q" style="display:block;margin:0;padding:7px 4px;border:1px solid ${G[d.g].c}44"><b style="color:${G[d.g].c};font-size:10.5px">${d.sz} Can</b><div class="mu" style="font-size:9.5px">+${potAmt(P,"hp",sz)} HP · <span style="color:#fff">×${P.pot.hp[sz]||0}</span></div><button class="btn" style="margin-top:5px;padding:6px;font-size:11px" ${P.gold>=d.cost*BUYQ?"":"disabled"} onclick="buy('hp',${d.cost},'${sz}')">${d.cost*BUYQ} 🪙</button></div>`}).join("")}
     </div>
     <div class="ct">💧 Simyacı — Mana İksirleri <span class="mu" style="font-size:10px">Çanta: ${P.pot.mp.S}K · ${P.pot.mp.M}O · ${P.pot.mp.L}B</span></div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center;margin-bottom:9px">
-      ${["S","M","L"].map(sz=>{const d=POT_DEF.mp[sz];return`<div class="q" style="display:block;margin:0;padding:7px 4px;border:1px solid ${G[d.g].c}44"><b style="color:${G[d.g].c};font-size:10.5px">${d.sz} Mana</b><div class="mu" style="font-size:9.5px">+${d.amt} MP · <span style="color:#fff">×${P.pot.mp[sz]||0}</span></div><button class="btn b" style="margin-top:5px;padding:6px;font-size:11px" ${P.gold>=d.cost*BUYQ?"":"disabled"} onclick="buy('mp',${d.cost},'${sz}')">${d.cost*BUYQ} 🪙</button></div>`}).join("")}
+      ${["S","M","L"].map(sz=>{const d=POT_DEF.mp[sz];return`<div class="q" style="display:block;margin:0;padding:7px 4px;border:1px solid ${G[d.g].c}44"><b style="color:${G[d.g].c};font-size:10.5px">${d.sz} Mana</b><div class="mu" style="font-size:9.5px">+${potAmt(P,"mp",sz)} MP · <span style="color:#fff">×${P.pot.mp[sz]||0}</span></div><button class="btn b" style="margin-top:5px;padding:6px;font-size:11px" ${P.gold>=d.cost*BUYQ?"":"disabled"} onclick="buy('mp',${d.cost},'${sz}')">${d.cost*BUYQ} 🪙</button></div>`}).join("")}
     </div>
     <div class="q" style="margin:0;padding:8px 10px">
       <div><b style="color:#c084fc">📜 Koruma Parşömeni</b> <span class="mu">(Çanta: ×${P.sc})</span><div class="mu" style="font-size:9.5px">+6 ve üzeri yükseltmelerde kırılmayı/düşmeyi önler</div></div>
@@ -954,8 +960,8 @@ function usePot(t,sz="S"){
   if(t=="hp"&&P.hp>=P.maxHp)return toast("Canın zaten tamamen dolu!");
   if(t=="mp"&&P.mp>=P.maxMp)return toast("Manan zaten tamamen dolu!");
   P.pot[t][sz]--;A.pot();ev("pot");
-  if(t=="hp"){const r=Math.min(def.amt,P.maxHp-P.hp);P.hp=Math.min(P.maxHp,P.hp+r);toast(`🧪 ${def.n} içildi: +${r} HP`)}
-  else{const r=Math.min(def.amt,P.maxMp-P.mp);P.mp=Math.min(P.maxMp,P.mp+r);toast(`💧 ${def.n} içildi: +${r} MP`)}
+  if(t=="hp"){const r=Math.min(potAmt(P,"hp",sz),P.maxHp-P.hp);P.hp=Math.min(P.maxHp,P.hp+r);toast(`🧪 ${def.n} içildi: +${r} HP`)}
+  else{const r=Math.min(potAmt(P,"mp",sz),P.maxMp-P.mp);P.mp=Math.min(P.maxMp,P.mp+r);toast(`💧 ${def.n} içildi: +${r} MP`)}
   hud();save();
   if((P.pot[t][sz]||0)>0)inspStack("pot_"+t+"_"+sz);else{closeM();view()}
 }
@@ -1182,12 +1188,12 @@ if(ab){
   }else ab.style.display="none";
 }
 hud()}
-function fx(t,c){const f=$("fl");if(!f)return;const s=document.createElement("span");s.className="fn"+(String(t).charAt(0)==="💥"?" cr":String(t).charAt(0)==="+"?" hl":"");s.style.cssText=`color:${c};left:${30+R(40)}%;top:${20+R(20)}%`;s.innerText=t;f.appendChild(s);setTimeout(()=>s.remove(),850)}
-function shake(){const a=$("mav");if(!a)return;a.classList.add("sk");setTimeout(()=>a.classList.remove("sk"),250)}
+function fx(t,c){if(!SET.dmg)return;const f=$("fl");if(!f)return;const s=document.createElement("span");s.className="fn"+(String(t).charAt(0)==="💥"?" cr":String(t).charAt(0)==="+"?" hl":"");s.style.cssText=`color:${c};left:${30+R(40)}%;top:${20+R(20)}%`;s.innerText=t;f.appendChild(s);setTimeout(()=>s.remove(),850)}
+function shake(){if(!SET.shk)return;const a=$("mav");if(!a)return;a.classList.add("sk");setTimeout(()=>a.classList.remove("sk"),250)}
 /* ---- Savaş efektleri (yalnızca görsel) ---- */
-function hap(p){try{if(localStorage.getItem("kz_nohap")==="1")return;if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
-function togHap(){try{localStorage.setItem("kz_nohap",localStorage.getItem("kz_nohap")==="1"?"0":"1")}catch(e){}view()}
-function hapOn(){try{return localStorage.getItem("kz_nohap")!=="1"}catch(e){return true}}
+function hap(p){try{if(!SET.hap||localStorage.getItem("kz_nohap")==="1")return;if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+function togHap(){SET.hap=SET.hap?0:1;try{localStorage.setItem("kz_nohap",SET.hap?"0":"1");localStorage.setItem("kz_set",JSON.stringify(SET))}catch(e){}view()}
+function hapOn(){return !!SET.hap}
 const SFX={tank:["bash","ward","roar","nova"],mage:["fire","ice","ward","meteor"],archer:["poison","arrows","mark","rain"],assassin:["bleed","dust","dark","exec"],healer:["holy","bash","heal","dome"]};
 const SFXB={tank:"slash",mage:"bolt",archer:"arrow",assassin:"slash",healer:"spark"};
 function sxAdd(f,cls,col,dl,st){const d=document.createElement("div");d.className="sx "+cls;d.style.setProperty("--c",col);if(dl)d.style.animationDelay=dl+"ms";if(st)d.style.cssText+=st;f.appendChild(d);setTimeout(()=>d.remove(),900+(dl||0))}
@@ -1256,7 +1262,7 @@ function cycleSelPot(t){
   const cur=P.selPot[t]||"S";
   P.selPot[t]=order[(order.indexOf(cur)+1)%3];
   const d=POT_DEF[t][P.selPot[t]];
-  toast(`${d.e} Seçili iksir: ${d.n} (+${d.amt})`);
+  toast(`${d.e} Seçili iksir: ${d.n} (+${potAmt(P,t,P.selPot[t])})`);
   save();upd();
 }
 function pot(t,szOverride){
@@ -1328,7 +1334,7 @@ function openAutoSetup(alreadyRunning){
       <div class="r" style="margin-bottom:5px"><b style="color:#f87171;font-size:11.5px">🧪 Can İksiri Boyutu</b><span class="mu" style="font-size:9.5px">Can %${cfg.hpThr} altına inince içer</span></div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px">
         ${optBtn("hp","off","Kullanma","Pasif")}
-        ${["S","M","L"].map(sz=>{const d=POT_DEF.hp[sz];return optBtn("hp",sz,`${d.sz} (×${P.pot.hp[sz]||0})`,`+${d.amt} HP`)}).join("")}
+        ${["S","M","L"].map(sz=>{const d=POT_DEF.hp[sz];return optBtn("hp",sz,`${d.sz} (×${P.pot.hp[sz]||0})`,`+${potAmt(P,"hp",sz)} HP`)}).join("")}
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
         ${[25,40,55,70].map(v=>thrBtn("hpThr",v)).join("")}
@@ -1339,7 +1345,7 @@ function openAutoSetup(alreadyRunning){
       <div class="r" style="margin-bottom:5px"><b style="color:#60a5fa;font-size:11.5px">💧 Mana İksiri Boyutu</b><span class="mu" style="font-size:9.5px">Mana %${cfg.mpThr} altına inince içer</span></div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px">
         ${optBtn("mp","off","Kullanma","Pasif")}
-        ${["S","M","L"].map(sz=>{const d=POT_DEF.mp[sz];return optBtn("mp",sz,`${d.sz} (×${P.pot.mp[sz]||0})`,`+${d.amt} MP`)}).join("")}
+        ${["S","M","L"].map(sz=>{const d=POT_DEF.mp[sz];return optBtn("mp",sz,`${d.sz} (×${P.pot.mp[sz]||0})`,`+${potAmt(P,"mp",sz)} MP`)}).join("")}
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
         ${[15,25,40,55].map(v=>thrBtn("mpThr",v)).join("")}
@@ -1348,6 +1354,8 @@ function openAutoSetup(alreadyRunning){
 
     <div class="q" style="display:block;margin-bottom:10px">
       <button class="btn ${cfg.buy?"":"s"}" style="width:100%;padding:8px;font-size:11px;border:1px solid ${cfg.buy?"var(--gold)":"rgba(255,255,255,.15)"}" onclick="setAutoCfg('buy',${cfg.buy?"false":"true"})"><b>${cfg.buy?"✅":"⛔"} İksir bitince otomatik satın al</b><div style="font-size:9px;opacity:.85;margin-top:2px">Seçili iksir bitince ve gerekince 10 adede kadar altınla alır</div></button>
+      ${cfg.buy?`<div style="margin-top:8px;font-size:10.5px"><b>💰 Altın rezervi</b> <span class="mu" style="font-size:9.5px">(altının bunun altına inmesin)</span></div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:5px">${[[0,"Yok"],[200,"200"],[1000,"1.000"],[5000,"5.000"],[20000,"20.000"]].map(([v,l])=>`<button class="btn ${(cfg.keep|0)===v?"":"s"}" style="padding:5px 1px;font-size:10px;margin:0" onclick="setAutoCfg('keep',${v})">${l}</button>`).join("")}</div>`:""}
     </div>
     <button class="btn" onclick="startAutoWithCfg()">${alreadyRunning?"✅ Ayarları Uygula":"▶ Otomatik Savaşı Başlat"}</button>
     <button class="btn s" style="margin-top:6px" onclick="closeM()">Vazgeç</button>
@@ -1697,6 +1705,7 @@ function cWiki(v){
           <li><b>🗺️ 12 Bölge ve Seviye 100:</b> Dünya artık 12 bölgeden oluşuyor ve seviye sınırı <b>100</b>. Her bölgede 7 canavar ve 1 👑 Elit Boss var (toplam 96 canavar, hepsinin kendi çizimi var). Haritada bölge noktalarına dokunarak bölgeleri gezebilirsin; bir sonraki bölge için seviye gerekir ve önceki bölgenin Elit Boss'unu yenmelisin. 51-100 arası eşyalar yeni kademelerde (55, 60 … 100) düşer; Lv 75 ve Lv 100 silahları da kilometre taşı efsunlu gelir.</li>
           <li><b>🏰 Lonca (v2.8.0):</b> Topluluk > Lonca sekmesinden 10. seviyeden itibaren lonca kurabilir ya da açık bir loncaya katılabilirsin (en çok 30 üye). Roller: <b>Lider</b> (ayarlar, rütbe, atma, devir, dağıtma), <b>Subay</b> (sıradan üyeleri atar), <b>Üye</b>. Lider ayrılırsa liderlik en eski subaya geçer. Loncanın gücü üyelerinin seviyeleri toplamıdır; lonca listesi güce göre sıralanır. Lonca sohbetini yalnızca üyeler görür.</li>
           <li><b>🗺️ Harita (v2.8.0):</b> Harita sekmesi doğrudan tam ekran haritayı açar. Bir bölgeye dokununca küçük bir pencerede bölgenin canavarları çıkar; haritanın boş yerine dokunarak pencereyi kapatırsın.</li>
+          <li><b>🐉 Dünya Boss'u (v2.13.0):</b> Topluluk > Boss sekmesinde herkesin ortak vurduğu boss durur (10. seviyeden itibaren). Karakter başına günde 3 saldırı hakkın var (her gün 03:00'te yenilenir); bir saldırı en çok 30 tur sürer ve boss seviyene göre ayarlanır. Saldırıda canın, manan ve iksirlerin harcanmaz. Boss 3 gün yaşar; canı %75, %50, %25'e inince herkese sandık, ölürse katılanlara sandık çıkar. Hasarda ilk 3'e <i>Dünya Yıkıcı</i>, katılanlara <i>Boss Avcısı</i> ünvanı verilir; en çok hasar veren 3 loncanın üyelerine ek sandık vardır. Boss ölünce ya da kaçınca 12 saat sonra sıradaki bölgenin bossu gelir.</li>
           <li><b>🧍 Karakterler birbirinden bağımsızdır (v2.11.0):</b> Aynı hesapta birden çok karakter açsan da her biri ayrı bir oyuncu sayılır: kendi sıralaması, arkadaşları, mesajları, engelleri ve loncası vardır. Ortak olan tek şey deponun (banka, pazar, takas) hesaba bağlı olmasıdır.</li>
           <li><b>👥 Arkadaşlar ve Mesajlar (v2.9.0):</b> Sıralamada, sohbette ya da loncada bir oyuncunun adına dokununca profilinin altında <i>Mesaj gönder</i>, <i>Arkadaş ekle</i> ve <i>Engelle</i> düğmeleri çıkar. Arkadaşlık iki taraflıdır (istek gönderilir, karşı taraf kabul eder; en çok 50 arkadaş). Arkadaşlarının çevrimiçi olup olmadığını Topluluk > Arkadaş sekmesinde görürsün (son 3 dakikada oyundaysa çevrimiçidir; bu bilgiyi yalnızca arkadaşların görür). Özel mesaj herkese gönderilebilir; rahatsız eden oyuncuyu engelleyebilirsin. Okunmamış mesaj ve istekler Topluluk sekmesinde kırmızı rozetle görünür. Mesajlar 14 gün saklanır.</li>
           <li><b>📖 Hikâye Günlüğü (v2.10.0):</b> Harita sekmesindeki günlükte Valdrenn'in hikâyesi (Kral Valdrenn, gölgenin on iki mührü ve senin gölgen) yer alır. Prolog ilk girişte kendiliğinden açılır; her bölgenin Elit Boss'unu yenince o bölgenin sayfası açılır ve bildirim gelir. Son sayfalar Valdrenn Tahtı'ndaki Elit Boss'u yenince açılır.</li>
